@@ -1,0 +1,8 @@
+{
+  "id": "M1-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "Phase B M1 통과 — CLI 14개 명령 골격, --help/--version, npm test 18/18.",
+  "relatedTaskId": "B1-013",
+  "createdAt": "2026-05-18T13:00:00Z",
+  "notes": "commander 등록 + cli-help.test.ts 통과. 의존성 위반 0."
+}

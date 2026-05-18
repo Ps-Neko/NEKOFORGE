@@ -1,0 +1,7 @@
+{
+  "id": "M2-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "Phase B M2 통과 — deterministic rule 9종 단위 테스트 통과 (rule 별 6+ 케이스).",
+  "createdAt": "2026-05-18T14:00:00Z",
+  "notes": "secret-fallback, auth-bypass, test-deletion, no-test-risk, dangerous-file-write, hook-injection-risk, agent-permission-risk, auto-apply-block, codex-missing-risk."
+}

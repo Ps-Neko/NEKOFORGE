@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.3",
+  "pattern": "Pipeline",
+  "rationale": "Phase C self-host: 변경 규모 작아 직렬이 충분.",
+  "agents": [
+    { "id": "impl-1", "role": "implementation-agent", "owns": ["TASK-C1", "TASK-C2", "TASK-C3", "TASK-C4"] },
+    { "id": "sec-1", "role": "security-reviewer", "owns": ["TASK-C1"] },
+    { "id": "rel-1", "role": "release-gatekeeper", "owns": ["TASK-C1", "TASK-C2", "TASK-C3", "TASK-C4"] }
+  ],
+  "orchestratorRef": ".harness/orchestrator.md",
+  "skillsMapRef": ".harness/skills-map.json"
+}

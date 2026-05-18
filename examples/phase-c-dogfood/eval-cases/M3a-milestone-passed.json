@@ -1,0 +1,7 @@
+{
+  "id": "M3a-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "Phase B M3a 통과 — core 14단계 + adapter + CLI 통합. 30초 path e2e 통과.",
+  "createdAt": "2026-05-18T15:00:00Z",
+  "notes": "init→ask→context→spec→plan→design→policy→team→work→review→gate→apply→report→export claude 완주. tests/integration/full-flow.test.ts."
+}

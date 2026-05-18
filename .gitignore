@@ -1,0 +1,30 @@
+# Build output
+dist/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Cache
+.cache/
+.eslintcache
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Local workspace artifacts
+.harness/
+!.harness/.gitkeep
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
