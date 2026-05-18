@@ -1,0 +1,7 @@
+{
+  "id": "M3b-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "Phase B M3b 통과 — SECURITY.md §7 의 T-SEC-01~16 모두 통과.",
+  "createdAt": "2026-05-18T16:00:00Z",
+  "notes": "BLOCK 3건, NEEDS_HUMAN_REVIEW 5건, PASS_WITH_WARNINGS 1건, INSUFFICIENT_EVIDENCE 2건, apply 거부 4건, export 보안 2건."
+}
