@@ -1,0 +1,7 @@
+{
+  "id": "phase-qf-prompt-input",
+  "kind": "improved_prompt",
+  "summary": "외부 입력 'NEKOFORGE_Quality_Factory_Upgrade_Prompt.md' (v1) 가 본 도구의 정체성을 재정의. 17 task 분해 + 5 라운드 진행 + 검증 완료.",
+  "createdAt": "2026-05-19T17:00:00Z",
+  "notes": "핵심 결정 사항 5개: (1) Quality Contract 도입 — work 전 강제, (2) 8 영역 quality score — verdict 정량화, (3) architecture/design rule 7종 추가, (4) fixture benchmark, (5) fast/safe/release modes. NEKOWORK 가족 관계는 진화 (출처 보존하되 별개 제품)."
+}

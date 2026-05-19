@@ -127,6 +127,8 @@ OMC                = "그 팀을 어떻게 운용할 것인가" (실행)
 5. **로컬 우선 보장** — 모든 기본 동작은 외부 SaaS · 원격 서버 없이 로컬에서 수행한다.
 6. **도구 독립 보장 (v3 신규)** — `.harness/` 가 core. Claude Code, Codex, Cursor 등의 디렉터리는 `harness export` 로 생성되는 adapter 출력일 뿐, 의존성이 아니다.
 7. **설계·실행 분리 보장 (v3 신규)** — "어떤 팀으로 일할지" (harness-design) 와 "그 팀을 어떻게 운용할지" (team) 는 다른 단계다. 설계 변경이 즉시 실행 변경으로 새지 않는다.
+8. **Quality Contract before Work (v0.4 / Phase QF)** — `quality-contract.json` 없이는 `work` 진입 불가. 산출물 골격뿐 아니라 **품질 기준 자체** 가 work 전 강제.
+9. **Quality Score before PASS (v0.4 / Phase QF)** — 8 영역 정량 점수 미달 시 verdict 상한이 자동 강등. critical/high 가 없어도 점수만으로 PASS 거부 가능.
 
 ## 8. 핵심 기능 (MVP)
 
@@ -175,7 +177,7 @@ OMC                = "그 팀을 어떻게 운용할 것인가" (실행)
 ## 11. 비-성공 시나리오 (이런 상태면 실패)
 
 - agent 가 11개 role 정의를 넘어 그 이상으로 확장.
-- CLI 명령어가 18개를 넘는다.
+- CLI 명령어가 22개를 넘는다 (v0.4 기준 — 18 명령 + 향후 4 여유. 이전 18 한계는 Phase QF 진입으로 갱신됨).
 - `harness apply` 가 verdict 확인을 우회할 수 있는 경로가 한 개라도 존재.
 - `decision.json` 이 일부 단계에서만 생성.
 - 외부 SaaS 키 없이는 동작하지 않는 핵심 기능이 한 개라도 존재.
