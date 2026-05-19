@@ -1,0 +1,6 @@
+diff --git a/src/conf.ts b/src/conf.ts
+@@ -1 +1,3 @@
+-export const key = "";
++export const key = process.env.API_KEY;
++
++if (!key) throw new Error("API_KEY required");
