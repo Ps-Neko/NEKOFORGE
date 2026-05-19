@@ -59,7 +59,7 @@ test("harness --help exits 0 and prints program description", () => {
 test("harness --version exits 0 and prints version", () => {
   const r = runCli(["--version"]);
   assert.equal(r.status, 0, `unexpected stderr: ${r.stderr}`);
-  assert.match(r.stdout, /0\.3\.0/);
+  assert.match(r.stdout, /0\.5\.0/);
 });
 
 test("harness lists all 14 commands in --help", () => {

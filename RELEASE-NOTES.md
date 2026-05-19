@@ -1,5 +1,81 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha — Worker Factory + Rule/Skill Pack Upgrade (2026-05-20)
+
+### Summary
+
+Phase WF (Worker Factory) + Phase RP (Rule/Skill Pack) 도입.
+NEKOFORGE 의 정체성: **"AI 작업자를 배치하고 / 룰·스킬팩을 적용하고 / Quality Contract 기준으로 점수화한 뒤 / Human Gate 전에는 출고 차단하는 local-first AI Development Factory"**.
+
+### Breaking changes
+
+- `decision.json` `schemaVersion` 0.4 → **0.5**.
+- `quality-contract.json` / `quality-score.json` 도 0.5.
+- gate decision 에 새 필드: `workerFactory`, `rulePacks`, `skillPacks`.
+
+### Phase WF — Worker Factory
+
+| 영역 | 산출 |
+|---|---|
+| 문서 | `docs/WORKER-FACTORY.md`, `docs/WORKER-SAFETY.md` |
+| 스키마 | `workers.schema.ts` (profile + roleSeparation), `worker-result.schema.ts` |
+| Core | `src/workers/{types,index,dispatch,validate,result}.ts` |
+| CLI | `harness workers <init\|list\|status\|validate>`, `harness dispatch`, `harness worker-result <import\|list\|show>` |
+| Worker 8종 | product-questioner, architect, implementation-worker, test-worker, refactor-worker, security-reviewer, design-reviewer, release-gatekeeper |
+| 강제 | impl ↔ security/release 분리 + forbidden action 감지 + worker 가 decision/apply 절대 불가 |
+| Profile | minimal / standard / strict |
+| gate 영향 | requiredWorkers 누락 / role 위반 / critical finding / forbidden action → verdict 강등 |
+
+### Phase RP — Rule/Skill Pack
+
+| 영역 | 산출 |
+|---|---|
+| 문서 | `docs/RULE-PACKS.md`, `docs/SKILL-PACKS.md` |
+| 스키마 | `rule-packs.schema.ts`, `skill-packs.schema.ts` |
+| Core | `src/rule-packs/{catalog,index,resolve}.ts`, `src/skill-packs/{catalog,index,render}.ts` |
+| CLI | `harness rule-pack <list\|enable\|disable\|status\|audit>`, `harness skill-pack <…>` |
+| Rule pack 8종 | security-core, test-discipline, architecture-core, design-web, release-strict, ai-generated-code-risk, worker-safety-core, quality-contract-core |
+| Skill pack 7종 | typescript-quality, backend-api-quality, web-ui-quality, cli-tool-quality, library-quality, release-readiness, evidence-writing |
+| 자동 추천 | quality-contract template (web-ui/backend-api/cli-tool/library) 별 required pack |
+| gate 영향 | required pack 누락 → INSUFFICIENT_EVIDENCE (web-ui+design-web 만 누락 시 NEEDS_HUMAN_REVIEW) |
+
+### CLI count
+
+19 → **24** (workers, dispatch, worker-result, rule-pack, skill-pack — 모두 subcommand 패턴).
+
+### Tests
+
+240 → **266** (+26):
+- workers validate / forbidden action 단위 6
+- rule-pack catalog/resolve 단위 8
+- skill-pack catalog/render 단위 4
+- T-WF/T-RP e2e 8
+
+### Dependency rules
+
+`src/workers/`, `src/rule-packs/`, `src/skill-packs/` 모두 leaf 디렉터리. gate 는 이들만 import 가능. cross-stage core 위반 0건 유지.
+
+### Migration
+
+```bash
+# 기존 워크스페이스 마이그레이션
+$ harness workers init --profile standard
+$ harness rule-pack audit       # 기본 enabled pack 자동 생성
+$ harness skill-pack audit      # 기본 enabled pack 자동 생성
+
+# release mode 진입 전
+$ harness rule-pack enable release-strict
+$ harness workers init --profile strict --force
+```
+
+### Known limits (의도된)
+
+- worker 자동 LLM 실행 미포함 — prompt 생성 + result import 만 (Phase WF-2 예약).
+- skill pack 은 직접 verdict 만들지 않음 (rule pack 만 verdict 영향).
+- 8 rule pack + 7 skill pack 의 카탈로그는 큐레이션 — ECC 식 마켓플레이스 미지향.
+
+---
+
 ## v0.4.0-alpha — Quality Factory Upgrade (2026-05-19)
 
 ### self-host #6 (2026-05-19) — 실 결함 1건 발견·즉시 해결

@@ -19,7 +19,7 @@ export interface QualityScoreInput {
 }
 
 export interface QualityScoreResult {
-  schemaVersion: "0.4";
+  schemaVersion: "0.5";
   taskId: string;
   scores: {
     correctness: number;
@@ -190,7 +190,7 @@ export function calculateQualityScore(
   }
 
   return {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     taskId: input.taskId,
     scores,
     weights,

@@ -29,6 +29,22 @@ import {
   verdictHintFromScore,
   type QualityScoreResult
 } from "../../scoring/index.js";
+import {
+  readWorkers,
+  profileRequiredRoles,
+  type WorkerProfile
+} from "../../workers/index.js";
+import {
+  validateRoleSeparation,
+  detectForbiddenActions
+} from "../../workers/validate.js";
+import { collectTaskWorkerResults } from "../../workers/result.js";
+import { readRulePacks } from "../../rule-packs/index.js";
+import { resolveRulePacks } from "../../rule-packs/resolve.js";
+import {
+  readSkillPacks,
+  resolveSkillPacks
+} from "../../skill-packs/index.js";
 
 interface TeamJson {
   pattern?: string;
@@ -290,6 +306,147 @@ export async function runGate(
     );
   }
 
+  // Phase WF — worker factory 평가.
+  const workers = await readWorkers(deps);
+  const workerResults = workers
+    ? await collectTaskWorkerResults(input.taskId ?? "TASK-001", deps)
+    : [];
+  const completedRoles = workerResults
+    .filter((r) => r.status === "completed")
+    .map((r) => r.role);
+  const requiredRoles = workers
+    ? profileRequiredRoles(workers.profile as WorkerProfile)
+    : [];
+  const missingWorkers = requiredRoles.filter(
+    (r) => !completedRoles.includes(r)
+  );
+  const separationViolations = workers
+    ? validateRoleSeparation(workers.workers, workers.roleSeparation)
+    : [];
+  const workerFindings = workerResults.flatMap((r) => r.findings ?? []);
+  const criticalWorkerFindings = workerFindings.filter(
+    (f) => f.severity === "critical"
+  ).length;
+  const highWorkerFindings = workerFindings.filter(
+    (f) => f.severity === "high"
+  ).length;
+  // worker-safety — body 안에 forbidden action 패턴이 있으면 critical.
+  for (const wr of workerResults) {
+    const resultPath = wr.evidence?.result;
+    if (!resultPath) continue;
+    const body =
+      (await deps.artifact.readMarkdown(
+        resultPath.replace(/^\.harness\//, "")
+      )) ?? "";
+    const hits = detectForbiddenActions(body);
+    if (hits.length > 0) {
+      passTwo.push(
+        makeFinding(
+          "worker-safety-risk",
+          "critical",
+          `worker ${wr.role} body contains forbidden action: ${hits.map((h) => h.rule).join(", ")}`
+        )
+      );
+    }
+  }
+
+  // Phase RP — rule pack / skill pack 평가.
+  const rulePacks = await readRulePacks(deps);
+  const skillPacks = await readSkillPacks(deps);
+  const templateName =
+    contract && "template" in contract
+      ? ((contract as { template?: string }).template ?? undefined)
+      : undefined;
+  const rulePackResolve = rulePacks
+    ? resolveRulePacks({
+        packs: rulePacks,
+        template: templateName,
+        mode: input.mode
+      })
+    : null;
+  const skillPackResolve =
+    skillPacks && templateName
+      ? resolveSkillPacks(skillPacks, templateName)
+      : null;
+
+  // verdict 영향: missing required rule pack → INSUFFICIENT_EVIDENCE finding.
+  let rulePackCap: Verdict | null = null;
+  if (rulePackResolve && rulePackResolve.missingRequired.length > 0) {
+    passTwo.push(
+      makeFinding(
+        "rule-pack-missing",
+        "critical",
+        `required rule pack missing: ${rulePackResolve.missingRequired.join(", ")}`
+      )
+    );
+    rulePackCap = "INSUFFICIENT_EVIDENCE";
+    // web-ui + design-web 누락은 NEEDS_HUMAN_REVIEW 수준으로 약화.
+    if (
+      templateName === "web-ui" &&
+      rulePackResolve.missingRequired.length === 1 &&
+      rulePackResolve.missingRequired[0] === "design-web"
+    ) {
+      rulePackCap = "NEEDS_HUMAN_REVIEW";
+    }
+  }
+
+  // verdict 영향: missing required worker → NEEDS_HUMAN_REVIEW or stricter.
+  let workerCap: Verdict | null = null;
+  if (workers) {
+    if (missingWorkers.length > 0) {
+      const sec = missingWorkers.includes("security-reviewer");
+      if (input.mode === "release" && sec) {
+        workerCap = "INSUFFICIENT_EVIDENCE";
+      } else {
+        workerCap = "NEEDS_HUMAN_REVIEW";
+      }
+      passTwo.push(
+        makeFinding(
+          "worker-missing-required",
+          input.mode === "release" && sec ? "critical" : "high",
+          `required worker(s) missing: ${missingWorkers.join(", ")}`
+        )
+      );
+    }
+    if (separationViolations.length > 0) {
+      workerCap = workerCap === "INSUFFICIENT_EVIDENCE" ? workerCap : "NEEDS_HUMAN_REVIEW";
+      passTwo.push(
+        makeFinding(
+          "worker-role-separation",
+          "high",
+          `role separation violation: ${separationViolations.join("; ")}`
+        )
+      );
+    }
+    if (criticalWorkerFindings > 0) {
+      passTwo.push(
+        makeFinding(
+          "worker-critical-finding",
+          "critical",
+          `${criticalWorkerFindings} critical worker finding(s) reported`
+        )
+      );
+    } else if (highWorkerFindings > 0) {
+      passTwo.push(
+        makeFinding(
+          "worker-high-finding",
+          "high",
+          `${highWorkerFindings} high worker finding(s) reported`
+        )
+      );
+    }
+  } else if (input.mode === "release") {
+    // release mode 인데 workers.json 없으면 INSUFFICIENT_EVIDENCE.
+    workerCap = "INSUFFICIENT_EVIDENCE";
+    passTwo.push(
+      makeFinding(
+        "worker-factory-missing",
+        "critical",
+        "release mode requires workers.json (run `harness workers init --profile strict`)"
+      )
+    );
+  }
+
   const verdictBase = computeVerdict({
     findings: passTwo,
     testStatus: input.testStatus ?? "not_run",
@@ -298,8 +455,17 @@ export async function runGate(
     schemaFailed: false
   });
 
-  // verdict 와 scoreCap 중 더 보수적인 것을 채택.
-  const verdict = applyScoreCap(verdictBase, scoreCap);
+  // verdict 와 (scoreCap | rulePackCap | workerCap) 중 더 보수적인 것을 채택.
+  const allCaps: Array<Verdict | null> = [
+    scoreCap,
+    rulePackCap,
+    workerCap
+  ];
+  const strictestCap = allCaps.reduce<Verdict | null>(
+    (acc, cap) => mergeCap(acc, cap),
+    null
+  );
+  const verdict = applyScoreCap(verdictBase, strictestCap);
 
   const triggered = uniqueRuleIds(passTwo);
   const hasSerious = passTwo.some(
@@ -308,7 +474,7 @@ export async function runGate(
   const rulesStatus = hasSerious ? ("failed" as const) : ("passed" as const);
 
   const decision = {
-    schemaVersion: "0.4" as const,
+    schemaVersion: "0.5" as const,
     project: "nekoforge",
     taskId: input.taskId ?? "TASK-UNKNOWN",
     workflowStage: "gate",
@@ -415,6 +581,76 @@ export async function runGate(
           findingsCount: 0,
           criticalFindings: 0
         },
+    workerFactory: workers
+      ? {
+          status: (separationViolations.length > 0
+            ? "violated"
+            : missingWorkers.length === 0
+              ? "complete"
+              : missingWorkers.length < requiredRoles.length
+                ? "partial"
+                : "missing") as
+            | "complete"
+            | "partial"
+            | "missing"
+            | "violated",
+          profile: workers.profile,
+          requiredWorkers: requiredRoles,
+          completedWorkers: completedRoles,
+          missingWorkers,
+          roleSeparationViolations: separationViolations,
+          workerFindingsCount: workerFindings.length,
+          criticalWorkerFindings
+        }
+      : {
+          status: "missing" as const,
+          profile: "",
+          requiredWorkers: [],
+          completedWorkers: [],
+          missingWorkers: [],
+          roleSeparationViolations: [],
+          workerFindingsCount: 0,
+          criticalWorkerFindings: 0
+        },
+    rulePacks: rulePackResolve
+      ? {
+          status: (rulePackResolve.missingRequired.length > 0
+            ? "missing"
+            : "complete") as "complete" | "missing" | "violated",
+          enabled: rulePackResolve.enabled,
+          required: rulePackResolve.required,
+          missingRequired: rulePackResolve.missingRequired,
+          triggeredPacks: uniqueTriggeredPacks(passTwo, rulePackResolve.enabled)
+        }
+      : {
+          status: "missing" as const,
+          enabled: [],
+          required: [],
+          missingRequired: [],
+          triggeredPacks: []
+        },
+    skillPacks: skillPackResolve
+      ? {
+          status: (skillPackResolve.missingRecommended.length > 0
+            ? "partial"
+            : "complete") as "complete" | "missing" | "partial",
+          enabled: skillPackResolve.enabled,
+          recommended: skillPackResolve.recommended,
+          missingRecommended: skillPackResolve.missingRecommended
+        }
+      : skillPacks
+        ? {
+            status: "complete" as const,
+            enabled: skillPacks.enabledPacks,
+            recommended: [],
+            missingRecommended: []
+          }
+        : {
+            status: "missing" as const,
+            enabled: [],
+            recommended: [],
+            missingRecommended: []
+          },
     evidence: {
       intake: ".harness/intake.md",
       clarify: ".harness/clarify.md",
@@ -443,7 +679,7 @@ export async function runGate(
 
   // Codex review #3 (Major #4) — 별도 산출 파일 작성.
   await deps.artifact.writeJson("factory-cells.json", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     cells: decision.factoryCells
   });
   await deps.artifact.writeMarkdown(
@@ -451,7 +687,7 @@ export async function runGate(
     renderFactoryCellsMd(decision.factoryCells)
   );
   await deps.artifact.writeJson("architecture-findings.json", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     findings: archFindings,
     summary: `${archFindings.length} architecture findings (${archFindings.filter((f) => f.severity === "critical").length} critical)`
   });
@@ -460,7 +696,7 @@ export async function runGate(
     renderReviewMd("Architecture", archFindings)
   );
   await deps.artifact.writeJson("design-findings.json", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     findings: designFindings,
     summary: `${designFindings.length} design findings (uiTouched: ${contract?.riskProfile?.uiTouched === true || detectUiInDiff(diff)})`
   });
@@ -597,6 +833,67 @@ function applyScoreCap(
     humanApprovalRequired: true,
     reasons: [...base.reasons, `quality score cap: ${cap}`]
   };
+}
+
+/**
+ * Phase WF/RP — 여러 cap (scoreCap, rulePackCap, workerCap) 중 가장 엄격한 것을 채택.
+ * 낮은 VERDICT_ORDER 가 더 엄격.
+ */
+function mergeCap(a: Verdict | null, b: Verdict | null): Verdict | null {
+  if (!a) return b;
+  if (!b) return a;
+  return VERDICT_ORDER[a] <= VERDICT_ORDER[b] ? a : b;
+}
+
+/**
+ * Phase RP — passTwo findings 의 ruleId 를 enabled pack 으로 역매핑.
+ */
+function uniqueTriggeredPacks(
+  findings: ReadonlyArray<RuleFinding>,
+  enabledPacks: ReadonlyArray<string>
+): string[] {
+  const triggered = new Set<string>();
+  const ids = new Set(findings.map((f) => f.ruleId));
+  for (const p of enabledPacks) {
+    // 동적 import 회피 — 간단한 매칭만.
+    if (p === "security-core" && [
+      "secret-fallback",
+      "auth-bypass",
+      "dangerous-file-write",
+      "hook-injection-risk",
+      "agent-permission-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "test-discipline" && ["test-deletion", "no-test-risk"].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "architecture-core" && [
+      "large-file-risk",
+      "layer-violation",
+      "circular-dependency-risk",
+      "untyped-api-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "design-web" && [
+      "accessibility-risk",
+      "design-token-violation",
+      "responsive-break-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "release-strict" && [
+      "codex-missing-risk",
+      "release-benchmark-required",
+      "auto-apply-block"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "worker-safety-core" && [
+      "worker-safety-risk",
+      "worker-role-separation",
+      "worker-missing-required",
+      "worker-critical-finding",
+      "worker-high-finding",
+      "worker-factory-missing"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "quality-contract-core" && [
+      "quality-contract-invalid",
+      "rule-pack-missing"
+    ].some((r) => ids.has(r))) triggered.add(p);
+  }
+  return [...triggered];
 }
 
 interface FactoryCellStatusInput {

@@ -5,7 +5,7 @@
 
 > NEKOFORGE 는 OMC 처럼 일을 시키는 도구가 아니고, ECC 처럼 스킬을 많이 쌓는 도구도 아니다. 그 도구들이 만든 산출물을 **품질 계약 기준으로 검증하고 출고를 통제하는 공장** 이다.
 
-**현재 상태**: `v0.4.0-alpha` · 14단계 + 18 CLI · 240 tests · benchmark 20/20 (critical recall 1.000, FP rate 0.000) · self-host 6회 통과 · external Codex review 3회 통합.
+**현재 상태**: `v0.5.0-alpha` · 14단계 + 24 CLI · Worker Factory (8 worker role) · Rule Pack (8종) + Skill Pack (7종) · 266 tests · benchmark 20/20 (critical recall 1.000, FP rate 0.000) · self-host 6회 통과 · external Codex review 3회 통합.
 
 **Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ 외부 사용자 1명 이상 PR 1개 머지.
 

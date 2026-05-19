@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createValidator, KNOWN_SCHEMA_IDS } from "../../../src/schemas/loader.js";
 
-test("loader registers 9 schemas", () => {
-  assert.equal(KNOWN_SCHEMA_IDS.length, 9);
+test("loader registers 13 schemas", () => {
+  assert.equal(KNOWN_SCHEMA_IDS.length, 13);
   for (const id of [
     "decision",
     "team",
@@ -13,7 +13,11 @@ test("loader registers 9 schemas", () => {
     "codex-findings",
     "eval-case",
     "quality-contract",
-    "quality-score"
+    "quality-score",
+    "workers",
+    "worker-result",
+    "rule-packs",
+    "skill-packs"
   ]) {
     assert.ok(KNOWN_SCHEMA_IDS.includes(id), `missing schema: ${id}`);
   }
@@ -22,7 +26,7 @@ test("loader registers 9 schemas", () => {
 test("decision: valid minimal decision passes", () => {
   const v = createValidator();
   const r = v.validate("decision", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
@@ -39,7 +43,7 @@ test("decision: valid minimal decision passes", () => {
 test("decision: unknown verdict fails", () => {
   const v = createValidator();
   const r = v.validate("decision", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",

@@ -93,7 +93,7 @@ test("Codex #1: apply promotes pending patch to applied when diff matches", asyn
   await writeFile(
     join(ws.cwd, ".harness", "decision.json"),
     JSON.stringify({
-      schemaVersion: "0.4",
+      schemaVersion: "0.5",
       project: "nekoforge",
       taskId: "TASK-001",
       workflowStage: "gate",
@@ -129,7 +129,7 @@ test("Codex re-review #2: apply rejects when workingtree drifted from pending pa
   await writeFile(
     join(ws.cwd, ".harness", "decision.json"),
     JSON.stringify({
-      schemaVersion: "0.4",
+      schemaVersion: "0.5",
       project: "nekoforge",
       taskId: "TASK-001",
       workflowStage: "gate",

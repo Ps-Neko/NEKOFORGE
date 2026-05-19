@@ -101,7 +101,7 @@ export async function seedHarness(): Promise<SeededWorkspace> {
   // 테스트들은 대부분 직접 runGate 를 호출해 새로 생성하지만, gate 를 호출하지 않고
   // 바로 runApply 만 시험하는 경우 (decision.json 직접 주입형) 를 위해 최소 시드를 만든다.
   await deps.artifact.writeJson("quality-score.json", {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     taskId: "TASK-001",
     scores: {
       overall: 100,

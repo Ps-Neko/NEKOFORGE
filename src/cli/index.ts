@@ -28,10 +28,15 @@ import { registerContract } from "./commands/contract.js";
 import { registerBenchmark } from "./commands/benchmark.js";
 import { registerRun } from "./commands/run.js";
 import { registerSelfHost } from "./commands/self-host.js";
+import { registerWorkers } from "./commands/workers.js";
+import { registerDispatch } from "./commands/dispatch.js";
+import { registerWorkerResult } from "./commands/worker-result.js";
+import { registerRulePack } from "./commands/rule-pack.js";
+import { registerSkillPack } from "./commands/skill-pack.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
 
-const VERSION = "0.3.0-alpha.0";
+const VERSION = "0.5.0-alpha.0";
 
 function buildProgram(): Command {
   const program = new Command();
@@ -68,6 +73,11 @@ function buildProgram(): Command {
   registerBenchmark(program);
   registerRun(program);
   registerSelfHost(program);
+  registerWorkers(program);
+  registerDispatch(program);
+  registerWorkerResult(program);
+  registerRulePack(program);
+  registerSkillPack(program);
 
   program.showHelpAfterError(
     "(run `harness <command> --help` for command-specific help)"
