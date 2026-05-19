@@ -19,6 +19,8 @@ coverage/
 # examples 디렉터리 내부의 .harness 는 시연 목적이라 예외로 추적
 !examples/**/.harness/
 !examples/**/.harness/**
+# REPORT.md 는 harness gate 가 cwd 루트에 작성하는 산출물 (커밋 대상 아님)
+/REPORT.md
 
 # OS
 Thumbs.db
