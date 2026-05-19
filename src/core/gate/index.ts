@@ -70,6 +70,11 @@ export interface GateInput {
   noReviewAdapter?: boolean;
   testStatus?: "passed" | "failed" | "not_run" | "insufficient";
   taskId?: string;
+  /**
+   * Codex self-audit #1 — release mode 시 benchmark smoke 필수.
+   * .harness/benchmark-results.json 부재 또는 critical recall < 0.8 이면 verdict 강등.
+   */
+  mode?: "fast" | "safe" | "release";
 }
 
 export interface GateResult {
@@ -149,6 +154,30 @@ export async function runGate(
     );
   }
   await writeAuditAnchor(currentAnchor, deps.cwd);
+
+  // Codex self-audit #1 — release mode 시 benchmark smoke 필수.
+  if (input.mode === "release") {
+    const benchmark = await deps.artifact
+      .readJson<{ totalScenarios: number; criticalRecall: number }>("benchmark-results.json")
+      .catch(() => null);
+    if (!benchmark || benchmark.totalScenarios === 0) {
+      passTwo.push(
+        makeFinding(
+          "release-benchmark-required",
+          "high",
+          "release mode requires .harness/benchmark-results.json (run `harness benchmark`)"
+        )
+      );
+    } else if (benchmark.criticalRecall < 0.8) {
+      passTwo.push(
+        makeFinding(
+          "release-benchmark-required",
+          "high",
+          `release mode requires benchmark critical recall >= 0.8 (current ${benchmark.criticalRecall.toFixed(2)})`
+        )
+      );
+    }
+  }
 
   // Phase QF — architecture/design rule 별도 실행.
   const archFindings: RuleFinding[] = [];

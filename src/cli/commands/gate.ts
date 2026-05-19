@@ -7,6 +7,7 @@ interface GateOpts {
   reviewAdapter?: boolean;
   task?: string;
   testStatus?: string;
+  mode?: string;
 }
 
 export function registerGate(program: Command): void {
@@ -23,6 +24,10 @@ export function registerGate(program: Command): void {
       "test status to record (passed | failed | not_run | insufficient)",
       "not_run"
     )
+    .option(
+      "--mode <name>",
+      "fast | safe | release (release requires benchmark smoke)"
+    )
     .action(async (opts: GateOpts) => {
       await runStage(
         () =>
@@ -34,7 +39,10 @@ export function registerGate(program: Command): void {
                 | "passed"
                 | "failed"
                 | "not_run"
-                | "insufficient"
+                | "insufficient",
+              ...(opts.mode !== undefined
+                ? { mode: opts.mode as "fast" | "safe" | "release" }
+                : {})
             },
             buildDeps()
           ),
