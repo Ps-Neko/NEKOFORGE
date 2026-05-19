@@ -151,8 +151,20 @@ export async function runWork(
   await deps.artifact.writeMarkdown("worklog.md", worklog + entry + "\n");
 
   // post-tool hooks (Phase D 후속 — non-blocking 으로 결과만 기록)
+  // self-host #6 후속 — 결과를 hook-results.json 에 보존해 gate 가 testStatus 추정.
   const postHooks = await loadHooks(deps, "post-tool");
-  await runHooks(postHooks, { stage: "work", cwd: deps.cwd });
+  const postResults = await runHooks(postHooks, { stage: "work", cwd: deps.cwd });
+  if (postResults.length > 0) {
+    const enriched = postResults.map((r, idx) => ({
+      ...r,
+      command: postHooks[idx]?.command,
+      stage: "work"
+    }));
+    await deps.artifact.writeJson("hook-results.json", {
+      results: enriched,
+      recordedAt: at
+    });
+  }
 
   return {
     worklogPath: ".harness/worklog.md",

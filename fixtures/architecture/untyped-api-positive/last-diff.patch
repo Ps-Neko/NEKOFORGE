@@ -1,0 +1,7 @@
+diff --git a/src/util/parser.ts b/src/util/parser.ts
+@@ -1,3 +1,4 @@
+-export function parse(input: string): unknown {
++export function parse(input: string) {
++  const tokens: any = input.split(",");
+   return tokens;
+ }

@@ -2,6 +2,25 @@
 
 ## v0.4.0-alpha — Quality Factory Upgrade (2026-05-19)
 
+### self-host #6 (2026-05-19) — 실 결함 1건 발견·즉시 해결
+
+Codex review #3 + Beta 조건 #2/#3 처리 직후 본 도구로 본 작업을 14단계 회수. verdict NEEDS_HUMAN_REVIEW + apply exit 3 (approval 부재) 로 자가 정직성 확인. 도중 실 결함 1건 발견·해결:
+
+| 영역 | 상세 |
+|---|---|
+| **결함** | Windows 의 hook runner 가 `npx tsc --noEmit`, `npm test` 같은 .cmd 명령을 spawnSync(shell:false) 로 실행 시 status=null 로 실패. 정상 환경에서도 pre-tool hook 차단. |
+| **원인 1** | Windows 에서 npm/npx/yarn 등은 .cmd 파일이며 PATHEXT 자동 탐색 미동작. |
+| **원인 2** | Node.js 20+ 의 CVE-2024-27980 fix 가 .cmd/.bat 의 shell:false 실행을 EINVAL 로 차단. |
+| **해결** | `resolveExecutable(cmd, platform)` 헬퍼 + `.cmd`/`.bat` 시 `cmd.exe /c <cmd> <args...>` 우회. shell:false 정책 유지. |
+| **보안 근거** | isAllowedCommand 셸 메타 차단 + args 토큰 분리 + cmd.exe argv 직접 전달 → DEP0190 결합 위험 회피. |
+
+### self-host #6 후속 — tests.status 자동 추정
+
+post-tool hook (npm test 등) 결과가 work 단계에서 버려지던 문제 보완:
+- work 가 post-tool 결과를 `.harness/hook-results.json` 에 보존.
+- gate 의 `inferTestStatusFromHooks` 가 `npm/yarn/pnpm/bun test` 류 명령 결과로 tests.status 자동 추정 (ok→passed / failed→failed).
+- CLI `--test-status` 명시값은 항상 우선.
+
 ### Codex review #3 (2026-05-18) — 5건 대응
 
 외부 Codex 가 QF self-host 결과를 재검증해 QF 의 핵심 강제 조건 5건이 아직 뚫린다고 지적. main 통합 완료:
