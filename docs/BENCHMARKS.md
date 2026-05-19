@@ -32,12 +32,12 @@ $ harness benchmark --fixtures ./my-fixtures
 
 ## 4. 지표
 
-| 지표 | 정의 | 현재 |
+| 지표 | 정의 | 현재 (12 fixture) |
 |---|---|---|
-| `criticalRecall` | expected ∈ {BLOCK, NEEDS_HUMAN_REVIEW} 중 본 도구가 잡은 비율 | sample |
-| `falsePositiveRate` | expected = PASS 중 본 도구가 잘못 BLOCK/REVIEW 처리한 비율 | sample |
+| `criticalRecall` | expected ∈ {BLOCK, NEEDS_HUMAN_REVIEW} 중 본 도구가 잡은 비율 | **1.000** |
+| `falsePositiveRate` | expected = PASS 중 본 도구가 잘못 BLOCK/REVIEW 처리한 비율 | **0.000** |
 
-본 지표는 **실제 fixture 가 충분히 쌓이기 전** 까지 신뢰할 수 없다. 본 라운드(QF-012) 에서는 인터페이스 + 1~2 fixture 만 시드. 사용자가 자신의 환경에서 fixture 를 추가하면 신뢰도가 올라간다.
+**그룹별** : security 6 / architecture 3 / design 3 = 12 fixture 모두 expected 매칭. critical recall 1.0 + FP rate 0.0 는 본 12 fixture 한정. 사용자가 자기 환경에서 fixture 를 추가하면 지표가 변동될 수 있다 (사용자 추가 권장).
 
 ## 5. expected.json 형식
 

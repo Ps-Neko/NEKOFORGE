@@ -1,0 +1,4 @@
+diff --git a/src/Btn.tsx b/src/Btn.tsx
+@@ -1 +1 @@
+-<button>x</button>
++<button style={{ color: "#ff0000", padding: "16px" }}>x</button>

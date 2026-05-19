@@ -1,0 +1,6 @@
+diff --git a/tests/auth.test.ts b/tests/auth.test.ts
+deleted file mode 100644
+--- a/tests/auth.test.ts
++++ /dev/null
+@@ -1,1 +0,0 @@
+-test("auth flow", () => {});
