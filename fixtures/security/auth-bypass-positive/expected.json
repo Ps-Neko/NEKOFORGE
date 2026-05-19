@@ -1,0 +1,4 @@
+{
+  "verdict": "BLOCK",
+  "triggeredRules": ["auth-bypass"]
+}

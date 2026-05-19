@@ -1,0 +1,6 @@
+diff --git a/src/L.scss b/src/L.scss
+@@ -1 +1,3 @@
+-.col {}
++.col {
++  width: 800px;
++}

@@ -161,8 +161,9 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 ## 현재 상태
 
-- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**) + **Phase QF — Quality Factory Upgrade (#5)**.
-- `npm test` : **223/223 통과**.
+- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**) + **Phase QF — Quality Factory Upgrade (#5)** + QF self-audit ×2 (#6, #7).
+- `npm test` : **227/227 통과**.
+- `harness benchmark` : **12 fixture / critical recall 1.000 / FP rate 0.000** (security 6 + architecture 3 + design 3).
 - ROADMAP §9 마일스톤 M0~M8 모두 도달.
 - 외부 검증 **2건 누적** (Codex 2026-05-19).
 - Phase F (협업 모델) 만 보류 (외부 수요 조건부).
