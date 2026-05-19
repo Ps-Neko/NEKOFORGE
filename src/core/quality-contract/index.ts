@@ -197,6 +197,16 @@ function renderMarkdown(c: ContractJson): string {
   ].join("\n");
 }
 
+const PLACEHOLDER_RE = /\(사용자가 작성\)|\(작성\)|^$|^\s*$/;
+
+function lintProductIntent(intent: ContractJson["productIntent"]): string[] {
+  const violations: string[] = [];
+  if (PLACEHOLDER_RE.test(intent.user)) violations.push("productIntent.user is placeholder");
+  if (PLACEHOLDER_RE.test(intent.problem)) violations.push("productIntent.problem is placeholder");
+  if (PLACEHOLDER_RE.test(intent.coreValue)) violations.push("productIntent.coreValue is placeholder");
+  return violations;
+}
+
 export async function runQualityContract(
   input: ContractInput,
   deps: StageDeps
@@ -209,6 +219,13 @@ export async function runQualityContract(
     if (!existing) {
       throw new ContractCheckError(
         "quality-contract.json missing or schema invalid"
+      );
+    }
+    // Codex self-audit #2 — productIntent placeholder lint.
+    const lintErrors = lintProductIntent(existing.productIntent);
+    if (lintErrors.length > 0) {
+      throw new ContractCheckError(
+        `quality-contract.json has unfilled productIntent: ${lintErrors.join(", ")}`
       );
     }
     return {
