@@ -5,7 +5,13 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
-import { ALL_RULES, type RuleContext, type RuleFinding } from "../../rules/index.js";
+import {
+  ALL_RULES,
+  ALL_ARCHITECTURE_RULES,
+  ALL_DESIGN_RULES,
+  type RuleContext,
+  type RuleFinding
+} from "../../rules/index.js";
 import { parseUnifiedDiff } from "../../utils/diff.js";
 import { isoNow } from "../../utils/time.js";
 import {
@@ -144,6 +150,16 @@ export async function runGate(
   }
   await writeAuditAnchor(currentAnchor, deps.cwd);
 
+  // Phase QF — architecture/design rule 별도 실행.
+  const archFindings: RuleFinding[] = [];
+  for (const r of ALL_ARCHITECTURE_RULES) {
+    archFindings.push(...(await r.run(ctxWithFlags)));
+  }
+  const designFindings: RuleFinding[] = [];
+  for (const r of ALL_DESIGN_RULES) {
+    designFindings.push(...(await r.run(ctxWithFlags)));
+  }
+
   // Phase QF — quality-contract 읽기 + quality-score 계산.
   const contract = await deps.artifact
     .readJson<QualityContractJson>("quality-contract.json", "quality-contract")
@@ -153,6 +169,8 @@ export async function runGate(
   if (contract) {
     qualityScore = calculateQualityScore({
       findings: passTwo,
+      architectureFindings: archFindings,
+      designFindings,
       testStatus: input.testStatus ?? "not_run",
       reviewStatus,
       evidenceComplete: !evidenceMissing,
@@ -268,12 +286,30 @@ export async function runGate(
       hasWork: true,
       hasReview: true
     }),
-    architectureReview: { status: "not_run" as const, findingsCount: 0, criticalFindings: 0 },
-    designReview: {
-      status: contract?.riskProfile?.uiTouched ? ("not_run" as const) : ("not_applicable" as const),
-      findingsCount: 0,
-      criticalFindings: 0
+    architectureReview: {
+      status: archFindings.some((f) => f.severity === "critical")
+        ? ("failed" as const)
+        : archFindings.some((f) => f.severity === "high" || f.severity === "warning")
+          ? ("warnings" as const)
+          : ("passed" as const),
+      findingsCount: archFindings.length,
+      criticalFindings: archFindings.filter((f) => f.severity === "critical").length
     },
+    designReview: contract?.riskProfile?.uiTouched
+      ? {
+          status: designFindings.some((f) => f.severity === "critical")
+            ? ("failed" as const)
+            : designFindings.some((f) => f.severity === "high" || f.severity === "warning")
+              ? ("warnings" as const)
+              : ("passed" as const),
+          findingsCount: designFindings.length,
+          criticalFindings: designFindings.filter((f) => f.severity === "critical").length
+        }
+      : {
+          status: "not_applicable" as const,
+          findingsCount: 0,
+          criticalFindings: 0
+        },
     evidence: {
       intake: ".harness/intake.md",
       clarify: ".harness/clarify.md",

@@ -1,6 +1,9 @@
 /**
- * deterministic rule 9종 레지스트리.
- * gate 모듈은 본 배열을 통해 일괄 실행한다.
+ * deterministic rule 레지스트리.
+ *
+ * - ALL_RULES : 보안/공정 9종 (gate 의 verdict 직접 입력).
+ * - ALL_ARCHITECTURE_RULES : 구조 품질 4종 (Phase QF).
+ * - ALL_DESIGN_RULES : UI/UX 품질 3종 (Phase QF, uiTouched 시만).
  */
 import type { DeterministicRule } from "./types.js";
 import { secretFallbackRule } from "./secret-fallback.js";
@@ -12,6 +15,13 @@ import { hookInjectionRiskRule } from "./hook-injection-risk.js";
 import { agentPermissionRiskRule } from "./agent-permission-risk.js";
 import { autoApplyBlockRule } from "./auto-apply-block.js";
 import { codexMissingRiskRule } from "./codex-missing-risk.js";
+import { largeFileRiskRule } from "./architecture/large-file-risk.js";
+import { layerViolationRule } from "./architecture/layer-violation.js";
+import { untypedApiRiskRule } from "./architecture/untyped-api-risk.js";
+import { circularDependencyRiskRule } from "./architecture/circular-dependency-risk.js";
+import { accessibilityRiskRule } from "./design/accessibility-risk.js";
+import { designTokenViolationRule } from "./design/design-token-violation.js";
+import { responsiveBreakRiskRule } from "./design/responsive-break-risk.js";
 
 export const ALL_RULES: readonly DeterministicRule[] = [
   secretFallbackRule,
@@ -23,6 +33,19 @@ export const ALL_RULES: readonly DeterministicRule[] = [
   agentPermissionRiskRule,
   autoApplyBlockRule,
   codexMissingRiskRule
+];
+
+export const ALL_ARCHITECTURE_RULES: readonly DeterministicRule[] = [
+  largeFileRiskRule,
+  layerViolationRule,
+  untypedApiRiskRule,
+  circularDependencyRiskRule
+];
+
+export const ALL_DESIGN_RULES: readonly DeterministicRule[] = [
+  accessibilityRiskRule,
+  designTokenViolationRule,
+  responsiveBreakRiskRule
 ];
 
 export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./auto-apply-block.js";
