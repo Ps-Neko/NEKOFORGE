@@ -1,7 +1,38 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isAllowedCommand, runHooks } from "../../../src/hooks/runner.js";
+import {
+  isAllowedCommand,
+  resolveExecutable,
+  runHooks
+} from "../../../src/hooks/runner.js";
 import type { Hook } from "../../../src/hooks/types.js";
+
+test("resolveExecutable: non-win32 leaves command alone", () => {
+  assert.equal(resolveExecutable("npm", "linux"), "npm");
+  assert.equal(resolveExecutable("npx", "darwin"), "npx");
+  assert.equal(resolveExecutable("yarn", "linux"), "yarn");
+});
+
+test("resolveExecutable: win32 appends .cmd to npm/npx/yarn/pnpm/deno/bun", () => {
+  assert.equal(resolveExecutable("npm", "win32"), "npm.cmd");
+  assert.equal(resolveExecutable("npx", "win32"), "npx.cmd");
+  assert.equal(resolveExecutable("yarn", "win32"), "yarn.cmd");
+  assert.equal(resolveExecutable("pnpm", "win32"), "pnpm.cmd");
+  assert.equal(resolveExecutable("deno", "win32"), "deno.cmd");
+  assert.equal(resolveExecutable("bun", "win32"), "bun.cmd");
+});
+
+test("resolveExecutable: win32 leaves tsc/node/git unchanged (.exe in PATH)", () => {
+  assert.equal(resolveExecutable("tsc", "win32"), "tsc");
+  assert.equal(resolveExecutable("node", "win32"), "node");
+  assert.equal(resolveExecutable("git", "win32"), "git");
+});
+
+test("resolveExecutable: win32 preserves existing extension", () => {
+  assert.equal(resolveExecutable("npm.cmd", "win32"), "npm.cmd");
+  assert.equal(resolveExecutable("custom.exe", "win32"), "custom.exe");
+  assert.equal(resolveExecutable("script.bat", "win32"), "script.bat");
+});
 
 test("isAllowedCommand: internal:noop is allowed", () => {
   assert.equal(isAllowedCommand("internal:noop"), true);

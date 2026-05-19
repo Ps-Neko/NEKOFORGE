@@ -1,0 +1,9 @@
+{
+  "id": "self-host-6-windows-cmd-resolution-missed-risk",
+  "kind": "missed_risk",
+  "summary": "hook runner 의 defaultExecutor 가 Windows 에서 `npx`, `npm` 같은 .cmd 명령을 spawnSync(shell:false) 로 실행해 status=null 로 실패 (exit=?). hook-injection-risk 정책 (shell 메타 금지) 의 부작용. 정상 build/test 환경에서도 hook 이 동작하지 않으므로 testCoverage 강등의 부수 원인.",
+  "relatedRule": "hook-injection-risk",
+  "createdAt": "2026-05-19T05:30:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "self-host #6 에서 실측. 해결안 후보: (a) Windows 에서 .cmd 확장자 자동 탐색, (b) shell:true 허용 + 인자 quoting 강화, (c) executor 가 cmd /c 래퍼 사용. SECURITY.md §3.6 과의 정합 검토 필요."
+}

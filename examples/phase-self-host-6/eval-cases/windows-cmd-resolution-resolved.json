@@ -1,0 +1,8 @@
+{
+  "id": "self-host-6-windows-cmd-resolution-resolved",
+  "kind": "changed_workflow",
+  "summary": "Windows .cmd 해상도 결함을 `resolveExecutable(cmd, platform)` + cmd.exe /c 우회로 해결. Node.js 20+ CVE-2024-27980 fix 와 shell:false 정책 동시 만족.",
+  "relatedRule": "hook-injection-risk",
+  "createdAt": "2026-05-19T05:50:00Z",
+  "notes": "구체 변경: src/hooks/runner.ts 의 resolveExecutable (Windows 면 npm/npx/yarn/pnpm/deno/bun 에 .cmd 부착) + SPAWN_INJECTOR (.cmd 일 때 cmd.exe /c 로 우회). 보안 근거: isAllowedCommand 가 입력 단계에서 셸 메타 모두 차단 + args 는 토큰 분리 + cmd.exe argv 로 직접 전달이라 DEP0190 의 결합 위험 회피. 테스트: resolveExecutable 4 단위 테스트 추가 (linux/darwin/win32 + 확장자 보존)."
+}

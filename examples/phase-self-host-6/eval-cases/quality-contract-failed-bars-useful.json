@@ -1,0 +1,9 @@
+{
+  "id": "self-host-6-quality-contract-failed-bars-useful",
+  "kind": "useful_rule",
+  "summary": "quality-contract 의 failedBars (`correctness:70<80`, `testCoverage:40<70`) 가 decision.json 에 정확히 누적되어 verdict 가 NEEDS_HUMAN_REVIEW 로 강등됨. 본 도구가 본 작업 (Codex review #3 + Beta 조건 처리) 을 자동 PASS 시키지 않고 사람 검토를 요구.",
+  "relatedRule": "quality-contract",
+  "createdAt": "2026-05-19T05:30:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "self-host #6 핵심 신호. apply 도 approval.txt 부재로 exit 3 거부 (ApplyApprovalError). 두 약속 (failedBars 강등 + Evidence before Apply) 가 모두 발화."
+}

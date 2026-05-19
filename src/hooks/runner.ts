@@ -28,6 +28,22 @@ const ALLOWED_EXTERNAL = new Set([
   "bun"
 ]);
 
+/**
+ * self-host #6 발견 — Windows 에서 `npm`/`npx` 등은 `.cmd` 파일이며
+ * spawnSync(shell:false) 가 PATHEXT 를 자동 탐색하지 않아 status=null 로 실패.
+ *
+ * 해결: 확장자 없는 화이트리스트 명령에 한해 Windows 면 `.cmd` 부착.
+ * 이미 확장자 (.exe/.cmd/.bat/.com) 가 있으면 그대로 둔다.
+ * shell:false 정책 (hook-injection-risk 와의 정합) 은 유지.
+ */
+const WINDOWS_CMD_COMMANDS = new Set(["npm", "npx", "yarn", "pnpm", "deno", "bun"]);
+
+export function resolveExecutable(cmd: string, platform: string): string {
+  if (platform !== "win32") return cmd;
+  if (/\.(exe|cmd|bat|com)$/i.test(cmd)) return cmd;
+  return WINDOWS_CMD_COMMANDS.has(cmd) ? `${cmd}.cmd` : cmd;
+}
+
 const SHELL_META_RE = /[;&|`$<>]|\$\(/;
 
 export function isAllowedCommand(cmd: string): boolean {
@@ -73,7 +89,22 @@ const DEFAULT_HOOK_TIMEOUT_MS = 60_000;
 
 export const SPAWN_INJECTOR: { spawn: SpawnLike } = {
   spawn: (command, args, options) => {
-    const r = nodeSpawnSync(command, [...args], {
+    const resolved = resolveExecutable(command, process.platform);
+    // self-host #6 — Node.js 20+ 의 CVE-2024-27980 fix 가 .cmd/.bat 을
+    // shell:false 로 실행하는 것을 EINVAL 로 차단.
+    // 해결: .cmd/.bat 는 `cmd.exe /c <cmd> <args...>` 로 우회.
+    //
+    // 보안 안전 근거:
+    //   1. isAllowedCommand 가 입력 단계에서 SHELL_META_RE 로 모든 셸 메타 차단.
+    //   2. resolved 는 ALLOWED_EXTERNAL/INTERNAL 화이트리스트 통과.
+    //   3. args 는 split(/\s+/) 로 분리된 토큰이라 셸 해석되는 위험 문자 없음.
+    //   4. cmd.exe 의 argv 로 직접 전달 (shell:false) 되므로 DEP0190 의
+    //      문자열 결합 / 비정상 escape 위험 회피.
+    const isWinCmd =
+      process.platform === "win32" && /\.(cmd|bat)$/i.test(resolved);
+    const finalCmd = isWinCmd ? "cmd.exe" : resolved;
+    const finalArgs = isWinCmd ? ["/c", resolved, ...args] : [...args];
+    const r = nodeSpawnSync(finalCmd, finalArgs, {
       cwd: options.cwd ?? process.cwd(),
       encoding: "utf8",
       timeout: options.timeoutMs ?? DEFAULT_HOOK_TIMEOUT_MS,
