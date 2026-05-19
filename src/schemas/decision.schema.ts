@@ -17,7 +17,7 @@ export const decisionSchema = {
     "apply"
   ],
   properties: {
-    schemaVersion: { type: "string", const: "0.3" },
+    schemaVersion: { type: "string", const: "0.4" },
     project: { type: "string", minLength: 1 },
     taskId: { type: "string", minLength: 1 },
     workflowStage: { type: "string" },

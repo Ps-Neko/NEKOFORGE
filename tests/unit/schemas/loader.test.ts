@@ -22,7 +22,7 @@ test("loader registers 9 schemas", () => {
 test("decision: valid minimal decision passes", () => {
   const v = createValidator();
   const r = v.validate("decision", {
-    schemaVersion: "0.3",
+    schemaVersion: "0.4",
     project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
@@ -39,7 +39,7 @@ test("decision: valid minimal decision passes", () => {
 test("decision: unknown verdict fails", () => {
   const v = createValidator();
   const r = v.validate("decision", {
-    schemaVersion: "0.3",
+    schemaVersion: "0.4",
     project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
