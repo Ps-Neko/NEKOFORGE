@@ -1,0 +1,8 @@
+{
+  "id": "accessibility-risk-img-no-alt-useful",
+  "kind": "useful_rule",
+  "summary": "accessibility-risk 가 `<img>` alt 누락을 high 발화 (NEEDS_HUMAN_REVIEW). 디자인 PR 에서 alt 누락이 가장 흔한 a11y 결함이라는 실측 (fixture: design/accessibility-positive).",
+  "relatedRule": "accessibility-risk",
+  "createdAt": "2026-05-19T01:04:00Z",
+  "notes": "uiTouched 플래그 또는 diff 의 *.tsx/*.jsx/*.html 자동 감지 시만 발화 (Codex review #3 의 #3 처리)."
+}

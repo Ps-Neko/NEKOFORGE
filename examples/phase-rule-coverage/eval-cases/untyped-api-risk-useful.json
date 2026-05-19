@@ -1,0 +1,8 @@
+{
+  "id": "untyped-api-risk-export-no-type-useful",
+  "kind": "useful_rule",
+  "summary": "untyped-api-risk 가 exported function 의 return type 누락 시 warning 발화. typescript strict 모드와 분리된 휴리스틱이지만 보조적으로 작동.",
+  "relatedRule": "untyped-api-risk",
+  "createdAt": "2026-05-19T01:02:00Z",
+  "notes": "fixture 미보유 (positive 케이스 추가 필요). architecture rule 중 가장 약한 발화 — 다음 self-host 회차에서 추가 케이스 수집."
+}

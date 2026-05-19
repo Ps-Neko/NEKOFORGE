@@ -1,0 +1,8 @@
+{
+  "id": "responsive-break-risk-fixed-width-useful",
+  "kind": "useful_rule",
+  "summary": "responsive-break-risk 가 fixed-width CSS (`width: 1200px` 등 큰 고정값) 를 warning 발화. 모바일 깨짐 사전 경고.",
+  "relatedRule": "responsive-break-risk",
+  "createdAt": "2026-05-19T01:06:00Z",
+  "notes": "fixture: design/responsive-break-positive. responsive utility (Tailwind/CSS variable) 또는 media query 사용 압력."
+}
