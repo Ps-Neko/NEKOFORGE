@@ -4,7 +4,7 @@
  * gate 의 finding/review/tests 입력을 8개 영역 점수로 환원한다.
  * LLM 호출 없이 결정적으로 계산. ux/performance 는 약점 인정 — finding 카운트 기반의 단순 점수.
  */
-import type { RuleFinding } from "../../rules/types.js";
+import type { RuleFinding } from "../rules/types.js";
 
 export interface QualityScoreInput {
   findings: readonly RuleFinding[];
