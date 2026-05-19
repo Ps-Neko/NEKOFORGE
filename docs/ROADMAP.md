@@ -101,9 +101,9 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 
 ### 통과 기록 (2026-05-18 ~ 2026-05-19)
 
-- **self-hosting 3회 통과** : (1) audit.jsonl 자동 어펜드 추가, (2) audit chain hash + audit anchor + 문서 정합, (3) Codex feedback 6건 대응 (patch 격리 / hooks 통합 / memory CLI / --workspace / apply_refused + 의도된 한계 명시).
-- eval-cases : 15건 (milestone 5 + rule 별 9건 + 외부 점검 1건).
-- 외부 검증 1건 누적 (Codex 2026-05-19) — Beta 진입 조건의 "외부 사용자 1명 이상 PR" 영역에서 실질 입력. examples/phase-codex-feedback/.
+- **self-hosting 4회 통과** : (1) audit.jsonl 자동 어펜드, (2) audit chain + anchor + 문서 정합, (3) Codex feedback 6건 (patch 격리·hooks 통합·memory CLI·--workspace·apply_refused·의도된 한계), (4) Codex re-review 3건 (hooks 실제 spawn 실행·apply drift 검증·memory 자동 적재).
+- eval-cases : 17건 (milestone 6 + rule 별 9건 + 외부 점검 2건).
+- 외부 검증 2건 누적 (Codex 2회) — Beta 진입 조건의 "외부 사용자 1명 이상 PR" 영역에서 실질 입력 누적. examples/phase-codex-feedback/, phase-codex-rereview/.
 
 ## 5. Phase D — 외부 어댑터 실연결 (T+6 ~ T+7 주)
 

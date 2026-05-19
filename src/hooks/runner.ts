@@ -6,7 +6,9 @@
  * - 외부 명령은 첫 토큰이 ALLOWED_EXTERNAL 에 포함되어야 한다.
  * - 따옴표·세미콜론·파이프·리다이렉트가 들어있으면 거부.
  */
+import { spawnSync as nodeSpawnSync } from "node:child_process";
 import type { Hook, HookContext, HookResult } from "./types.js";
+import { maskSecrets } from "../utils/mask.js";
 
 const ALLOWED_INTERNAL = new Set([
   "internal:noop",
@@ -44,16 +46,75 @@ export type HookExecutor = (
   ctx: HookContext
 ) => Promise<HookResult>;
 
-export const defaultExecutor: HookExecutor = async (hook, _ctx) => {
-  // M2 단계의 기본 실행기는 noop 시뮬레이션. 실제 외부 명령 실행은 work 단계에서 도입.
+/**
+ * Codex re-review #1 (Major) — 외부 명령을 실제 spawn 으로 실행.
+ *
+ * - `internal:noop` 은 즉시 ok.
+ * - 그 외 `internal:*` 는 미구현으로 skipped.
+ * - 외부 명령 (npm/npx/tsc/git 등) 은 spawnSync 로 실행 (timeout 60s, shell:false).
+ * - stdout/stderr 는 maskSecrets 로 마스킹 후 output 에 truncate.
+ *
+ * spawn 함수는 SPAWN_INJECTOR.spawn 으로 교체 가능 (테스트용).
+ */
+export interface SpawnResult {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+  signal?: string | null;
+}
+
+export type SpawnLike = (
+  command: string,
+  args: readonly string[],
+  options: { cwd?: string; timeoutMs?: number }
+) => SpawnResult;
+
+const DEFAULT_HOOK_TIMEOUT_MS = 60_000;
+
+export const SPAWN_INJECTOR: { spawn: SpawnLike } = {
+  spawn: (command, args, options) => {
+    const r = nodeSpawnSync(command, [...args], {
+      cwd: options.cwd ?? process.cwd(),
+      encoding: "utf8",
+      timeout: options.timeoutMs ?? DEFAULT_HOOK_TIMEOUT_MS,
+      shell: false
+    });
+    return {
+      status: r.status,
+      stdout: r.stdout ?? "",
+      stderr: r.stderr ?? "",
+      signal: r.signal
+    };
+  }
+};
+
+export const defaultExecutor: HookExecutor = async (hook, ctx) => {
   if (hook.command === "internal:noop") {
     return { hookId: hook.id, type: hook.type, status: "ok", exitCode: 0 };
   }
+  if (hook.command.startsWith("internal:")) {
+    return {
+      hookId: hook.id,
+      type: hook.type,
+      status: "skipped",
+      reason: `internal command not implemented: ${hook.command}`
+    };
+  }
+  const tokens = hook.command.trim().split(/\s+/);
+  const cmd = tokens[0]!;
+  const args = tokens.slice(1);
+  const r = SPAWN_INJECTOR.spawn(cmd, args, { cwd: ctx.cwd });
+  const ok = r.status === 0;
+  const output = maskSecrets(
+    `${r.stdout ?? ""}\n${r.stderr ?? ""}`.slice(0, 1000)
+  );
   return {
     hookId: hook.id,
     type: hook.type,
-    status: "skipped",
-    reason: "executor stub (M2): only internal:noop is materialized"
+    status: ok ? "ok" : "failed",
+    exitCode: r.status ?? -1,
+    output,
+    ...(ok ? {} : { reason: `exit=${r.status ?? "?"}${r.signal ? ` signal=${r.signal}` : ""}` })
   };
 };
 

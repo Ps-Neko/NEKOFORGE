@@ -1,0 +1,7 @@
+{
+  "id": "codex-rereview-3-items",
+  "kind": "improved_prompt",
+  "summary": "Codex 재검증 (self-host #3 후속) 에서 추가 3건 식별: (Major) hooks 가 외부 명령 실제 실행 안 함, (Major) apply 가 워킹트리 미반영, (Medium) memory 자동 적재 부재.",
+  "createdAt": "2026-05-19T14:30:00Z",
+  "notes": "외부 점검 2회차. hooks/apply 의 강제력 정체성이 실제로는 약했음을 외부 시각이 잡아냄. 본 도구의 self-host #3 점검은 이를 못 잡았음 → 약점이지만 외부 검증이 보완하는 메커니즘이 작동 중."
+}

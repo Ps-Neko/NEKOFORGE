@@ -155,10 +155,10 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 ## 현재 상태
 
-- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback round (self-host #3).
-- `npm test` : **194/194 통과**.
+- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**).
+- `npm test` : **200/200 통과**.
 - ROADMAP §9 마일스톤 M0~M8 모두 도달.
-- 외부 검증 1건 누적 (Codex 2026-05-19) — examples/phase-codex-feedback/ 참고.
+- 외부 검증 **2건 누적** (Codex 2026-05-19) — examples/phase-codex-feedback/, phase-codex-rereview/ 참고.
 - Phase F (협업 모델) 만 보류 (외부 수요 조건부).
 
 설치·실행은 TypeScript 5 + Node.js 20 LTS 기반 :

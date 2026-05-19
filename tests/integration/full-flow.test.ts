@@ -74,6 +74,20 @@ test("M3a: full 30초 path runs end-to-end", async (t) => {
   r = runCli(["policy"], cwd);
   assert.equal(r.status, 0, `policy: ${r.stderr}`);
 
+  // 테스트 환경에서 외부 spawn 회피 — hooks.json 을 noop 로 덮어씀.
+  // 실제 사용자 환경에서는 quality-policy default (npx tsc --noEmit) 이 동작.
+  await writeFile(
+    join(cwd, ".harness", "hooks.json"),
+    JSON.stringify({
+      schemaVersion: "0.3",
+      hooks: [
+        { id: "noop-pre", type: "pre-tool", command: "internal:noop" },
+        { id: "noop-post", type: "post-tool", command: "internal:noop" }
+      ]
+    }),
+    "utf8"
+  );
+
   // 8. team
   r = runCli(["team"], cwd);
   assert.equal(r.status, 0, `team: ${r.stderr}`);

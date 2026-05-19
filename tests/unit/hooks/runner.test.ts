@@ -24,9 +24,11 @@ test("isAllowedCommand: unknown external rejected", () => {
   assert.equal(isAllowedCommand("curl example.com"), false);
 });
 
-test("runHooks: blocking failed command stops sequence", async () => {
+test("runHooks: blocking whitelist-violation stops sequence", async () => {
+  // 외부 spawn 회피를 위해 internal:noop 만 사용. rm -rf 는 whitelist 외라
+  // executor 호출 전 단계에서 failed.
   const hooks: Hook[] = [
-    { id: "h1", type: "pre-tool", command: "npm test", blocking: true },
+    { id: "h1", type: "pre-tool", command: "internal:noop", blocking: true },
     { id: "h2", type: "pre-tool", command: "rm -rf /", blocking: true },
     { id: "h3", type: "pre-tool", command: "internal:noop" }
   ];

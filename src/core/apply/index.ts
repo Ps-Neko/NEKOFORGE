@@ -9,6 +9,7 @@ import type { StageDeps } from "../stage-runner.js";
 import { evaluateAutoApplyBlock } from "../../rules/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
 import { appendAuditEvent } from "../../utils/audit.js";
+import { readGitDiff } from "../../utils/git.js";
 import { runHooks } from "../../hooks/runner.js";
 import type { Hook } from "../../hooks/types.js";
 
@@ -39,6 +40,11 @@ function detectTampering(decision: DecisionJson): string | null {
 export interface ApplyInput {
   approved: boolean;
   dryRun?: boolean;
+  /**
+   * 테스트용 — 현재 워킹트리 diff 를 반환할 함수.
+   * 기본은 `readGitDiff(deps.cwd)` 호출.
+   */
+  diffReader?: () => string | null;
 }
 
 export interface ApplyResult {
@@ -61,6 +67,14 @@ export class ApplyApprovalError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ApplyApprovalError";
+  }
+}
+
+export class ApplyDriftError extends Error {
+  readonly exitCode = 2;
+  constructor(message: string) {
+    super(message);
+    this.name = "ApplyDriftError";
   }
 }
 
@@ -119,12 +133,23 @@ export async function runApply(
     );
   }
 
-  // Phase D 후속 (Codex feedback #1) — pending patch → applied 로 격리 이동.
+  // Codex re-review #2 (Major) — 워킹트리 drift 검증.
+  // pending patch 가 있으면 현재 git diff 와 정확히 일치해야 한다.
+  // 사용자가 work 이후 추가 변경했거나 부분 revert 했으면 거부.
+  const pendingPath = `pending/${decision.taskId}.patch`;
+  const pending = await deps.artifact.readMarkdown(pendingPath);
   let patchPromoted = false;
-  if (!input.dryRun) {
-    const pendingPath = `pending/${decision.taskId}.patch`;
-    const pending = await deps.artifact.readMarkdown(pendingPath);
-    if (pending !== null) {
+  if (pending !== null) {
+    const readDiff = input.diffReader ?? (() => readGitDiff(deps.cwd));
+    const current = readDiff() ?? "";
+    if (current !== pending) {
+      throw new ApplyDriftError(
+        `workingtree drifted: current git diff differs from .harness/${pendingPath}. ` +
+          `commit/revert/edit since work? re-run 'harness work ${decision.taskId}' or restore the state.`
+      );
+    }
+    // Phase D 후속 (Codex feedback #1) — pending patch → applied 로 격리 이동.
+    if (!input.dryRun) {
       await deps.artifact.writeMarkdown(
         `applied/${decision.taskId}.patch`,
         pending

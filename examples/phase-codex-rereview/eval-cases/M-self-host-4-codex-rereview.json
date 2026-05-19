@@ -1,0 +1,8 @@
+{
+  "id": "M-self-host-4-codex-rereview",
+  "kind": "milestone_passed",
+  "summary": "self-host #4 통과 — Codex 재검증 3건 대응 (hooks 실제 spawn 실행, apply drift 검증, memory 자동 적재). npm test 200/200.",
+  "createdAt": "2026-05-19T15:00:00Z",
+  "sourceVerdict": "PASS_WITH_WARNINGS",
+  "notes": "외부 점검 2회차. 외부 검증 사례 누적 2건 → ROADMAP §10 Beta 의 '외부 사용자 PR' 진척."
+}
