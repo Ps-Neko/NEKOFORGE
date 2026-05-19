@@ -205,11 +205,29 @@ export async function runGate(
   }
 
   // Phase QF — quality-contract 읽기 + quality-score 계산.
-  const contract = await deps.artifact
-    .readJson<QualityContractJson>("quality-contract.json", "quality-contract")
-    .catch(() => null);
+  // Codex review #3 (Critical #2) — schema invalid 와 not found 구분.
+  let contract: QualityContractJson | null = null;
+  let contractInvalid = false;
+  if (await deps.artifact.exists("quality-contract.json")) {
+    try {
+      contract = await deps.artifact.readJson<QualityContractJson>(
+        "quality-contract.json",
+        "quality-contract"
+      );
+    } catch {
+      // schema 위반 — gate verdict 를 INSUFFICIENT_EVIDENCE 로 강등.
+      contractInvalid = true;
+      passTwo.push(
+        makeFinding(
+          "quality-contract-invalid",
+          "critical",
+          "quality-contract.json fails schema validation"
+        )
+      );
+    }
+  }
   let qualityScore: QualityScoreResult | null = null;
-  let scoreCap: Verdict | null = null;
+  let scoreCap: Verdict | null = contractInvalid ? "INSUFFICIENT_EVIDENCE" : null;
   if (contract) {
     qualityScore = calculateQualityScore({
       findings: passTwo,
@@ -220,7 +238,7 @@ export async function runGate(
       evidenceComplete: !evidenceMissing,
       qualityBars: contract.qualityBars,
       taskId: contract.taskId,
-      uiTouched: contract.riskProfile?.uiTouched === true
+      uiTouched: contract.riskProfile?.uiTouched === true || detectUiInDiff(diff)
     });
     const requiredFailure = qualityScore.failedQualityBars.some((s) => {
       const bar = s.split(":")[0]!;
@@ -253,7 +271,7 @@ export async function runGate(
   const rulesStatus = hasSerious ? ("failed" as const) : ("passed" as const);
 
   const decision = {
-    schemaVersion: "0.3" as const,
+    schemaVersion: "0.4" as const,
     project: "nekoforge",
     taskId: input.taskId ?? "TASK-UNKNOWN",
     workflowStage: "gate",
@@ -297,11 +315,17 @@ export async function runGate(
           status: "valid" as const,
           failedBars: qualityScore?.failedQualityBars ?? []
         }
-      : {
-          path: ".harness/quality-contract.json",
-          status: "missing" as const,
-          failedBars: []
-        },
+      : contractInvalid
+        ? {
+            path: ".harness/quality-contract.json",
+            status: "violated" as const,
+            failedBars: []
+          }
+        : {
+            path: ".harness/quality-contract.json",
+            status: "missing" as const,
+            failedBars: []
+          },
     qualityScore: qualityScore
       ? {
           path: ".harness/quality-score.json",
@@ -339,7 +363,7 @@ export async function runGate(
       findingsCount: archFindings.length,
       criticalFindings: archFindings.filter((f) => f.severity === "critical").length
     },
-    designReview: contract?.riskProfile?.uiTouched
+    designReview: contract?.riskProfile?.uiTouched || detectUiInDiff(diff)
       ? {
           status: designFindings.some((f) => f.severity === "critical")
             ? ("failed" as const)
@@ -379,6 +403,34 @@ export async function runGate(
   };
 
   await deps.artifact.writeJson("decision.json", decision, "decision");
+
+  // Codex review #3 (Major #4) — 별도 산출 파일 작성.
+  await deps.artifact.writeJson("factory-cells.json", {
+    schemaVersion: "0.4",
+    cells: decision.factoryCells
+  });
+  await deps.artifact.writeMarkdown(
+    "factory-cells.md",
+    renderFactoryCellsMd(decision.factoryCells)
+  );
+  await deps.artifact.writeJson("architecture-findings.json", {
+    schemaVersion: "0.4",
+    findings: archFindings,
+    summary: `${archFindings.length} architecture findings (${archFindings.filter((f) => f.severity === "critical").length} critical)`
+  });
+  await deps.artifact.writeMarkdown(
+    "architecture-review.md",
+    renderReviewMd("Architecture", archFindings)
+  );
+  await deps.artifact.writeJson("design-findings.json", {
+    schemaVersion: "0.4",
+    findings: designFindings,
+    summary: `${designFindings.length} design findings (uiTouched: ${contract?.riskProfile?.uiTouched === true || detectUiInDiff(diff)})`
+  });
+  await deps.artifact.writeMarkdown(
+    "design-review.md",
+    renderReviewMd("Design", designFindings)
+  );
 
   const report = renderReport({
     verdict: verdict.verdict,
@@ -554,5 +606,46 @@ function renderQualityScoreMd(s: QualityScoreResult, hintReason: string): string
     s.reasons.length === 0 ? "(none)" : s.reasons.map((x) => `- ${x}`).join("\n"),
     "",
     `Score cap hint: ${hintReason}`
+  ].join("\n");
+}
+
+// Codex review #3 (Major #3) — UI 변경 자동 감지.
+const UI_PATH_RE =
+  /\.(tsx|jsx|css|scss|sass|html)$|(^|\/)(components|app|pages|ui)\//i;
+
+function detectUiInDiff(diff: { files: Array<{ path: string }> }): boolean {
+  return diff.files.some((f) => UI_PATH_RE.test(f.path));
+}
+
+function renderFactoryCellsMd(
+  cells: Record<string, "complete" | "missing" | "partial">
+): string {
+  return [
+    "# Factory Cells",
+    "",
+    "| cell | status |",
+    "|---|---|",
+    ...Object.entries(cells).map(([k, v]) => `| ${k} | ${v} |`)
+  ].join("\n");
+}
+
+function renderReviewMd(title: string, findings: readonly RuleFinding[]): string {
+  return [
+    `# ${title} Review`,
+    "",
+    `- findings: ${findings.length}`,
+    `- critical: ${findings.filter((f) => f.severity === "critical").length}`,
+    `- high: ${findings.filter((f) => f.severity === "high").length}`,
+    `- warning: ${findings.filter((f) => f.severity === "warning").length}`,
+    "",
+    "## Findings",
+    findings.length === 0
+      ? "(none)"
+      : findings
+          .map(
+            (f) =>
+              `- [${f.severity}] ${f.ruleId}: ${f.message}${f.file ? ` (${f.file}${f.line ? `:${f.line}` : ""})` : ""}`
+          )
+          .join("\n")
   ].join("\n");
 }

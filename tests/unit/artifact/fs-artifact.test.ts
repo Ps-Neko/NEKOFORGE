@@ -54,7 +54,7 @@ test("FsArtifact: writeJson accepts valid decision", async () => {
     await fa.writeJson(
       "decision.json",
       {
-        schemaVersion: "0.3",
+        schemaVersion: "0.4",
         project: "p",
         taskId: "T1",
         workflowStage: "gate",

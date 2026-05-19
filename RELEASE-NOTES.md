@@ -2,6 +2,21 @@
 
 ## v0.4.0-alpha — Quality Factory Upgrade (2026-05-19)
 
+### Codex review #3 (2026-05-18) — 5건 대응
+
+외부 Codex 가 QF self-host 결과를 재검증해 QF 의 핵심 강제 조건 5건이 아직 뚫린다고 지적. main 통합 완료:
+
+| # | 항목 | 심각도 | 처리 |
+|---|---|---|---|
+| 1 | `quality-contract.json` / `quality-score.json` 없이도 apply 통과 | **Critical** | apply Evidence before Apply 강화 — contract/score/REPORT 존재 + schema valid + decision.qualityContract/qualityScore status 까지 검증 |
+| 2 | contract schema invalid 가 verdict 미반영 | **Critical** | gate 가 `quality-contract-invalid` critical finding + `scoreCap = INSUFFICIENT_EVIDENCE` |
+| 3 | UI 감지가 `riskProfile.uiTouched` 플래그 only | **Major** | diff 파일 경로 자동 감지 (`detectUiInDiff`: `.tsx/.jsx/.css/.scss/.sass/.html` 또는 `components/app/pages/ui` 디렉터리) |
+| 4 | factory/architecture/design 결과가 REPORT.md 안에만 | **Major** | gate 가 5개 독립 산출 파일 작성: `factory-cells.{json,md}`, `architecture-{findings.json,review.md}`, `design-{findings.json,review.md}` |
+| 5 | decision schemaVersion 0.3 그대로 | Medium | `schemaVersion: "0.4"` 갱신 + 테스트 시드 일괄 갱신 |
+
+흔적: `examples/phase-codex-review-3/README.md`. 테스트: 227/227 (이전 223 + drift seed 보강 4).
+
+
 ### Summary
 
 NEKOFORGE 의 정체성을 **"AI 변경 검증·차단 도구"** 에서 **"Quality Contract 기반 Local-first AI Development Factory"** 로 진화. 차단 중심 → 품질 압력 중심.

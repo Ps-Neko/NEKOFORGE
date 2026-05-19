@@ -22,6 +22,8 @@ interface DecisionJson {
   verdict: string;
   humanApprovalRequired: boolean;
   deterministicRules?: { status?: string; triggeredRules: string[] };
+  qualityContract?: { status?: string };
+  qualityScore?: { status?: string };
 }
 
 function detectTampering(decision: DecisionJson): string | null {
@@ -91,6 +93,59 @@ export async function runApply(
   if (!decision) {
     throw new ApplyPrecondError(
       "decision.json missing or schema invalid (run `harness gate`)"
+    );
+  }
+
+  // Codex review #3 (Critical #1) — Evidence before Apply.
+  // quality-contract / quality-score / REPORT.md 가 모두 존재 + 유효해야 한다.
+  if (!(await deps.artifact.exists("quality-contract.json"))) {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: quality-contract.json missing (run `harness contract`)"
+    );
+  }
+  // contract schema 재검증.
+  const contractValid = await deps.artifact
+    .readJson<{ taskId?: string }>("quality-contract.json", "quality-contract")
+    .then(() => true)
+    .catch(() => false);
+  if (!contractValid) {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: quality-contract.json fails schema validation"
+    );
+  }
+  if (!(await deps.artifact.exists("quality-score.json"))) {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: quality-score.json missing (run `harness gate`)"
+    );
+  }
+  const scoreValid = await deps.artifact
+    .readJson<{ scores?: unknown }>("quality-score.json", "quality-score")
+    .then(() => true)
+    .catch(() => false);
+  if (!scoreValid) {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: quality-score.json fails schema validation"
+    );
+  }
+  // REPORT.md 는 cwd 루트에 있음 (artifact 외부).
+  const { stat } = await import("node:fs/promises");
+  try {
+    const { join } = await import("node:path");
+    await stat(join(deps.cwd, "REPORT.md"));
+  } catch {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: REPORT.md missing (run `harness gate`)"
+    );
+  }
+  // qualityContract / qualityScore 상태 검사 (cross-field).
+  if (decision.qualityContract?.status === "violated") {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: decision.qualityContract.status=violated"
+    );
+  }
+  if (decision.qualityScore?.status === "failed") {
+    throw new ApplyPrecondError(
+      "Evidence before Apply: decision.qualityScore.status=failed"
     );
   }
 
