@@ -36,7 +36,7 @@ memory                              ←  사후 학습용 자체 모듈
 ## 3. 레포지토리 구조
 
 ```text
-verified-harness/
+nekoforge/
 ├── README.md
 ├── TASKS.md                          # Phase B 구현 task 분해
 ├── docs/

@@ -1,7 +1,7 @@
 {
-  "name": "verified-harness",
+  "name": "nekoforge",
   "version": "0.3.0-alpha.0",
-  "description": "Local-first AI Development Harness — verified gate, deterministic rules, Human Gate, explicit apply.",
+  "description": "NEKOFORGE — Local-first AI Development Harness. NEKOWORK-style Verified Gate + Gstack/Superpowers/ECC/revfactory/OMC/Codex 통합 14단계 공정.",
   "private": true,
   "type": "module",
   "bin": {

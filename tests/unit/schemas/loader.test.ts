@@ -21,7 +21,7 @@ test("decision: valid minimal decision passes", () => {
   const v = createValidator();
   const r = v.validate("decision", {
     schemaVersion: "0.3",
-    project: "verified-harness",
+    project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
     verdict: "PASS",
@@ -38,7 +38,7 @@ test("decision: unknown verdict fails", () => {
   const v = createValidator();
   const r = v.validate("decision", {
     schemaVersion: "0.3",
-    project: "verified-harness",
+    project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
     verdict: "OK",
