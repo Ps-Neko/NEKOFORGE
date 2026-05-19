@@ -66,6 +66,12 @@ export async function runWork(
       "agent-routing.json missing (run `harness team`)"
     );
   }
+  // Phase QF — Quality Contract before Work.
+  if (!(await deps.artifact.exists("quality-contract.json"))) {
+    throw new WorkPrecondError(
+      "quality-contract.json missing (run `harness contract`)"
+    );
+  }
 
   const tasksDoc = (await deps.artifact.readMarkdown("TASKS.md")) ?? "";
   if (!new RegExp(`\\b${input.taskId}\\b`).test(tasksDoc)) {

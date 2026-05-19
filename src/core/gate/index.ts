@@ -18,6 +18,11 @@ import {
 } from "../../utils/audit.js";
 import { makeFinding } from "../../rules/types.js";
 import { computeVerdict, type Verdict } from "./verdict.js";
+import {
+  calculateQualityScore,
+  verdictHintFromScore,
+  type QualityScoreResult
+} from "../../scoring/index.js";
 
 interface TeamJson {
   pattern?: string;
@@ -45,8 +50,15 @@ const REQUIRED_EVIDENCE = [
   "hooks.json",
   "team-runtime.md",
   "agent-routing.json",
-  "worklog.md"
+  "worklog.md",
+  "quality-contract.json"
 ] as const;
+
+interface QualityContractJson {
+  taskId: string;
+  qualityBars: Record<string, { minimum: number; required: boolean }>;
+  riskProfile?: { uiTouched?: boolean };
+}
 
 export interface GateInput {
   noReviewAdapter?: boolean;
@@ -132,13 +144,45 @@ export async function runGate(
   }
   await writeAuditAnchor(currentAnchor, deps.cwd);
 
-  const verdict = computeVerdict({
+  // Phase QF — quality-contract 읽기 + quality-score 계산.
+  const contract = await deps.artifact
+    .readJson<QualityContractJson>("quality-contract.json", "quality-contract")
+    .catch(() => null);
+  let qualityScore: QualityScoreResult | null = null;
+  let scoreCap: Verdict | null = null;
+  if (contract) {
+    qualityScore = calculateQualityScore({
+      findings: passTwo,
+      testStatus: input.testStatus ?? "not_run",
+      reviewStatus,
+      evidenceComplete: !evidenceMissing,
+      qualityBars: contract.qualityBars,
+      taskId: contract.taskId,
+      uiTouched: contract.riskProfile?.uiTouched === true
+    });
+    const requiredFailure = qualityScore.failedQualityBars.some((s) => {
+      const bar = s.split(":")[0]!;
+      return contract.qualityBars[bar]?.required === true;
+    });
+    const hint = verdictHintFromScore(qualityScore, requiredFailure);
+    scoreCap = hint.capAt;
+    await deps.artifact.writeJson("quality-score.json", qualityScore, "quality-score");
+    await deps.artifact.writeMarkdown(
+      "quality-score.md",
+      renderQualityScoreMd(qualityScore, hint.reason)
+    );
+  }
+
+  const verdictBase = computeVerdict({
     findings: passTwo,
     testStatus: input.testStatus ?? "not_run",
     reviewStatus,
     evidenceMissing,
     schemaFailed: false
   });
+
+  // verdict 와 scoreCap 중 더 보수적인 것을 채택.
+  const verdict = applyScoreCap(verdictBase, scoreCap);
 
   const triggered = uniqueRuleIds(passTwo);
   const hasSerious = passTwo.some(
@@ -184,6 +228,51 @@ export async function runGate(
     deterministicRules: {
       status: rulesStatus,
       triggeredRules: triggered
+    },
+    qualityContract: contract
+      ? {
+          path: ".harness/quality-contract.json",
+          status: "valid" as const,
+          failedBars: qualityScore?.failedQualityBars ?? []
+        }
+      : {
+          path: ".harness/quality-contract.json",
+          status: "missing" as const,
+          failedBars: []
+        },
+    qualityScore: qualityScore
+      ? {
+          path: ".harness/quality-score.json",
+          overall: qualityScore.scores.overall,
+          minimumRequired: qualityScore.thresholds.pass,
+          status:
+            qualityScore.scores.overall >= qualityScore.thresholds.pass
+              ? ("passed" as const)
+              : qualityScore.scores.overall >= qualityScore.thresholds.passWithWarnings
+                ? ("warning" as const)
+                : ("failed" as const)
+        }
+      : {
+          path: ".harness/quality-score.json",
+          overall: 0,
+          minimumRequired: 0,
+          status: "failed" as const
+        },
+    factoryCells: computeFactoryCells({
+      hasIntake: true,
+      hasSpec: true,
+      hasPlan: true,
+      hasDesign: true,
+      hasPolicy: true,
+      hasTeam: true,
+      hasWork: true,
+      hasReview: true
+    }),
+    architectureReview: { status: "not_run" as const, findingsCount: 0, criticalFindings: 0 },
+    designReview: {
+      status: contract?.riskProfile?.uiTouched ? ("not_run" as const) : ("not_applicable" as const),
+      findingsCount: 0,
+      criticalFindings: 0
     },
     evidence: {
       intake: ".harness/intake.md",
@@ -313,5 +402,77 @@ function renderReport(r: RenderInput): string {
               `- [${f.severity}] ${f.ruleId}: ${f.message}${f.file ? ` (${f.file}${f.line ? `:${f.line}` : ""})` : ""}`
           )
           .join("\n")
+  ].join("\n");
+}
+
+const VERDICT_ORDER: Record<Verdict, number> = {
+  PASS: 5,
+  PASS_WITH_WARNINGS: 4,
+  NEEDS_HUMAN_REVIEW: 3,
+  BLOCK: 2,
+  INSUFFICIENT_EVIDENCE: 1
+};
+
+/**
+ * 두 verdict 중 더 보수적인 것을 채택 (낮은 order 가 더 엄격).
+ */
+function applyScoreCap(
+  base: { verdict: Verdict; riskLevel: "low" | "medium" | "high" | "critical"; humanApprovalRequired: boolean; reasons: string[] },
+  cap: Verdict | null
+): typeof base {
+  if (!cap) return base;
+  if (VERDICT_ORDER[cap] >= VERDICT_ORDER[base.verdict]) return base;
+  return {
+    verdict: cap,
+    riskLevel: cap === "BLOCK" || cap === "INSUFFICIENT_EVIDENCE" ? "critical" : "high",
+    humanApprovalRequired: true,
+    reasons: [...base.reasons, `quality score cap: ${cap}`]
+  };
+}
+
+interface FactoryCellStatusInput {
+  hasIntake: boolean;
+  hasSpec: boolean;
+  hasPlan: boolean;
+  hasDesign: boolean;
+  hasPolicy: boolean;
+  hasTeam: boolean;
+  hasWork: boolean;
+  hasReview: boolean;
+}
+
+function computeFactoryCells(
+  i: FactoryCellStatusInput
+): Record<string, "complete" | "missing" | "partial"> {
+  return {
+    product: i.hasSpec ? "complete" : "missing",
+    architecture: i.hasDesign ? "complete" : "missing",
+    build: i.hasPlan && i.hasTeam && i.hasWork ? "complete" : i.hasPlan ? "partial" : "missing",
+    quality: i.hasPolicy ? "complete" : "missing",
+    review: i.hasReview ? "complete" : "missing",
+    gate: "complete"
+  };
+}
+
+function renderQualityScoreMd(s: QualityScoreResult, hintReason: string): string {
+  return [
+    `# QUALITY SCORE — ${s.taskId}`,
+    "",
+    `Overall: **${s.scores.overall}** (threshold pass=${s.thresholds.pass}, warn=${s.thresholds.passWithWarnings})`,
+    "",
+    "## Scores",
+    ...Object.entries(s.scores)
+      .filter(([k]) => k !== "overall")
+      .map(([k, v]) => `- ${k}: ${v} (weight ${s.weights[k] ?? "-"})`),
+    "",
+    "## Failed Quality Bars",
+    s.failedQualityBars.length === 0
+      ? "(none)"
+      : s.failedQualityBars.map((x) => `- ${x}`).join("\n"),
+    "",
+    "## Reasons",
+    s.reasons.length === 0 ? "(none)" : s.reasons.map((x) => `- ${x}`).join("\n"),
+    "",
+    `Score cap hint: ${hintReason}`
   ].join("\n");
 }

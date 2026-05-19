@@ -24,6 +24,7 @@ import { registerApply } from "./commands/apply.js";
 import { registerReport } from "./commands/report.js";
 import { registerExport } from "./commands/export.js";
 import { registerMemory } from "./commands/memory.js";
+import { registerContract } from "./commands/contract.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
 
@@ -60,6 +61,7 @@ function buildProgram(): Command {
   registerReport(program);
   registerExport(program);
   registerMemory(program);
+  registerContract(program);
 
   program.showHelpAfterError(
     "(run `harness <command> --help` for command-specific help)"
