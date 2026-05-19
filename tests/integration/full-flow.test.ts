@@ -93,8 +93,27 @@ test("M3a: full 30초 path runs end-to-end", async (t) => {
   assert.equal(r.status, 0, `team: ${r.stderr}`);
 
   // Phase QF — work 전에 quality-contract 필수.
+  // self-audit #2-1 — productIntent 채워야 work 통과.
+  const contractAnswers = join(cwd, "contract-answers.json");
+  await writeFile(
+    contractAnswers,
+    JSON.stringify({
+      user: "test user",
+      problem: "test problem",
+      coreValue: "test value"
+    }),
+    "utf8"
+  );
   r = runCli(
-    ["contract", "--template", "custom", "--task", "TASK-001"],
+    [
+      "contract",
+      "--template",
+      "custom",
+      "--task",
+      "TASK-001",
+      "--answers",
+      contractAnswers
+    ],
     cwd
   );
   assert.equal(r.status, 0, `contract: ${r.stderr}`);

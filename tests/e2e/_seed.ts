@@ -72,7 +72,21 @@ export async function seedHarness(): Promise<SeededWorkspace> {
   await runTeam(deps);
 
   // Phase QF — work 전에 quality-contract 필수.
-  await runQualityContract({ taskId: "TASK-001", template: "custom" }, deps);
+  // self-audit #2-1 — work 가 productIntent placeholder 거부하므로 진짜 답변 시드.
+  const contractAnswers = join(cwd, "contract-answers.json");
+  await writeFile(
+    contractAnswers,
+    JSON.stringify({
+      user: "test seed user",
+      problem: "test seed problem",
+      coreValue: "test seed value"
+    }),
+    "utf8"
+  );
+  await runQualityContract(
+    { taskId: "TASK-001", template: "custom", answersFile: contractAnswers },
+    deps
+  );
 
   await runWork({ taskId: "TASK-001" }, deps);
   await runReview(
