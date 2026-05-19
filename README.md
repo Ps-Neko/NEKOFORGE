@@ -1,11 +1,15 @@
 # NEKOFORGE
 
-> AI 가 만든 코드를 그냥 머지하기 전에, 검증·차단·승인 단계를 **CLI 로 강제**하는 local-first 개발 공정 도구.
+> **Quality Contract 기반 Local-first AI Development Factory**.
+> AI 가 만든 산출물을 품질 계약 기준으로 검사하고, 점수화하고, 위험하면 막고, 사람 승인 전에는 apply 하지 못하게 한다.
+
+> NEKOFORGE 는 OMC 처럼 일을 시키는 도구가 아니고, ECC 처럼 스킬을 많이 쌓는 도구도 아니다. 그 도구들이 만든 산출물을 **품질 계약 기준으로 검증하고 출고를 통제하는 공장** 이다.
 
 **한 문장 요약**
 
 ```text
-AI 가 코드를 만든다 → 본 도구가 14단계로 검증 + 차단 + Human Gate → 통과 시에만 적용.
+AI 산출물 → Quality Contract (사전 계약) → 14단계 공정 →
+Quality Score (8영역 정량) + deterministic verdict → Human Gate → explicit apply.
 ```
 
 **누구를 위한 도구인가**
@@ -14,12 +18,14 @@ AI 가 코드를 만든다 → 본 도구가 14단계로 검증 + 차단 + Human
 - "AI 가 만든 코드 / 테스트 통과했길래 머지 → 사고" 경험이 있는 사람.
 - 외부 SaaS 없이 **로컬에서만** 동작하는 검증 공정이 필요한 사람.
 
-**핵심 가치**
+**핵심 가치 (6)**
 
-- ❶ verdict 가 `BLOCK` / `INSUFFICIENT_EVIDENCE` 면 어떤 플래그로도 apply 되지 않는다.
-- ❷ secret 하드코딩 · auth 우회 · 테스트 삭제 같은 위험 패턴 9종을 deterministic rule 로 즉시 차단.
-- ❸ 모든 의사결정은 `.md` (사람용) + `.json` (기계용) 으로 동시에 남는다.
-- ❹ Codex/Claude 같은 외부 어댑터는 검증자이지 **최종 승인자가 아니다**. 사람 토큰 매칭이 필수.
+- ❶ **Quality Contract before Work** — `quality-contract.json` 없으면 `work` 진입 거부.
+- ❷ **Quality Score before PASS** — 8 영역 점수 미달이면 `PASS` 불가, 상한 자동 강등.
+- ❸ verdict `BLOCK` / `INSUFFICIENT_EVIDENCE` 는 **어떤 플래그로도** apply 안 됨.
+- ❹ secret 하드코딩 · auth 우회 · 테스트 삭제 등 위험 패턴 **9 + architecture 4 + design 3** 을 deterministic rule 로 즉시 차단.
+- ❺ 모든 의사결정은 `.md` + `.json` 으로 동시에 남고, audit chain hash + anchor 로 위변조 감지.
+- ❻ Codex/Claude/Cursor 어댑터는 검증자이지 **최종 승인자가 아니다**. 사람 토큰 매칭 필수.
 
 ---
 
@@ -155,11 +161,23 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 ## 현재 상태
 
-- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**).
-- `npm test` : **200/200 통과**.
+- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**) + **Phase QF — Quality Factory Upgrade (#5)**.
+- `npm test` : **223/223 통과**.
 - ROADMAP §9 마일스톤 M0~M8 모두 도달.
-- 외부 검증 **2건 누적** (Codex 2026-05-19) — examples/phase-codex-feedback/, phase-codex-rereview/ 참고.
+- 외부 검증 **2건 누적** (Codex 2026-05-19).
 - Phase F (협업 모델) 만 보류 (외부 수요 조건부).
+
+### Phase QF 추가 산출 (v0.4)
+
+- `harness contract --template <web-ui|cli-tool|backend-api|library|custom>` — Quality Contract 강제
+- `harness benchmark [--group <name>]` — fixture 기반 critical recall / FP rate 측정
+- `harness run --mode <fast|safe|release>` — 모드별 권장 시퀀스
+- `harness memory add` — eval-case 수동 적재
+- `docs/QUALITY-CONTRACT.md`, `QUALITY-SCORE.md`, `FACTORY-CELLS.md`, `BENCHMARKS.md`, `INTEGRATIONS-OMC-ECC-HERMES.md` 신규
+- `decision.json` v0.3 → v0.4 (qualityContract / qualityScore / factoryCells / architectureReview / designReview 5 필드 신규)
+- `src/scoring/` — 8 영역 정량 점수 계산
+- architecture rule 4 (large-file / layer-violation / untyped-api / circular-dep)
+- design rule 3 (accessibility / design-token / responsive-break)
 
 설치·실행은 TypeScript 5 + Node.js 20 LTS 기반 :
 
