@@ -1,0 +1,8 @@
+diff --git a/tests/util/parser.test.ts b/tests/util/parser.test.ts
+@@ -3,6 +3,6 @@ import assert from "node:assert/strict";
+ import { parse } from "../../src/util/parser.js";
+
+ test("parse: trims input", () => {
+-  assert.equal(parse("  foo "), "fo");
++  assert.equal(parse("  foo "), "foo");
+ });
