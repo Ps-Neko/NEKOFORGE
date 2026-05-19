@@ -1,0 +1,20 @@
+diff --git a/src/util/sum.ts b/src/util/sum.ts
+@@ -1,3 +1,4 @@
+ export function sum(a: number, b: number): number {
+-  return a + b;
++  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
++  return a + b;
+ }
+diff --git a/tests/util/sum.test.ts b/tests/util/sum.test.ts
+@@ -1,4 +1,8 @@
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { sum } from "../../src/util/sum.js";
+
++test("sum: NaN guard", () => {
++  assert.equal(sum(NaN, 2), 0);
++});
++
+ test("sum: 1+2", () => {
+   assert.equal(sum(1, 2), 3);
+ });
