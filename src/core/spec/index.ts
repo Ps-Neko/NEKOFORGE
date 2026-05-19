@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
 import type { StageDeps } from "../stage-runner.js";
 
 const QUESTIONS = [
@@ -67,9 +68,29 @@ async function loadAnswers(input: SpecInput, cwd: string): Promise<SpecAnswers> 
       "non-interactive mode requires --answers <file>"
     );
   }
-  throw new SpecLintError(
-    "interactive mode not implemented yet; pass --answers <file>"
-  );
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    throw new SpecLintError(
+      "interactive mode requires a TTY; pass --answers <file> instead"
+    );
+  }
+  return promptAnswers();
+}
+
+async function promptAnswers(): Promise<SpecAnswers> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answers: SpecAnswers = {};
+  try {
+    process.stdout.write(
+      "\nSpec answers — 모두 답해야 합니다. (Ctrl-C 로 취소)\n"
+    );
+    for (const q of QUESTIONS) {
+      const a = (await rl.question(`Q (${q.id}) ${q.title}\n> `)).trim();
+      answers[q.id] = a;
+    }
+  } finally {
+    rl.close();
+  }
+  return answers;
 }
 
 export async function runSpec(

@@ -8,7 +8,8 @@ import type { StageDeps } from "../stage-runner.js";
 import { ALL_RULES, type RuleContext, type RuleFinding } from "../../rules/index.js";
 import { parseUnifiedDiff } from "../../utils/diff.js";
 import { isoNow } from "../../utils/time.js";
-import { appendAuditEvent } from "../../utils/audit.js";
+import { appendAuditEvent, readAuditChain } from "../../utils/audit.js";
+import { makeFinding } from "../../rules/types.js";
 import { computeVerdict, type Verdict } from "./verdict.js";
 
 interface TeamJson {
@@ -97,6 +98,18 @@ export async function runGate(
   const highRiskFlags = deriveHighRiskFlags(passOne);
   const ctxWithFlags: RuleContext = { ...baseCtx, highRiskFlags };
   const passTwo = await runAllRules(ctxWithFlags);
+
+  // audit.jsonl chain 무결성 검증 (SECURITY.md §9).
+  const auditChain = await readAuditChain(deps.cwd);
+  if (!auditChain.valid) {
+    passTwo.push(
+      makeFinding(
+        "audit-integrity",
+        "high",
+        `audit.jsonl chain broken at line ${auditChain.brokenAtLine}: ${auditChain.reason}`
+      )
+    );
+  }
 
   const verdict = computeVerdict({
     findings: passTwo,

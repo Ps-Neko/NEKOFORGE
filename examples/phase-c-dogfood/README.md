@@ -28,19 +28,30 @@
 | quality-policy | `quality-policy.md` |
 | gate | `REPORT.md` |
 | apply | `apply-log.md` |
-| memory | `eval-cases/*.json` (5건) |
+| memory | `eval-cases/*.json` (13건: milestone 4 + rule 별 9건) |
 
 (`clarify.md`, `context.md`, `orchestrator.md`, `skills-map.json`, `rules.json`, `hooks.json`,
 `context-policy.md`, `team-runtime.md`, `agent-routing.json`, `worklog.md`, `self-review.md`,
 `codex-findings.json` 은 템플릿과 동일하므로 본 사본에서는 생략.)
 
-## 3. 5개 eval-case 의미
+## 3. eval-case 13건 의미
 
+milestone (Phase B/C 통과 기록):
 - `M1-milestone-passed.json` — CLI 골격 통과
 - `M2-milestone-passed.json` — rule 9종 unit test 통과
 - `M3a-milestone-passed.json` — core 14단계 + adapter + CLI 통합 통과
 - `M3b-milestone-passed.json` — T-SEC 16/16 통과
-- `secret-fallback-empty-fallback-useful.json` — useful_rule 케이스, 빈 fallback 무시 휴리스틱이 false positive 막은 사례
+
+rule 별 발화 사례 (Beta 진입 조건 — rule 9종 모두 1건씩):
+- `secret-fallback-empty-fallback-useful.json` — secret-fallback (false positive 차단)
+- `auth-bypass-py-comment-useful.json` — auth-bypass (Python 확장)
+- `test-deletion-go-skip-useful.json` — test-deletion (Go 확장)
+- `no-test-risk-import-shuffle-fp.json` — no-test-risk (false positive 차단)
+- `dangerous-file-write-env-example-conservative.json` — dangerous-file-write
+- `hook-injection-postinstall-useful.json` — hook-injection-risk
+- `agent-permission-impl-and-security-useful.json` — agent-permission-risk
+- `auto-apply-block-insufficient-useful.json` — auto-apply-block
+- `codex-missing-adapter-zero-critical-useful.json` — codex-missing-risk
 
 ## 4. 다음 단계
 

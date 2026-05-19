@@ -13,10 +13,14 @@ export function registerReport(program: Command): void {
     .command("report")
     .description("Print current stage and verdict in human form")
     .option("--since <stage>", "show only stages on/after this one")
-    .action(async (_opts: ReportOpts) => {
+    .action(async (opts: ReportOpts) => {
       const globalJson = (program.opts() as { json?: boolean }).json === true;
       await runStage(
-        () => runReport(buildDeps()),
+        () =>
+          runReport(
+            buildDeps(),
+            opts.since !== undefined ? { since: opts.since } : {}
+          ),
         (snap) => {
           if (globalJson) {
             process.stdout.write(JSON.stringify(snap) + "\n");
@@ -26,6 +30,9 @@ export function registerReport(program: Command): void {
           console.error(`last verdict  : ${snap.lastVerdict ?? "(none)"}`);
           console.error(`team pattern  : ${snap.teamPattern ?? "(none)"}`);
           console.error(`open findings : ${snap.openFindings}`);
+          console.error(
+            `stages shown  : ${snap.stagesPresent.join(" → ") || "(none)"}`
+          );
           console.error(`next          : ${snap.nextSuggested}`);
         }
       );

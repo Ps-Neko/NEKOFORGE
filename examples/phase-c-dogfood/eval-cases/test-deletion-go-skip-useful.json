@@ -1,0 +1,8 @@
+{
+  "id": "test-deletion-go-skip-useful",
+  "kind": "useful_rule",
+  "summary": "test-deletion 이 Go 테스트의 t.Skip 신규 추가를 high 로 잡아내 무력화 행위를 차단.",
+  "relatedRule": "test-deletion",
+  "createdAt": "2026-05-19T09:01:00Z",
+  "notes": "T-SEC-GO-02 와 단위 multilang 테스트로 검증."
+}

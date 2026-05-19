@@ -16,6 +16,9 @@ coverage/
 # Local workspace artifacts
 .harness/
 !.harness/.gitkeep
+# examples 디렉터리 내부의 .harness 는 시연 목적이라 예외로 추적
+!examples/**/.harness/
+!examples/**/.harness/**
 
 # OS
 Thumbs.db

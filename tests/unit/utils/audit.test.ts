@@ -5,7 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   appendAuditEvent,
-  appendAuditEventSync
+  appendAuditEventSync,
+  validateAuditChain,
+  readAuditChain
 } from "../../../src/utils/audit.js";
 
 async function inTmp<T>(fn: (dir: string) => Promise<T>): Promise<T> {
@@ -71,4 +73,66 @@ test("audit: each call appends one new JSON line", async () => {
       assert.ok(obj.at);
     }
   });
+});
+
+test("audit chain: prev_hash + line_hash on each line", async () => {
+  await inTmp(async (dir) => {
+    await mkdir(join(dir, ".harness"), { recursive: true });
+    await appendAuditEvent({ type: "command_start", command: "init" }, dir);
+    await appendAuditEvent({ type: "command_end", command: "init" }, dir);
+    const text = await readFile(
+      join(dir, ".harness", "audit.jsonl"),
+      "utf8"
+    );
+    const lines = text.trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(lines[0].prev_hash, null);
+    assert.ok(typeof lines[0].line_hash === "string");
+    assert.equal(lines[1].prev_hash, lines[0].line_hash);
+  });
+});
+
+test("validateAuditChain: well-formed chain returns valid", async () => {
+  await inTmp(async (dir) => {
+    await mkdir(join(dir, ".harness"), { recursive: true });
+    await appendAuditEvent({ type: "command_start", command: "init" }, dir);
+    await appendAuditEvent({ type: "command_end", command: "init" }, dir);
+    const r = await readAuditChain(dir);
+    assert.equal(r.valid, true);
+    assert.equal(r.totalLines, 2);
+  });
+});
+
+test("validateAuditChain: tampered line_hash detected", async () => {
+  await inTmp(async (dir) => {
+    await mkdir(join(dir, ".harness"), { recursive: true });
+    await appendAuditEvent({ type: "command_start", command: "init" }, dir);
+    const path = join(dir, ".harness", "audit.jsonl");
+    const text = await readFile(path, "utf8");
+    const parsed = JSON.parse(text.trim());
+    parsed.command = "TAMPERED";
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(path, JSON.stringify(parsed) + "\n", "utf8");
+    const r = await readAuditChain(dir);
+    assert.equal(r.valid, false);
+    assert.equal(r.brokenAtLine, 1);
+  });
+});
+
+test("validateAuditChain: prev_hash mismatch detected", async () => {
+  const { createHash } = await import("node:crypto");
+  const line1Payload = { type: "a", prev_hash: null };
+  const line1Hash = createHash("sha256")
+    .update(JSON.stringify(line1Payload))
+    .digest("hex");
+  const fake = [
+    JSON.stringify({ ...line1Payload, line_hash: line1Hash }),
+    JSON.stringify({ type: "b", prev_hash: "WRONG", line_hash: "def" })
+  ].join("\n");
+  const r = validateAuditChain(fake);
+  assert.equal(r.valid, false);
+  assert.equal(r.brokenAtLine, 2);
+});
+
+test("validateAuditChain: empty input is valid", () => {
+  assert.deepEqual(validateAuditChain(""), { valid: true, totalLines: 0 });
 });
