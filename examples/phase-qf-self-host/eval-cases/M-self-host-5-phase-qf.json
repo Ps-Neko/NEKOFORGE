@@ -1,0 +1,8 @@
+{
+  "id": "M-self-host-5-phase-qf",
+  "kind": "milestone_passed",
+  "summary": "Phase QF — Quality Factory Upgrade 17 task 완료. v0.3 → v0.4. Quality Contract before Work, Quality Score before PASS, architecture/design rules, benchmark, modes 도입.",
+  "createdAt": "2026-05-19T18:00:00Z",
+  "sourceVerdict": "PASS_WITH_WARNINGS",
+  "notes": "self-host 5회차. NEKOFORGE 의 정체성이 '차단 도구' 에서 'Quality Contract Factory' 로 진화. 223/223 테스트 통과. 외부 사용자 PR 영역의 다음 점검 트리거 대기."
+}
