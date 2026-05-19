@@ -5,6 +5,12 @@ import type {
 } from "../../integrations/review-adapter.js";
 import { isoNow } from "../../utils/time.js";
 import { maskSecrets } from "../../utils/mask.js";
+import { runHooks } from "../../hooks/runner.js";
+import type { Hook } from "../../hooks/types.js";
+
+interface HooksJson {
+  hooks: Hook[];
+}
 
 export interface ReviewInput {
   adapters?: readonly ReviewAdapter[];
@@ -132,6 +138,15 @@ export async function runReview(
       : "see codex-findings.json for raw findings"
   ].join("\n");
   await deps.artifact.writeMarkdown("codex-review.md", reviewMd);
+
+  // post-review hooks (Phase D 후속 — Codex feedback #2)
+  const hooksData = await deps.artifact
+    .readJson<HooksJson>("hooks.json")
+    .catch(() => null);
+  const postHooks = (hooksData?.hooks ?? []).filter(
+    (h) => h.type === "post-review"
+  );
+  await runHooks(postHooks, { stage: "review", cwd: deps.cwd });
 
   return {
     selfPath,

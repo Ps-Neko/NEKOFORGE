@@ -1,0 +1,8 @@
+{
+  "id": "M-self-host-3-codex",
+  "kind": "milestone_passed",
+  "summary": "self-host #3 통과 — 외부 Codex 가 식별한 6건 중 5건 대응 + 1건 의도된 한계 명시. npm test 194/194.",
+  "createdAt": "2026-05-19T13:00:00Z",
+  "sourceVerdict": "PASS_WITH_WARNINGS",
+  "notes": "본 도구가 외부 시각의 점검 결과를 본 도구의 14단계 공정으로 통과시킨 가장 정직한 dogfooding 사례."
+}

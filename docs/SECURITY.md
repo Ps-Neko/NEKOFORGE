@@ -1,6 +1,17 @@
 # SECURITY — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 PRODUCT.md §3 원칙 1·3(독립 검증 / 위험 작업 차단)을 실제 차단 메커니즘으로 구현하는 명세다. WORKFLOW.md §3.12 gate 와 §3.13 apply 가 본 명세를 참조한다.
+> 버전 0.3 · 2026-05-18 (Phase A) · 2026-05-19 (Codex feedback round 후속) · 본 문서는 PRODUCT.md §3 원칙 1·3(독립 검증 / 위험 작업 차단)을 실제 차단 메커니즘으로 구현하는 명세다. WORKFLOW.md §3.12 gate 와 §3.13 apply 가 본 명세를 참조한다.
+
+## 0. 책임 경계 — 본 도구가 책임지는 것과 책임지지 않는 것
+
+NEKOFORGE 는 14단계 산출물의 **골격(구조)** 과 단계 간 **강제력(차단)** 만 책임진다.
+
+- **본 도구 책임**: 산출물 파일 형식, schema 검증, deterministic rule 발화, verdict 산출, Human Gate 강제, audit chain 무결성.
+- **사용자/agent 책임**: 산출물의 **내용** (context 의 6 섹션 본문, plan 의 task 행 내용, self-review 의 7 섹션 본문, harness-design 의 패턴 선택 이유 등).
+
+본 도구가 작성하는 placeholder(예: `(작성)`, `-`, `(확인 항목)`) 는 그대로 두면 14단계 통과 자체에 영향을 주지 않는다. 다음 단계의 lint 는 **형식 준수** 만 검증하지 본문이 의미 있는지 검증하지 않는다. 사용자/agent 가 채우지 않은 산출물로 verdict 가 PASS 가 되어도 그것은 사용자 책임이며, 본 도구는 적합한 placeholder 가 거기 있음을 보장할 뿐이다.
+
+이 경계는 의도된 한계다. LLM 없이도 결정적으로 동작하는 본 도구의 정체성과 정합한다. 단, **사용자/agent 가 산출물을 실질적으로 채워야 본 공정의 가치가 발생** 한다는 점은 README §10 과 SECURITY 9 (audit) 가 함께 권고한다.
 
 ## 1. 위협 모델 (Threat Model)
 
