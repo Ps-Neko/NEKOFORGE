@@ -20,6 +20,7 @@ import { runTeam } from "../../src/core/team/index.js";
 import { runWork } from "../../src/core/work/index.js";
 import { runReview } from "../../src/core/review/index.js";
 import { createCodexStubAdapter } from "../../src/integrations/codex/stub.js";
+import { runQualityContract } from "../../src/core/quality-contract/index.js";
 
 export interface SeededWorkspace {
   cwd: string;
@@ -69,6 +70,10 @@ export async function seedHarness(): Promise<SeededWorkspace> {
   );
 
   await runTeam(deps);
+
+  // Phase QF — work 전에 quality-contract 필수.
+  await runQualityContract({ taskId: "TASK-001", template: "custom" }, deps);
+
   await runWork({ taskId: "TASK-001" }, deps);
   await runReview(
     {

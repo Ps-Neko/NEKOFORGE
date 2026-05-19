@@ -92,6 +92,13 @@ test("M3a: full 30초 path runs end-to-end", async (t) => {
   r = runCli(["team"], cwd);
   assert.equal(r.status, 0, `team: ${r.stderr}`);
 
+  // Phase QF — work 전에 quality-contract 필수.
+  r = runCli(
+    ["contract", "--template", "custom", "--task", "TASK-001"],
+    cwd
+  );
+  assert.equal(r.status, 0, `contract: ${r.stderr}`);
+
   // 9. work (TASK-001 is the template default)
   r = runCli(["work", "TASK-001"], cwd);
   assert.equal(r.status, 0, `work: ${r.stderr}`);

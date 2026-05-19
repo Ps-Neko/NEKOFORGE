@@ -12,6 +12,8 @@ import { rulesSchema } from "./rules.schema.js";
 import { hooksSchema } from "./hooks.schema.js";
 import { codexFindingsSchema } from "./codex-findings.schema.js";
 import { evalCaseSchema } from "./eval-case.schema.js";
+import { qualityContractSchema } from "./quality-contract.schema.js";
+import { qualityScoreSchema } from "./quality-score.schema.js";
 
 export interface ValidationResult {
   valid: boolean;
@@ -30,7 +32,9 @@ const SCHEMAS = [
   rulesSchema,
   hooksSchema,
   codexFindingsSchema,
-  evalCaseSchema
+  evalCaseSchema,
+  qualityContractSchema,
+  qualityScoreSchema
 ];
 
 export function createValidator(): SchemaValidator {

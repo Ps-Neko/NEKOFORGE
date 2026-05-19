@@ -90,6 +90,52 @@ export const decisionSchema = {
         triggeredRules: { type: "array", items: { type: "string" } }
       }
     },
+    qualityContract: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        status: { type: "string", enum: ["valid", "missing", "violated"] },
+        failedBars: { type: "array", items: { type: "string" } }
+      }
+    },
+    qualityScore: {
+      type: "object",
+      properties: {
+        path: { type: "string" },
+        overall: { type: "number", minimum: 0, maximum: 100 },
+        minimumRequired: { type: "number", minimum: 0, maximum: 100 },
+        status: { type: "string", enum: ["passed", "warning", "failed"] }
+      }
+    },
+    factoryCells: {
+      type: "object",
+      additionalProperties: {
+        type: "string",
+        enum: ["complete", "missing", "partial"]
+      }
+    },
+    architectureReview: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["passed", "warnings", "failed", "not_run"]
+        },
+        findingsCount: { type: "integer", minimum: 0 },
+        criticalFindings: { type: "integer", minimum: 0 }
+      }
+    },
+    designReview: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["passed", "warnings", "failed", "not_applicable", "not_run"]
+        },
+        findingsCount: { type: "integer", minimum: 0 },
+        criticalFindings: { type: "integer", minimum: 0 }
+      }
+    },
     evidence: {
       type: "object",
       additionalProperties: { type: "string" }
