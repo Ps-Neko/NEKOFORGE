@@ -201,3 +201,103 @@ export async function readAuditChain(
     return { valid: true, totalLines: 0, rawText: "" };
   }
 }
+
+/**
+ * SECURITY.md §9 — Audit anchor.
+ *
+ * gate 가 매 실행마다 audit.jsonl 의 firstHash/lastHash/lineCount 를
+ * `.harness/audit-anchor.json` 에 anchor 로 저장한다. 다음 gate 가
+ * 이전 anchor 와 비교해 chain 의 외부 위변조(append-only 위반)를 감지한다.
+ */
+export interface AuditAnchor {
+  schemaVersion: "0.3";
+  lineCount: number;
+  firstHash: string | null;
+  lastHash: string | null;
+  recordedAt: string;
+}
+
+export function computeAnchor(text: string, atIso?: string): AuditAnchor {
+  const lines = text.split("\n").filter((l) => l.length > 0);
+  if (lines.length === 0) {
+    return {
+      schemaVersion: "0.3",
+      lineCount: 0,
+      firstHash: null,
+      lastHash: null,
+      recordedAt: atIso ?? isoNow()
+    };
+  }
+  let firstHash: string | null = null;
+  let lastHash: string | null = null;
+  try {
+    const first = JSON.parse(lines[0]!) as { line_hash?: string };
+    firstHash = first.line_hash ?? null;
+  } catch {
+    firstHash = null;
+  }
+  try {
+    const last = JSON.parse(lines[lines.length - 1]!) as { line_hash?: string };
+    lastHash = last.line_hash ?? null;
+  } catch {
+    lastHash = null;
+  }
+  return {
+    schemaVersion: "0.3",
+    lineCount: lines.length,
+    firstHash,
+    lastHash,
+    recordedAt: atIso ?? isoNow()
+  };
+}
+
+export interface AnchorComparison {
+  match: boolean;
+  reason?: string;
+}
+
+export function compareAnchor(
+  prev: AuditAnchor | null,
+  current: AuditAnchor
+): AnchorComparison {
+  if (!prev) return { match: true };
+  if (prev.firstHash !== current.firstHash) {
+    return {
+      match: false,
+      reason: `firstHash changed (chain reorganized): ${prev.firstHash} → ${current.firstHash}`
+    };
+  }
+  if (current.lineCount < prev.lineCount) {
+    return {
+      match: false,
+      reason: `lineCount decreased: ${prev.lineCount} → ${current.lineCount}`
+    };
+  }
+  return { match: true };
+}
+
+export async function readAuditAnchor(
+  cwd: string = process.cwd()
+): Promise<AuditAnchor | null> {
+  const path = join(harnessRoot(cwd), "audit-anchor.json");
+  try {
+    const text = await readFile(path, "utf8");
+    return JSON.parse(text) as AuditAnchor;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeAuditAnchor(
+  anchor: AuditAnchor,
+  cwd: string = process.cwd()
+): Promise<void> {
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const root = harnessRoot(cwd);
+  await mkdir(root, { recursive: true });
+  await writeFile(
+    join(root, "audit-anchor.json"),
+    JSON.stringify(anchor, null, 2) + "\n",
+    "utf8"
+  );
+}

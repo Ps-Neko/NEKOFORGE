@@ -1,0 +1,7 @@
+{
+  "id": "M-self-host-2-passed",
+  "kind": "milestone_passed",
+  "summary": "Phase D 후속 self-host 2회차 통과 — audit chain hash + audit anchor + export 4종 + 문서 정합 + rule eval-case 9건. npm test 204/204.",
+  "createdAt": "2026-05-19T11:00:00Z",
+  "notes": "본 도구로 본 도구의 v0.3 → v0.3.1 같은 안정성 보강을 14단계 공정에 통과시킨 사례."
+}

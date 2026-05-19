@@ -14,17 +14,27 @@ import type {
   ReviewResult,
   ReviewFinding
 } from "../review-adapter.js";
+import { maskSecrets } from "../../utils/mask.js";
 
 export interface SpawnResult {
   status: number | null;
   stdout: string;
   stderr: string;
+  signal?: string | null;
+  timedOut?: boolean;
+}
+
+export interface SpawnOptions {
+  input?: string;
+  encoding?: "utf8";
+  env?: NodeJS.ProcessEnv;
+  timeoutMs?: number;
 }
 
 export type SpawnLike = (
   command: string,
   args: readonly string[],
-  options: { input?: string; encoding?: "utf8"; env?: NodeJS.ProcessEnv }
+  options: SpawnOptions
 ) => SpawnResult;
 
 export interface ClaudeReviewOptions {
@@ -33,26 +43,46 @@ export interface ClaudeReviewOptions {
   env?: NodeJS.ProcessEnv;
   spawn?: SpawnLike;
   requireApiKey?: boolean;
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 function defaultSpawn(
   command: string,
   args: readonly string[],
-  options: Parameters<SpawnLike>[2]
+  options: SpawnOptions
 ): SpawnResult {
   const r = nodeSpawnSync(command, [...args], {
     encoding: "utf8",
+    timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     ...(options.input !== undefined ? { input: options.input } : {}),
     ...(options.env ? { env: options.env } : {})
   });
   return {
     status: r.status,
     stdout: r.stdout ?? "",
-    stderr: r.stderr ?? ""
+    stderr: r.stderr ?? "",
+    signal: r.signal,
+    timedOut: r.signal === "SIGTERM" || r.status === null
   };
 }
 
 function normalize(out: SpawnResult, adapterId: string): ReviewResult {
+  if (out.timedOut === true) {
+    return {
+      adapterId,
+      status: "failed",
+      findings: [
+        {
+          severity: "high",
+          title: `${adapterId} adapter timed out`,
+          detail: maskSecrets((out.stderr || out.stdout || "").slice(0, 500))
+        }
+      ],
+      summary: "timeout"
+    };
+  }
   if (out.status !== 0) {
     return {
       adapterId,
@@ -61,7 +91,7 @@ function normalize(out: SpawnResult, adapterId: string): ReviewResult {
         {
           severity: "high",
           title: `${adapterId} adapter non-zero exit`,
-          detail: (out.stderr || out.stdout || "").slice(0, 500)
+          detail: maskSecrets((out.stderr || out.stdout || "").slice(0, 500))
         }
       ],
       summary: `exit=${out.status}`
@@ -87,7 +117,7 @@ function normalize(out: SpawnResult, adapterId: string): ReviewResult {
         {
           severity: "warning",
           title: `${adapterId} adapter output not JSON`,
-          detail: out.stdout.slice(0, 500)
+          detail: maskSecrets(out.stdout.slice(0, 500))
         }
       ],
       summary: "unparsed output captured as warning"
@@ -118,6 +148,7 @@ export function createClaudeReviewAdapter(
       const r = spawn(command, args, {
         input: input.rawDiff,
         encoding: "utf8",
+        timeoutMs: opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
         ...(opts.env ? { env: opts.env } : {})
       });
       return normalize(r, "claude");

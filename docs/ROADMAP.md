@@ -99,6 +99,12 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 
 - Phase B 종료 조건 + 위 추가 조건.
 
+### 통과 기록 (2026-05-18 ~ 2026-05-19)
+
+- **self-hosting 2회 통과** : (1) audit.jsonl 자동 어펜드 추가, (2) audit chain hash + audit anchor 추가 + 문서 정합 갱신.
+- eval-cases : 13건 (milestone 4 + rule 별 9건 — Beta 조건 충족).
+- 외부 사용자 조건은 ROADMAP §10 Beta 영역.
+
 ## 5. Phase D — 외부 어댑터 실연결 (T+6 ~ T+7 주)
 
 ### 목표
@@ -121,6 +127,13 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 - 의견 불일치 케이스 테스트 통과.
 - cursor export 결과가 결정적임이 테스트로 증명.
 
+### 통과 기록 (2026-05-18 ~ 2026-05-19)
+
+- ReviewAdapter : codex-stub + codex-real(spawn) + claude-real(spawn) 인터페이스 구현. SpawnLike 주입으로 테스트 가능.
+- ExportAdapter : claude + cursor + **codex** + **generic** 4종 (codex/generic 은 Phase D 후속).
+- real adapter : timeout (30s 기본) + stderr 마스킹.
+- 의견 불일치 정책 + secret 마스킹 단위 테스트 통과.
+
 ## 6. Phase E — 다언어 확장 (T+8 주 이후, 조건부)
 
 ### 진입 조건
@@ -137,6 +150,12 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 
 - Python/Go 중 1언어에 대해 T-SEC 시리즈 통과.
 - 새 rule 추가 절차(SECURITY §4) 가 변경 없이 동작.
+
+### 통과 기록 (2026-05-18)
+
+- `src/utils/language.ts` 추가 (확장자 감지).
+- 4개 룰 (secret-fallback / auth-bypass / test-deletion / no-test-risk) 의 휴리스틱이 Python + Go 모두 커버.
+- T-SEC Python 2건 + Go 3건 = 5건 e2e 통과.
 
 ## 7. Phase F — 협업 모델 (미정)
 
