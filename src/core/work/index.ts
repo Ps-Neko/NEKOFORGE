@@ -1,6 +1,8 @@
 import type { StageDeps } from "../stage-runner.js";
 import { readGitDiff, diffHash } from "../../utils/git.js";
 import { isoNow } from "../../utils/time.js";
+import { runHooks } from "../../hooks/runner.js";
+import type { Hook, HookType } from "../../hooks/types.js";
 
 export interface WorkInput {
   taskId: string;
@@ -27,6 +29,29 @@ export class WorkDuplicateError extends Error {
     super(`task ${taskId} is already recorded in worklog`);
     this.name = "WorkDuplicateError";
   }
+}
+
+export class WorkHookError extends Error {
+  readonly exitCode = 10;
+  constructor(hookId: string, reason: string) {
+    super(`pre-tool hook "${hookId}" failed: ${reason}`);
+    this.name = "WorkHookError";
+  }
+}
+
+interface HooksJson {
+  hooks: Hook[];
+}
+
+async function loadHooks(
+  deps: StageDeps,
+  type: HookType
+): Promise<Hook[]> {
+  const data = await deps.artifact
+    .readJson<HooksJson>("hooks.json")
+    .catch(() => null);
+  if (!data) return [];
+  return (data.hooks ?? []).filter((h) => h.type === type);
 }
 
 export async function runWork(
@@ -58,12 +83,30 @@ export async function runWork(
     throw new WorkDuplicateError(input.taskId);
   }
 
+  // pre-tool hooks (Phase D 후속 — Codex feedback #2)
+  const preHooks = await loadHooks(deps, "pre-tool");
+  const preResults = await runHooks(preHooks, {
+    stage: "work",
+    cwd: deps.cwd
+  });
+  const blockingFailure = preResults.find(
+    (r) => r.status === "failed" && preHooks.find((h) => h.id === r.hookId)?.blocking
+  );
+  if (blockingFailure) {
+    throw new WorkHookError(
+      blockingFailure.hookId,
+      blockingFailure.reason ?? "unknown"
+    );
+  }
+
   const rawDiff = readGitDiff(deps.cwd);
   const captured = rawDiff !== null;
   const text = rawDiff ?? "";
   const hash = diffHash(text);
   if (captured) {
     await deps.artifact.writeMarkdown("last-diff.patch", text);
+    // Phase D 후속 (Codex feedback #1) — task 별 pending patch 격리.
+    await deps.artifact.writeMarkdown(`pending/${input.taskId}.patch`, text);
   }
 
   const at = isoNow(deps.clock);
@@ -78,6 +121,10 @@ export async function runWork(
     .join("\n");
 
   await deps.artifact.writeMarkdown("worklog.md", worklog + entry + "\n");
+
+  // post-tool hooks (Phase D 후속 — non-blocking 으로 결과만 기록)
+  const postHooks = await loadHooks(deps, "post-tool");
+  await runHooks(postHooks, { stage: "work", cwd: deps.cwd });
 
   return {
     worklogPath: ".harness/worklog.md",

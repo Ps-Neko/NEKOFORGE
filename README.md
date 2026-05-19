@@ -161,7 +161,8 @@ CLI 상세는 [docs/CLI.md](docs/CLI.md). 단계별 산출물은 [docs/WORKFLOW.
 - **Phase D — real adapters + export 4종 + 의견 불일치 정책** : 완료 (claude/cursor/codex/generic export, codex/claude real adapter timeout + stderr 마스킹).
 - **Phase E — 다언어 (Python/Go) 확장** : 완료.
 - **Phase F — 협업 모델** : 보류 (외부 수요 조건부).
-- `npm test` 현재 : **190/190 통과** (Phase E 까지 의 모든 회귀 + Phase C/D 후속).
+- `npm test` 현재 : **194/194 통과** (Phase E 까지 의 모든 회귀 + Phase C/D 후속 + Codex feedback 라운드 self-host #3).
+- 외부 검증 사례 1건 누적 (Codex 2026-05-19) — examples/phase-codex-feedback/ 참고.
 - 자세한 마일스톤 : [docs/ROADMAP.md](docs/ROADMAP.md) §9.
 
 ## 10. 기여·실행 정책

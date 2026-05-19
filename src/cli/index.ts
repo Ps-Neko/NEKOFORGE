@@ -23,6 +23,7 @@ import { registerGate } from "./commands/gate.js";
 import { registerApply } from "./commands/apply.js";
 import { registerReport } from "./commands/report.js";
 import { registerExport } from "./commands/export.js";
+import { registerMemory } from "./commands/memory.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
 
@@ -58,6 +59,7 @@ function buildProgram(): Command {
   registerApply(program);
   registerReport(program);
   registerExport(program);
+  registerMemory(program);
 
   program.showHelpAfterError(
     "(run `harness <command> --help` for command-specific help)"
@@ -70,6 +72,13 @@ async function main(): Promise<void> {
   const program = buildProgram();
   const argv = process.argv.slice(2);
   const cmdName = argv.find((x) => !x.startsWith("-")) ?? "(none)";
+
+  // --workspace 우선. commander 가 옵션 파싱 후 hook 발화 전이라 직접 파싱한다.
+  const { resolve } = await import("node:path");
+  const wsIdx = argv.findIndex((a) => a === "--workspace");
+  if (wsIdx >= 0 && argv[wsIdx + 1]) {
+    process.env.HARNESS_WORKSPACE = resolve(argv[wsIdx + 1]!);
+  }
   const workspaceCwd = resolveWorkspaceCwd();
 
   await appendAuditEvent(

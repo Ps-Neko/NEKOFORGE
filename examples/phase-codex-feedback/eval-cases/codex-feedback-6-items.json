@@ -1,0 +1,7 @@
+{
+  "id": "codex-feedback-6-items",
+  "kind": "improved_prompt",
+  "summary": "외부 Codex 가 NEKOFORGE 의 v3 사양 대비 부분 이행 6건 식별: explicit apply patch 격리 미사용, hooks 미연결, 산출물 placeholder, memory CLI 미연결, --workspace 무시, apply_refused audit 미발화.",
+  "createdAt": "2026-05-19T12:30:00Z",
+  "notes": "5건은 즉시 대응 (patch 격리, hooks 통합, memory CLI, --workspace, apply_refused), 1건은 의도된 한계로 SECURITY.md 명시. ROADMAP §10 Beta 의 '외부 사용자 PR' 영역에서 첫 실질 입력."
+}

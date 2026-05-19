@@ -9,6 +9,12 @@ import type { StageDeps } from "../stage-runner.js";
 import { evaluateAutoApplyBlock } from "../../rules/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
 import { appendAuditEvent } from "../../utils/audit.js";
+import { runHooks } from "../../hooks/runner.js";
+import type { Hook } from "../../hooks/types.js";
+
+interface HooksJson {
+  hooks: Hook[];
+}
 
 interface DecisionJson {
   taskId: string;
@@ -93,11 +99,46 @@ export async function runApply(
     }
   }
 
+  // pre-apply hooks (Phase D 후속 — Codex feedback #2)
+  const hooksData = await deps.artifact
+    .readJson<HooksJson>("hooks.json")
+    .catch(() => null);
+  const preApply = (hooksData?.hooks ?? []).filter(
+    (h) => h.type === "pre-apply"
+  );
+  const preResults = await runHooks(preApply, {
+    stage: "apply",
+    cwd: deps.cwd
+  });
+  const blocking = preResults.find(
+    (r) => r.status === "failed" && preApply.find((h) => h.id === r.hookId)?.blocking
+  );
+  if (blocking) {
+    throw new ApplyPrecondError(
+      `pre-apply hook "${blocking.hookId}" failed: ${blocking.reason ?? "unknown"}`
+    );
+  }
+
+  // Phase D 후속 (Codex feedback #1) — pending patch → applied 로 격리 이동.
+  let patchPromoted = false;
+  if (!input.dryRun) {
+    const pendingPath = `pending/${decision.taskId}.patch`;
+    const pending = await deps.artifact.readMarkdown(pendingPath);
+    if (pending !== null) {
+      await deps.artifact.writeMarkdown(
+        `applied/${decision.taskId}.patch`,
+        pending
+      );
+      patchPromoted = true;
+    }
+  }
+
   const entry = [
     `## ${decision.taskId} — ${isoNow(deps.clock)}`,
     `- verdict: ${decision.verdict}`,
     `- dryRun: ${input.dryRun === true}`,
     `- triggered rules: ${(decision.deterministicRules?.triggeredRules ?? []).join(", ") || "(none)"}`,
+    `- patch: ${patchPromoted ? `applied/${decision.taskId}.patch` : "(none)"}`,
     ""
   ].join("\n");
   const log = (await deps.artifact.readMarkdown("apply-log.md")) ?? "";
