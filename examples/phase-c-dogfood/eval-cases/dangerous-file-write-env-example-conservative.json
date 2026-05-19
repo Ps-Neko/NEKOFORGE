@@ -1,0 +1,8 @@
+{
+  "id": "dangerous-file-write-env-example-conservative",
+  "kind": "useful_rule",
+  "summary": "dangerous-file-write 가 .env 뿐 아니라 .env.example 까지 보수적으로 high 로 잡는다. 템플릿 파일을 통한 정보 유출 차단.",
+  "relatedRule": "dangerous-file-write",
+  "createdAt": "2026-05-19T09:03:00Z",
+  "notes": "tests/unit/rules/dangerous-file-write.test.ts 의 .env.example 케이스. 일부 사용자는 noise 로 느낄 수 있어 향후 noisy_rule 케이스로 재분류 가능."
+}

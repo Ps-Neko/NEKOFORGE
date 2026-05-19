@@ -1,0 +1,8 @@
+{
+  "id": "hook-injection-postinstall-useful",
+  "kind": "useful_rule",
+  "summary": "hook-injection-risk 가 package.json 의 신규 postinstall script 를 high 로 잡아 supply-chain 공격 벡터를 차단.",
+  "relatedRule": "hook-injection-risk",
+  "createdAt": "2026-05-19T09:04:00Z",
+  "notes": "T-SEC-11 + multilang 외 자체 case. tests/unit/rules/hook-injection-risk.test.ts 에서 검증."
+}

@@ -1,0 +1,8 @@
+{
+  "id": "agent-permission-impl-and-security-useful",
+  "kind": "useful_rule",
+  "summary": "agent-permission-risk 가 한 agent ID 가 implementation-agent 와 security-reviewer 를 겸직하는 team.json 변경을 high 로 잡는다. PRODUCT §7.4 독립성 보장의 1차 방어선.",
+  "relatedRule": "agent-permission-risk",
+  "createdAt": "2026-05-19T09:05:00Z",
+  "notes": "T-SEC-12 + team 모듈 lint 의 이중 방어."
+}

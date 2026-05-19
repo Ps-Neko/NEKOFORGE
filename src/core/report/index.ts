@@ -19,6 +19,19 @@ export interface ReportSnapshot {
   openFindings: number;
   nextSuggested: string;
   evidence: { report: string; decision: string };
+  stagesPresent: string[];
+}
+
+export interface ReportInput {
+  since?: string;
+}
+
+export class ReportInvalidStageError extends Error {
+  readonly exitCode = 1;
+  constructor(stage: string) {
+    super(`unknown stage for --since: ${stage}`);
+    this.name = "ReportInvalidStageError";
+  }
 }
 
 const STAGE_ORDER: Array<[string, string]> = [
@@ -54,11 +67,31 @@ const NEXT_BY_STAGE: Record<string, string> = {
   apply: "harness report"
 };
 
-export async function runReport(deps: StageDeps): Promise<ReportSnapshot> {
+function stageIndex(stage: string): number {
+  return STAGE_ORDER.findIndex(([, s]) => s === stage);
+}
+
+export async function runReport(
+  deps: StageDeps,
+  input: ReportInput = {}
+): Promise<ReportSnapshot> {
   let current = "uninitialized";
+  const stagesPresent: string[] = [];
   for (const [file, stage] of STAGE_ORDER) {
-    if (await deps.artifact.exists(file)) current = stage;
+    if (await deps.artifact.exists(file)) {
+      current = stage;
+      stagesPresent.push(stage);
+    }
   }
+
+  let filtered = stagesPresent;
+  if (input.since) {
+    const idx = stageIndex(input.since);
+    if (idx === -1) throw new ReportInvalidStageError(input.since);
+    const sinceStages = STAGE_ORDER.slice(idx).map(([, s]) => s);
+    filtered = stagesPresent.filter((s) => sinceStages.includes(s));
+  }
+
   const decision = await deps.artifact
     .readJson<DecisionJson>("decision.json")
     .catch(() => null);
@@ -72,6 +105,7 @@ export async function runReport(deps: StageDeps): Promise<ReportSnapshot> {
     evidence: {
       report: "REPORT.md",
       decision: ".harness/decision.json"
-    }
+    },
+    stagesPresent: filtered
   };
 }

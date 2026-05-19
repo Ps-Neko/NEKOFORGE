@@ -1,0 +1,4 @@
+diff --git a/src/config.ts b/src/config.ts
+@@ -1 +1 @@
+-const x = 1;
++const KEY = process.env.API_KEY || "sk-test-fallback-12345";

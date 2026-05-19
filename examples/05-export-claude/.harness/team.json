@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.3",
+  "pattern": "Pipeline",
+  "rationale": "Example 05 sample",
+  "agents": [
+    { "id": "impl-1", "role": "implementation-agent", "owns": ["TASK-001"] },
+    { "id": "sec-1", "role": "security-reviewer", "owns": ["TASK-001"] },
+    { "id": "rel-1", "role": "release-gatekeeper", "owns": ["TASK-001"] }
+  ],
+  "orchestratorRef": ".harness/orchestrator.md",
+  "skillsMapRef": ".harness/skills-map.json"
+}

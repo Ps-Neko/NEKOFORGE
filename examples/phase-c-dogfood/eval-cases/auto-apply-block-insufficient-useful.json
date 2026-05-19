@@ -1,0 +1,8 @@
+{
+  "id": "auto-apply-block-insufficient-useful",
+  "kind": "useful_rule",
+  "summary": "auto-apply-block 의 evaluateAutoApplyBlock 가 INSUFFICIENT_EVIDENCE 상태의 apply 시도를 exit 4 로 차단. SECURITY §6 의 Layer 3 핵심.",
+  "relatedRule": "auto-apply-block",
+  "createdAt": "2026-05-19T09:06:00Z",
+  "notes": "T-SEC-07/T-SEC-08 통합 + 단위 테스트 (BLOCK/INSUFFICIENT_EVIDENCE → throw)."
+}

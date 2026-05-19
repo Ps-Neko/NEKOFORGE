@@ -1,0 +1,8 @@
+{
+  "id": "auth-bypass-py-comment-useful",
+  "kind": "useful_rule",
+  "summary": "auth-bypass 가 Python 측에서 '# auth disabled' 주석 + login_required 제거 패턴을 잡는 사례. 무차별 인증 우회 코드의 일반 형태.",
+  "relatedRule": "auth-bypass",
+  "createdAt": "2026-05-19T09:00:00Z",
+  "notes": "Phase E 확장된 Python AUTH_TOKENS 와 BYPASS_PATTERNS 의 조합. tests/unit/rules/multilang.test.ts 에서 부분 검증."
+}
