@@ -10,6 +10,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
+import { lintProductIntent } from "../../utils/quality-contract-lint.js";
 
 export type ContractTemplate = "web-ui" | "cli-tool" | "backend-api" | "library" | "custom";
 
@@ -195,16 +196,6 @@ function renderMarkdown(c: ContractJson): string {
     "## Forbidden Actions",
     ...(c.forbiddenActions ?? []).map((e) => `- ${e}`)
   ].join("\n");
-}
-
-const PLACEHOLDER_RE = /\(사용자가 작성\)|\(작성\)|^$|^\s*$/;
-
-function lintProductIntent(intent: ContractJson["productIntent"]): string[] {
-  const violations: string[] = [];
-  if (PLACEHOLDER_RE.test(intent.user)) violations.push("productIntent.user is placeholder");
-  if (PLACEHOLDER_RE.test(intent.problem)) violations.push("productIntent.problem is placeholder");
-  if (PLACEHOLDER_RE.test(intent.coreValue)) violations.push("productIntent.coreValue is placeholder");
-  return violations;
 }
 
 export async function runQualityContract(

@@ -98,6 +98,21 @@ export async function runGate(
 
   const evidenceMissing = missing.length > 0;
 
+  // Codex self-audit #2-3 — factoryCells 가 실제 artifact 존재 반영.
+  const cellInputs = {
+    hasIntake: await deps.artifact.exists("intake.md"),
+    hasSpec: await deps.artifact.exists("SPEC.md"),
+    hasPlan: await deps.artifact.exists("PLAN.md"),
+    hasTasks: await deps.artifact.exists("TASKS.md"),
+    hasDesign: await deps.artifact.exists("harness-design.md"),
+    hasPolicy: await deps.artifact.exists("quality-policy.md"),
+    hasTeam: await deps.artifact.exists("agent-routing.json"),
+    hasWork: await deps.artifact.exists("worklog.md"),
+    hasSelf: await deps.artifact.exists("self-review.md"),
+    hasCodex: await deps.artifact.exists("codex-findings.json"),
+    hasContract: await deps.artifact.exists("quality-contract.json")
+  };
+
   const rawDiff = (await deps.artifact.readMarkdown("last-diff.patch")) ?? "";
   const diff = parseUnifiedDiff(rawDiff);
 
@@ -306,14 +321,14 @@ export async function runGate(
           status: "failed" as const
         },
     factoryCells: computeFactoryCells({
-      hasIntake: true,
-      hasSpec: true,
-      hasPlan: true,
-      hasDesign: true,
-      hasPolicy: true,
-      hasTeam: true,
-      hasWork: true,
-      hasReview: true
+      hasIntake: cellInputs.hasIntake,
+      hasSpec: cellInputs.hasSpec,
+      hasPlan: cellInputs.hasPlan && cellInputs.hasTasks,
+      hasDesign: cellInputs.hasDesign,
+      hasPolicy: cellInputs.hasPolicy && cellInputs.hasContract,
+      hasTeam: cellInputs.hasTeam,
+      hasWork: cellInputs.hasWork,
+      hasReview: cellInputs.hasSelf && cellInputs.hasCodex
     }),
     architectureReview: {
       status: archFindings.some((f) => f.severity === "critical")

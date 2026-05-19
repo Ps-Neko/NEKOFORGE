@@ -3,6 +3,15 @@ import { readGitDiff, diffHash } from "../../utils/git.js";
 import { isoNow } from "../../utils/time.js";
 import { runHooks } from "../../hooks/runner.js";
 import type { Hook, HookType } from "../../hooks/types.js";
+import { lintProductIntent } from "../../utils/quality-contract-lint.js";
+
+interface QualityContractMinimal {
+  productIntent: {
+    user: string;
+    problem: string;
+    coreValue: string;
+  };
+}
 
 export interface WorkInput {
   taskId: string;
@@ -71,6 +80,19 @@ export async function runWork(
     throw new WorkPrecondError(
       "quality-contract.json missing (run `harness contract`)"
     );
+  }
+  // Codex self-audit #2-1 — work 진입 시 productIntent placeholder 도 거부.
+  const contract = await deps.artifact
+    .readJson<QualityContractMinimal>("quality-contract.json")
+    .catch(() => null);
+  if (contract) {
+    const lintErrors = lintProductIntent(contract.productIntent);
+    if (lintErrors.length > 0) {
+      throw new WorkPrecondError(
+        `quality-contract.json has unfilled productIntent: ${lintErrors.join(", ")} ` +
+          `(re-run 'harness contract --answers <file>' or edit .harness/quality-contract.json)`
+      );
+    }
   }
 
   const tasksDoc = (await deps.artifact.readMarkdown("TASKS.md")) ?? "";
