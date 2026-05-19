@@ -17,7 +17,7 @@ export const decisionSchema = {
     "apply"
   ],
   properties: {
-    schemaVersion: { type: "string", const: "0.4" },
+    schemaVersion: { type: "string", const: "0.5" },
     project: { type: "string", minLength: 1 },
     taskId: { type: "string", minLength: 1 },
     workflowStage: { type: "string" },
@@ -134,6 +134,47 @@ export const decisionSchema = {
         },
         findingsCount: { type: "integer", minimum: 0 },
         criticalFindings: { type: "integer", minimum: 0 }
+      }
+    },
+    workerFactory: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["complete", "partial", "missing", "violated"]
+        },
+        profile: { type: "string" },
+        requiredWorkers: { type: "array", items: { type: "string" } },
+        completedWorkers: { type: "array", items: { type: "string" } },
+        missingWorkers: { type: "array", items: { type: "string" } },
+        roleSeparationViolations: { type: "array", items: { type: "string" } },
+        workerFindingsCount: { type: "integer", minimum: 0 },
+        criticalWorkerFindings: { type: "integer", minimum: 0 }
+      }
+    },
+    rulePacks: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["complete", "missing", "violated"]
+        },
+        enabled: { type: "array", items: { type: "string" } },
+        required: { type: "array", items: { type: "string" } },
+        missingRequired: { type: "array", items: { type: "string" } },
+        triggeredPacks: { type: "array", items: { type: "string" } }
+      }
+    },
+    skillPacks: {
+      type: "object",
+      properties: {
+        status: {
+          type: "string",
+          enum: ["complete", "missing", "partial"]
+        },
+        enabled: { type: "array", items: { type: "string" } },
+        recommended: { type: "array", items: { type: "string" } },
+        missingRecommended: { type: "array", items: { type: "string" } }
       }
     },
     evidence: {

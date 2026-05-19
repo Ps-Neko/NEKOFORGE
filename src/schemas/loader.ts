@@ -14,6 +14,10 @@ import { codexFindingsSchema } from "./codex-findings.schema.js";
 import { evalCaseSchema } from "./eval-case.schema.js";
 import { qualityContractSchema } from "./quality-contract.schema.js";
 import { qualityScoreSchema } from "./quality-score.schema.js";
+import { workersSchema } from "./workers.schema.js";
+import { workerResultSchema } from "./worker-result.schema.js";
+import { rulePacksSchema } from "./rule-packs.schema.js";
+import { skillPacksSchema } from "./skill-packs.schema.js";
 
 export interface ValidationResult {
   valid: boolean;
@@ -34,7 +38,11 @@ const SCHEMAS = [
   codexFindingsSchema,
   evalCaseSchema,
   qualityContractSchema,
-  qualityScoreSchema
+  qualityScoreSchema,
+  workersSchema,
+  workerResultSchema,
+  rulePacksSchema,
+  skillPacksSchema
 ];
 
 export function createValidator(): SchemaValidator {

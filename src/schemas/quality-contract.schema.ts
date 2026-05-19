@@ -15,7 +15,7 @@ export const qualityContractSchema = {
     "requiredEvidence"
   ],
   properties: {
-    schemaVersion: { type: "string", const: "0.4" },
+    schemaVersion: { type: "string", const: "0.5" },
     taskId: { type: "string", minLength: 1 },
     productIntent: {
       type: "object",

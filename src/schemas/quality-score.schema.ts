@@ -6,7 +6,7 @@ export const qualityScoreSchema = {
   type: "object",
   required: ["schemaVersion", "taskId", "scores", "weights", "thresholds"],
   properties: {
-    schemaVersion: { type: "string", const: "0.4" },
+    schemaVersion: { type: "string", const: "0.5" },
     taskId: { type: "string", minLength: 1 },
     scores: {
       type: "object",

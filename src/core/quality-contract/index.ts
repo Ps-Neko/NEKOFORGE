@@ -115,7 +115,7 @@ const FORBIDDEN_ACTIONS_DEFAULTS = [
 ];
 
 interface ContractJson {
-  schemaVersion: "0.4";
+  schemaVersion: "0.5";
   taskId: string;
   productIntent: {
     user: string;
@@ -134,7 +134,7 @@ interface ContractJson {
 function buildContract(input: ContractInput, productIntent: ContractJson["productIntent"]): ContractJson {
   const template = input.template ?? "custom";
   return {
-    schemaVersion: "0.4",
+    schemaVersion: "0.5",
     taskId: input.taskId ?? "TASK-001",
     productIntent,
     acceptanceCriteria: [],
