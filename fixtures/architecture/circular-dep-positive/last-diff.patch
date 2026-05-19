@@ -1,0 +1,9 @@
+diff --git a/src/feature/main.ts b/src/feature/main.ts
+@@ -1,2 +1,8 @@
+ export const FEATURE = "x";
++import { a } from "../shared/a.js";
++import { b } from "../shared/b.js";
++import { c } from "../shared/c.js";
++import { d } from "../shared/d.js";
++
++export function use() { return [a, b, c, d]; }

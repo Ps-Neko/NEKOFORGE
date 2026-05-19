@@ -66,6 +66,34 @@ interface QualityContractJson {
   riskProfile?: { uiTouched?: boolean };
 }
 
+interface HookResultsJson {
+  results?: Array<{
+    hookId?: string;
+    status?: string;
+    command?: string;
+    exitCode?: number;
+  }>;
+}
+
+/**
+ * self-host #6 후속 — work 단계의 post-tool hook 결과에서 `npm test` 류 명령을
+ * 찾아 tests.status 자동 추정. CLI 의 --test-status 명시값이 우선.
+ */
+export function inferTestStatusFromHooks(
+  data: HookResultsJson | null
+): "passed" | "failed" | "not_run" | null {
+  if (!data || !Array.isArray(data.results)) return null;
+  const testHook = data.results.find(
+    (r) =>
+      typeof r.command === "string" &&
+      /(^|\s)(npm|yarn|pnpm|bun)\s+(test|run\s+test)\b/.test(r.command)
+  );
+  if (!testHook) return null;
+  if (testHook.status === "ok") return "passed";
+  if (testHook.status === "failed") return "failed";
+  return null;
+}
+
 export interface GateInput {
   noReviewAdapter?: boolean;
   testStatus?: "passed" | "failed" | "not_run" | "insufficient";
@@ -128,6 +156,15 @@ export async function runGate(
       ? 1
       : 0;
 
+  // self-host #6 후속 — work 의 post-tool hook 결과에서 자동 추정.
+  // CLI 의 --test-status 명시값 (input.testStatus) 가 항상 우선.
+  const hookResults = await deps.artifact
+    .readJson<HookResultsJson>("hook-results.json")
+    .catch(() => null);
+  const inferredTestStatus = inferTestStatusFromHooks(hookResults);
+  const effectiveTestStatus =
+    input.testStatus ?? inferredTestStatus ?? "not_run";
+
   const baseCtx: RuleContext = {
     diff,
     review: {
@@ -136,7 +173,7 @@ export async function runGate(
       criticalFindings: reviewCritical
     },
     team: team ?? undefined,
-    testStatus: input.testStatus ?? "not_run"
+    testStatus: effectiveTestStatus
   };
 
   const passOne = await runAllRulesExceptCodex(baseCtx);
@@ -292,9 +329,9 @@ export async function runGate(
       violations: []
     },
     tests: {
-      status: input.testStatus ?? "not_run",
+      status: effectiveTestStatus,
       commands: ["npm test"],
-      summary: ""
+      summary: inferredTestStatus && !input.testStatus ? "inferred from post-tool hook" : ""
     },
     reviewAdapters: [
       {
