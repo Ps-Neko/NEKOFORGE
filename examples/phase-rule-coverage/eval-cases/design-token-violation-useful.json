@@ -1,0 +1,8 @@
+{
+  "id": "design-token-violation-hex-literal-useful",
+  "kind": "useful_rule",
+  "summary": "design-token-violation 이 CSS/스타일 안의 hex 리터럴 (`color: #ff0000` 등) 을 warning 발화. 디자인 시스템 토큰 (CSS variable / theme constant) 사용 압력.",
+  "relatedRule": "design-token-violation",
+  "createdAt": "2026-05-19T01:05:00Z",
+  "notes": "fixture: design/design-token-positive. 의도된 한계: 정적 휴리스틱이라 토큰 정의 자체 변경에서 false positive 가능."
+}

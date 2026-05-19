@@ -1,0 +1,8 @@
+{
+  "id": "layer-violation-cross-stage-core-useful",
+  "kind": "useful_rule",
+  "summary": "layer-violation 이 cross-stage core import (예: `core/gate` → `core/quality-score`) 을 high 로 차단. 본 도구 자체 빌드에서 dependency-cruiser 와 함께 발화해 `src/scoring/` leaf 디렉터리로 추출하도록 강제.",
+  "relatedRule": "layer-violation",
+  "createdAt": "2026-05-19T01:01:00Z",
+  "notes": "fixture: architecture/layer-violation-positive. dependency-cruiser 의 `no-cross-stage-core` 와 의미적으로 동등하며 패치 단계에서 사전 경고."
+}

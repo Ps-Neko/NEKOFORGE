@@ -1,0 +1,8 @@
+{
+  "id": "large-file-risk-800-loc-threshold-useful",
+  "kind": "useful_rule",
+  "summary": "large-file-risk 가 src 단일 파일 > 800 LOC 추가/유지 시 high 발화. 본 도구의 `core/gate/index.ts` 자체가 한때 1000+ 줄로 자란 사례에서, 분리(helper 추출) 압력으로 작동.",
+  "relatedRule": "large-file-risk",
+  "createdAt": "2026-05-19T01:00:00Z",
+  "notes": "fixture: architecture/large-file-positive. Phase QF 의 architecture 4 rule 중 가장 흔히 발화하는 신호."
+}

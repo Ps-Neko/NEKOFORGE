@@ -1,0 +1,8 @@
+{
+  "id": "circular-dependency-risk-useful",
+  "kind": "useful_rule",
+  "summary": "circular-dependency-risk 가 diff 안에 `import ... from './A'` (A 가 호출 측을 import) 같은 패턴 발견 시 발화. 패치 단계에서 잡지 못한 케이스는 dependency-cruiser 가 빌드 시 잡음.",
+  "relatedRule": "circular-dependency-risk",
+  "createdAt": "2026-05-19T01:03:00Z",
+  "notes": "fixture 미보유 (positive 케이스 추가 예정). 정적 분석 한계로 false-negative 가능 — depcruise 와 이중 방어."
+}

@@ -201,7 +201,7 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 
 - 외부(본인 외) 사용자 1명 이상이 본 도구를 사용해 PR 1개 이상을 머지.
 - ~~알려진 false-positive 패턴 5개 이상이 negative test 로 등록.~~ **(달성 — 2026-05-19: PASS-expected fixture 5개 누적: import-shuffle, aria-improvement, docs-only, src-with-test, test-only-fix)**
-- 모든 rule 의 발화 사례가 memory 에 최소 1건씩 적재.
+- ~~모든 rule 의 발화 사례가 memory 에 최소 1건씩 적재.~~ **(달성 — 2026-05-19: 16 rule + 1 gate finding 의 eval-cases 17건 누적. examples/phase-rule-coverage/README.md 의 대응표 참조.)**
 
 ### 1.0
 

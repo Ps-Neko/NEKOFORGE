@@ -1,0 +1,8 @@
+{
+  "id": "quality-contract-invalid-codex-review-3-useful",
+  "kind": "useful_rule",
+  "summary": "quality-contract-invalid finding 이 contract schema 불일치 시 critical 발화 + scoreCap=INSUFFICIENT_EVIDENCE 강등. Codex review #3 #2 의 직접 산출.",
+  "relatedRule": "quality-contract-invalid",
+  "createdAt": "2026-05-19T01:07:00Z",
+  "notes": "rule 가 아닌 gate finding 으로 분류. apply 단계의 Evidence before Apply 와 함께 contract 정직성 강제."
+}
