@@ -129,6 +129,15 @@
 - 그 상태에서 `codex-findings.json.status === "not_run"` 이면 본 rule 트리거.
 - 등급 : `high` → NEEDS_HUMAN_REVIEW. 어댑터가 1개도 등록 안 되어 있고 어댑터 fallback 도 없으면 → INSUFFICIENT_EVIDENCE.
 
+### 3.10 audit-integrity (Phase C 후속 신규)
+
+- `.harness/audit.jsonl` 의 chain hash 검증 + audit-anchor.json 의 append-only 위반 감지.
+- 두 가지 위반:
+  - **chain 무결성**: 각 라인의 `prev_hash` 가 직전 라인의 `line_hash` 와 불일치하거나, `line_hash` 재계산이 다른 경우.
+  - **anchor append-only 위반**: 이전 gate 의 anchor 와 비교해 `firstHash` 가 바뀌었거나 `lineCount` 가 감소한 경우.
+- 등급 : `high` → NEEDS_HUMAN_REVIEW.
+- 본 finding 은 `src/rules/` 하의 deterministic rule 카탈로그가 아니라 gate 모듈이 직접 생성한다 (audit 입력이 diff 가 아닌 audit.jsonl 자체이기 때문).
+
 ## 4. Rule 추가/수정 절차
 
 1. `src/rules/<new-id>.ts` 생성, `DeterministicRule` 인터페이스 구현.
@@ -225,7 +234,22 @@ if every required finding has a matching valid token:
 - export adapter 실행과 입력/출력 파일 경로.
 - hooks 실행(특히 blocking) 의 시작/종료.
 
-`audit.jsonl` 자체의 위변조 감지(자체 해시 별도 보관)는 ROADMAP Phase C.
+### 9.1 Chain hash (Phase C 후속 도입)
+
+각 `audit.jsonl` 라인은 다음 두 필드를 포함한다.
+
+- `prev_hash` : 직전 라인의 `line_hash` (없으면 `null`).
+- `line_hash` : `sha256(JSON.stringify({...event, at, prev_hash}))`.
+
+gate 가 `validateAuditChain` 으로 chain 무결성을 검증해 위반 시 `audit-integrity` finding (§3.10) 을 추가한다.
+
+### 9.2 Audit anchor (Phase C 후속 도입)
+
+gate 가 매 실행마다 `firstHash` / `lastHash` / `lineCount` 를 `.harness/audit-anchor.json` 에 보관. 다음 gate 가 이전 anchor 와 비교해 append-only 위반을 잡는다.
+
+- `firstHash` 가 바뀌면 chain 재구성/리셋 → 위변조 의심.
+- `lineCount` 가 감소하면 라인 삭제 → 위변조 의심.
+- `lineCount` 증가 + `firstHash` 유지는 정상 (append-only).
 
 ## 10. 의존성 신뢰 모델
 

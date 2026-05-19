@@ -103,7 +103,9 @@ harness spec [--non-interactive] [--answers <file>]
 ```
 
 - Gstack식 7문항 강제 → SPEC.md.
-- 거부 : `context.md` 없음 → 10. 빈/TBD 답변 → 1.
+- **interactive 모드 (TTY)** : 명령 호출 시 7문항을 `readline` 으로 순서대로 받음 (Phase C 후속에서 활성화).
+- **non-interactive 모드** : `--non-interactive` 와 함께 `--answers <file>` (JSON) 필수. TTY 가 아니면 자동 fallback.
+- 거부 : `context.md` 없음 → 10. 빈/TBD 답변 → 1. 비-TTY + `--answers` 부재 → 1.
 
 ### 3.5 `harness plan`
 
@@ -228,6 +230,7 @@ harness report [--since <stage>]
 ```
 
 - 현재 단계 + 마지막 verdict + 열린 finding + 다음 추천 명령.
+- `--since <stage>` : 지정 단계 이후만 `stagesPresent` 에 포함. 알 수 없는 stage → exit 1.
 - 부작용 없음 (read-only).
 - `--json` 출력 예 :
   ```json
@@ -245,22 +248,31 @@ harness report [--since <stage>]
 ### 3.14 `harness export <tool>`
 
 ```text
-harness export claude
-harness export cursor       # Phase D
-harness export codex        # Phase D
-harness export generic      # 표준 export 포맷
+harness export claude       # .claude/agents, skills, CLAUDE.md
+harness export cursor       # .cursor/rules, context
+harness export codex        # .codex/agents, policy.md
+harness export generic      # .export/<team|policy>.* + manifest.json
 ```
 
-- `.harness/` 표준을 외부 도구 형식으로 변환.
+- `.harness/` 표준을 외부 도구 형식으로 변환. 4종 모두 활성 (Phase D 후속에서 codex/generic 추가).
 - claude :
   - 입력 : `.harness/team.json`, `skills-map.json`, `quality-policy.md`, `orchestrator.md`.
   - 출력 : `.claude/agents/*.md`, `.claude/skills/*.md`, `CLAUDE.md`(포인터).
+- cursor :
+  - 입력 : `.harness/team.json`, `rules.json`, `quality-policy.md`, `skills-map.json`.
+  - 출력 : `.cursor/rules/{quality-policy,applied-rules}.md`, `.cursor/context/<agent>.md`.
+- codex :
+  - 입력 : `.harness/team.json`, `quality-policy.md`, `skills-map.json`, `orchestrator.md`.
+  - 출력 : `.codex/agents/<id>.md`, `.codex/policy.md`.
+- generic :
+  - 입력 : 위 모두 + `rules.json`, `hooks.json`.
+  - 출력 : `.export/<원본 파일 그대로>` + `.export/manifest.json` (어떤 파일이 복사됐는지 기록).
 - 거부 :
   - 알 수 없는 tool → 1.
   - 입력 화이트리스트 외 경로 접근 시도 → 70 (보안 위반).
   - `.harness/team.json` 없음 → 10.
 - **결정적**: 동일 입력 → 동일 출력. 시간/랜덤 의존 금지.
-- **단방향**: 본 명령은 `.claude/` 등을 읽지 않는다.
+- **단방향**: 본 명령은 `.claude/`, `.cursor/`, `.codex/`, `.export/` 를 읽지 않는다.
 
 ## 4. 종료 코드 우선순위
 

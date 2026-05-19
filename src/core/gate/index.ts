@@ -8,7 +8,14 @@ import type { StageDeps } from "../stage-runner.js";
 import { ALL_RULES, type RuleContext, type RuleFinding } from "../../rules/index.js";
 import { parseUnifiedDiff } from "../../utils/diff.js";
 import { isoNow } from "../../utils/time.js";
-import { appendAuditEvent, readAuditChain } from "../../utils/audit.js";
+import {
+  appendAuditEvent,
+  readAuditChain,
+  computeAnchor,
+  compareAnchor,
+  readAuditAnchor,
+  writeAuditAnchor
+} from "../../utils/audit.js";
 import { makeFinding } from "../../rules/types.js";
 import { computeVerdict, type Verdict } from "./verdict.js";
 
@@ -110,6 +117,20 @@ export async function runGate(
       )
     );
   }
+  // audit anchor 비교 — 이전 anchor 가 있으면 append-only 위반 감지.
+  const prevAnchor = await readAuditAnchor(deps.cwd);
+  const currentAnchor = computeAnchor(auditChain.rawText, isoNow(deps.clock));
+  const anchorCmp = compareAnchor(prevAnchor, currentAnchor);
+  if (!anchorCmp.match) {
+    passTwo.push(
+      makeFinding(
+        "audit-integrity",
+        "high",
+        `audit anchor mismatch: ${anchorCmp.reason}`
+      )
+    );
+  }
+  await writeAuditAnchor(currentAnchor, deps.cwd);
 
   const verdict = computeVerdict({
     findings: passTwo,

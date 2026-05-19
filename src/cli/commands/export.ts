@@ -1,6 +1,8 @@
 import type { Command } from "commander";
 import { exportClaude } from "../../integrations/claude/export.js";
 import { exportCursor } from "../../integrations/cursor/export.js";
+import { exportCodex } from "../../integrations/codex/export.js";
+import { exportGeneric } from "../../integrations/generic/export.js";
 import { resolveWorkspaceCwd } from "../../core/stage-runner.js";
 import { runStage } from "./_run.js";
 
@@ -42,7 +44,24 @@ export function registerExport(program: Command): void {
         );
         return;
       }
-      console.error(`[stub] export ${tool} is reserved for Phase E or later`);
-      process.exitCode = 0;
+      if (tool === "codex") {
+        await runStage(
+          () => exportCodex({ cwd }),
+          (r) => {
+            console.error(
+              `[ok] exported ${r.agents.length} agent(s) and policy at ${r.policy}`
+            );
+          }
+        );
+        return;
+      }
+      await runStage(
+        () => exportGeneric({ cwd }),
+        (r) => {
+          console.error(
+            `[ok] exported ${r.files.length} file(s) under .export/, manifest at ${r.manifest}`
+          );
+        }
+      );
     });
 }

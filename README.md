@@ -153,8 +153,13 @@ CLI 상세는 [docs/CLI.md](docs/CLI.md). 단계별 산출물은 [docs/WORKFLOW.
 
 ## 9. 현재 상태
 
-- **Phase A (문서 부트스트랩)** — 본 README 가 작성된 시점에 완료. 10개 문서 모두 존재.
-- **Phase B (MVP 구현)** — 시작 전. [TASKS.md](TASKS.md) 의 task-id 기준으로 진행 예정.
+- **Phase A — 문서 부트스트랩** : 완료 (10개 문서).
+- **Phase B — MVP 구현 (M1·M2·M3a·M3b)** : 완료. CLI 14개 + rule 9종 + core 14단계 + T-SEC 16/16.
+- **Phase C — self-hosting + memory 5건** : 완료 (audit.jsonl 자동 어펜드 + chain hash + anchor 도입을 본 도구 14단계로).
+- **Phase D — real adapters + export 4종 + 의견 불일치 정책** : 완료 (claude/cursor/codex/generic export, codex/claude real adapter timeout + stderr 마스킹).
+- **Phase E — 다언어 (Python/Go) 확장** : 완료.
+- **Phase F — 협업 모델** : 보류 (외부 수요 조건부).
+- `npm test` 현재 : **190/190 통과** (Phase E 까지 의 모든 회귀 + Phase C/D 후속).
 - 자세한 마일스톤 : [docs/ROADMAP.md](docs/ROADMAP.md) §9.
 
 ## 10. 기여·실행 정책

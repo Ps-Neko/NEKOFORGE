@@ -100,14 +100,14 @@ SECURITY §7 의 16 케이스. Phase B 종료 조건.
 
 ## 7. 문서·예제 동기화 (D-*)
 
-| id | title | depends | acceptance | tests | rollback |
-|---|---|---|---|---|---|
-| D-001 | examples/01-basic-flow | B2-031 이상 | SPEC ~ apply 까지 산출물 샘플. | smoke : 시드로 gate 재현. | 디렉터리 삭제. |
-| D-002 | examples/02-blocked-by-secret | B4-050, B2-031 | BLOCK 재현. | smoke. | - |
-| D-003 | examples/03-needs-human-review | B4-054, B2-032 | `.env` 변경 + approval.txt 샘플 유/무 비교. | smoke. | - |
-| D-004 | examples/04-codex-missing | B4-058, B2-031 | 고위험 + 어댑터 부재 시나리오. | smoke. | - |
-| D-005 | examples/05-export-claude | B3-042 | `harness export claude` 결과물 샘플. | smoke + 결정성. | - |
-| D-010 | README 30초 path 실측 갱신 | B2-031, D-001 | README §3 명령이 실제 출력과 ±5 토큰 이내. | manual + 자동. | 이전 README 복원. |
+| id | title | depends | acceptance | tests | rollback | status |
+|---|---|---|---|---|---|---|
+| D-001 | examples/01-basic-flow | B2-031 이상 | SPEC ~ apply 까지 산출물 샘플. | smoke : 시드로 gate 재현. | 디렉터리 삭제. | **완료** (examples/01-basic-flow + phase-c-dogfood 두 사례) |
+| D-002 | examples/02-blocked-by-secret | B4-050, B2-031 | BLOCK 재현. | smoke. | - | **완료** |
+| D-003 | examples/03-needs-human-review | B4-054, B2-032 | `.env` 변경 + approval.txt 샘플 유/무 비교. | smoke. | - | **완료** |
+| D-004 | examples/04-codex-missing | B4-058, B2-031 | 고위험 + 어댑터 부재 시나리오. | smoke. | - | **완료** |
+| D-005 | examples/05-export-claude | B3-042 | `harness export claude` 결과물 샘플. | smoke + 결정성. | - | **완료** |
+| D-010 | README 30초 path 실측 갱신 | B2-031, D-001 | README §3 명령이 실제 출력과 ±5 토큰 이내. | manual + 자동. | 이전 README 복원. | 갱신 |
 
 ## 8. 진척 추적
 
