@@ -148,7 +148,7 @@ export async function runGate(
 
   const decision = {
     schemaVersion: "0.3" as const,
-    project: "verified-harness",
+    project: "nekoforge",
     taskId: input.taskId ?? "TASK-UNKNOWN",
     workflowStage: "gate",
     verdict: verdict.verdict,

@@ -196,7 +196,7 @@ test("T-SEC-07: apply against BLOCK verdict exits 4", async (t) => {
   t.after(ws.cleanup);
   await overwriteJson(ws.cwd, "decision.json", {
     schemaVersion: "0.3",
-    project: "verified-harness",
+    project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
     verdict: "BLOCK",
@@ -234,7 +234,7 @@ test("T-SEC-09: tampered decision.json detected → apply refused", async (t) =>
   t.after(ws.cleanup);
   await overwriteJson(ws.cwd, "decision.json", {
     schemaVersion: "0.3",
-    project: "verified-harness",
+    project: "nekoforge",
     taskId: "TASK-001",
     workflowStage: "gate",
     verdict: "PASS",

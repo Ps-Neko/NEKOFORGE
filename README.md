@@ -1,9 +1,11 @@
-# Verified AI Development Harness (v3)
+# NEKOFORGE — Verified AI Development Harness
 
 > AI 가 코드를 만들 수는 있어도, AI 가 만든 변경은 **독립 검증과 사람 승인 없이 적용될 수 없다**. 이 한 줄을 실제로 강제하는 local-first CLI.
 
-버전 : 0.3 (Phase A · 문서 부트스트랩 단계)
-작성일 : 2026-05-18
+[NEKOWORK](https://github.com/Ps-Neko/NEKOWORK) 가 좁고 깊은 **검증 게이트**라면, NEKOFORGE 는 그 사상을 1개 단계(gate/apply)로 흡수해 **14단계 통합 공정**으로 확장한 가족 도구다. 7개 축(Gstack · Superpowers · ECC · revfactory/harness · OMC · Codex · NEKOWORK식 Gate)을 역할별로 분리해 직렬화한다.
+
+버전 : 0.3 (Phase A~E 완료)
+작성일 : 2026-05-18 (Phase A) · 2026-05-19 (Phase D 후속 + 이름 변경)
 
 ---
 
