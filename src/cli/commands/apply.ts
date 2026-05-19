@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { buildDeps, resolveWorkspaceCwd } from "../../core/stage-runner.js";
 import { runApply } from "../../core/apply/index.js";
+import { runMemoryAdd } from "../../core/memory/index.js";
 import { AutoApplyBlockedError } from "../../rules/auto-apply-block.js";
 import { appendAuditEvent } from "../../utils/audit.js";
 
@@ -18,16 +19,31 @@ export function registerApply(program: Command): void {
     .requiredOption("--approved", "explicit approval flag (no alias)")
     .option("--dry-run", "run blocking algorithm without applying")
     .action(async (opts: ApplyOpts) => {
+      const deps = buildDeps();
       try {
         const result = await runApply(
           {
             approved: opts.approved === true,
             dryRun: opts.dryRun === true
           },
-          buildDeps()
+          deps
         );
         console.error(`[ok] ${result.reason}`);
         console.error(`[log] ${result.applyLogPath}`);
+        // Codex re-review #3 (Medium) — apply 통과 시 memory 자동 적재.
+        if (result.applied) {
+          await runMemoryAdd(
+            {
+              kind: "milestone_passed",
+              summary: `apply passed (verdict via decision.json)`,
+              relatedTaskId: "apply-auto",
+              sourceVerdict: "apply_ok"
+            },
+            deps
+          ).catch(() => {
+            // memory 적재 실패가 apply 자체 결과를 바꾸지 않는다.
+          });
+        }
         if (!result.applied) {
           console.error(`[info] dry-run only; no apply happened`);
         } else {

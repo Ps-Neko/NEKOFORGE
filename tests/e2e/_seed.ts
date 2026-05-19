@@ -53,6 +53,21 @@ export async function seedHarness(): Promise<SeededWorkspace> {
   await runPlan({}, deps);
   await runDesign({ pattern: "Pipeline" }, deps);
   await runPolicy({}, deps);
+
+  // 테스트 시드는 외부 spawn 회피를 위해 hooks 를 internal:noop 로 덮어쓴다.
+  // 실제 사용자 환경에서는 quality-policy 의 default (npx tsc --noEmit 등) 이 동작.
+  await deps.artifact.writeJson(
+    "hooks.json",
+    {
+      schemaVersion: "0.3",
+      hooks: [
+        { id: "noop-pre", type: "pre-tool", command: "internal:noop" },
+        { id: "noop-post", type: "post-tool", command: "internal:noop" }
+      ]
+    },
+    "hooks"
+  );
+
   await runTeam(deps);
   await runWork({ taskId: "TASK-001" }, deps);
   await runReview(

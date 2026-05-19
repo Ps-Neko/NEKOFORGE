@@ -10,7 +10,7 @@ import { mkdtemp, rm, mkdir, writeFile, readFile, stat } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { seedHarness } from "../e2e/_seed.js";
-import { runApply } from "../../src/core/apply/index.js";
+import { runApply, ApplyDriftError } from "../../src/core/apply/index.js";
 import { runMemoryAdd } from "../../src/core/memory/index.js";
 import { runHooks } from "../../src/hooks/runner.js";
 import type { Hook } from "../../src/hooks/types.js";
@@ -79,19 +79,17 @@ test("Codex #1: work writes pending patch when diff captured", async (t) => {
   }
 });
 
-// === Codex #1: apply 가 pending → applied 로 이동 ===
-test("Codex #1: apply promotes pending patch to applied", async (t) => {
+// === Codex #1: apply 가 pending → applied 로 이동 (drift 일치 시) ===
+test("Codex #1: apply promotes pending patch to applied when diff matches", async (t) => {
   const ws = await seedHarness();
   t.after(ws.cleanup);
-  // seedHarness 가 .harness/pending/TASK-001.patch 를 만들지 않을 수 있어 수동 시드.
+  const pendingDiff = "diff --git a/x b/x\n";
   await mkdir(join(ws.cwd, ".harness", "pending"), { recursive: true });
   await writeFile(
     join(ws.cwd, ".harness", "pending", "TASK-001.patch"),
-    "diff --git a/x b/x\n",
+    pendingDiff,
     "utf8"
   );
-
-  // 정상 verdict 의 decision.json 직접 작성
   await writeFile(
     join(ws.cwd, ".harness", "decision.json"),
     JSON.stringify({
@@ -110,6 +108,49 @@ test("Codex #1: apply promotes pending patch to applied", async (t) => {
     "utf8"
   );
 
-  await runApply({ approved: true }, ws.deps);
+  await runApply(
+    { approved: true, diffReader: () => pendingDiff },
+    ws.deps
+  );
   await stat(join(ws.cwd, ".harness", "applied", "TASK-001.patch"));
+});
+
+// === Codex re-review #2 (Major): drift 시 ApplyDriftError ===
+test("Codex re-review #2: apply rejects when workingtree drifted from pending patch", async (t) => {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+  const pendingDiff = "diff --git a/original b/original\n";
+  await mkdir(join(ws.cwd, ".harness", "pending"), { recursive: true });
+  await writeFile(
+    join(ws.cwd, ".harness", "pending", "TASK-001.patch"),
+    pendingDiff,
+    "utf8"
+  );
+  await writeFile(
+    join(ws.cwd, ".harness", "decision.json"),
+    JSON.stringify({
+      schemaVersion: "0.3",
+      project: "nekoforge",
+      taskId: "TASK-001",
+      workflowStage: "gate",
+      verdict: "PASS",
+      riskLevel: "low",
+      humanApprovalRequired: false,
+      humanApproved: false,
+      evidence: {},
+      apply: { allowed: true, reason: "" },
+      deterministicRules: { status: "passed", triggeredRules: [] }
+    }),
+    "utf8"
+  );
+
+  // 사용자가 work 이후 워킹트리를 추가 변경 → drift
+  await assert.rejects(
+    () =>
+      runApply(
+        { approved: true, diffReader: () => "diff --git a/changed b/changed\n" },
+        ws.deps
+      ),
+    ApplyDriftError
+  );
 });
