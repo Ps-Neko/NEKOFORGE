@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-10-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #10 — 5라운드 문서 정합 마감 직후 자가 검증. doc-only 변경에 대해 deterministic rule 미발화 (정확), worker-missing-required 정확 발화. v0.5 정합 사이클 종결.",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T01:30:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "본 회차로 v0.5 내부 정합 완료. 다음 진척은 외부 신호 (Codex review 응답 또는 외부 사용자 PR) 도착 필요."
+}
