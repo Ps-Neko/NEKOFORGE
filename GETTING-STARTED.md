@@ -21,18 +21,37 @@ $ npm run build
 
 ```bash
 $ npm link
-$ harness --version
+$ nekoforge --version          # (또는 harness — 같은 명령)
 0.5.0-alpha.0
 ```
 
-## 2. 프로젝트에서 init (1분)
+## 2. 환경 점검 (선택, 30초)
 
-본 도구는 본인의 코드 repo 안에서 사용한다. 별도 디렉터리에서 시험할 거면 빈 디렉터리에서:
+```bash
+$ nekoforge doctor
+```
+
+12 검사 후 fix hint 출력. `.harness/` 가 없어도 OK — 다음 단계 안내함.
+
+## 3. 프로젝트에서 init (1분)
+
+### 3-A. preset 한 줄 (권장)
+
+본 도구가 처음이면 preset 으로 시작:
+
+```bash
+$ nekoforge init --preset cli-tool
+# 또는: --preset web-ui | backend-api | library
+```
+
+preset 이 자동 시드: workers (profile) + rule-packs (template required) + skill-packs + quality-contract (placeholder productIntent).
+
+### 3-B. 수동 (전체 14단계 학습용)
 
 ```bash
 $ mkdir try-nekoforge && cd try-nekoforge
 $ git init
-$ harness init
+$ nekoforge init
 [ok] D:\...\try-nekoforge\.harness created.
 [next] harness ask "<goal>"
 ```

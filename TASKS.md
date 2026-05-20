@@ -197,6 +197,32 @@ B4-* + B2-031..032  ──▶  T-SEC-01..16  ──▶  D-*  ──▶  M4 (ROAD
 | SH-010 | 문서 정합 마감 검증 | ✓ |
 | SH-011 | negative fixture 5→10 확장 + cross-rule interference 발견 (BENCHMARKS.md §4.A 회피 가이드 추가) | ✓ |
 
+## 7.E 9점 미만 영역 9점화 (v0.5 후속, 2026-05-20)
+
+| id | 제목 | 결과 |
+|---|---|---|
+| UX-001 | `harness doctor` 12 검사 + JSON 출력 | ✓ |
+| UX-002 | `harness init --preset <cli-tool\|web-ui\|backend-api\|library>` | ✓ |
+| UX-003 | README 10-minute first verdict + stale 수치 제거 | ✓ |
+| WF-201 | `harness dispatch --all` + worker-run-manifest + worker-handoff | ✓ |
+| WF-202 | `harness worker-result validate` + .harness/worker-result-validation.{md,json} | ✓ |
+| WF-203 | gate missing worker fix-hint 자동 첨부 | ✓ |
+| WF-204 | docs/FUTURE-WORKER-RUNTIME.md (Phase WF-3 후보 보존) | ✓ |
+| RP-201 | 5 신규 rule pack (docs-quality / release-evidence / api-safety / frontend-accessibility / dependency-risk) | ✓ |
+| RP-202 | 6 신규 skill pack (testing-quality / security-review-writing / architecture-review-writing / release-note-writing / migration-writing / external-review-prep) | ✓ |
+| RP-203 | rule-pack / skill-pack audit 강화 (template coverage / unknown / missing recommended) | ✓ |
+| DX-001 | package.json bin: nekoforge + harness alias | ✓ |
+| DX-002 | CLI program description NEKOFORGE 전면 | ✓ |
+| EV-001 | docs/ALPHA-RECRUITMENT.md | ✓ |
+| EV-002 | docs/EXTERNAL-VALIDATION-TEMPLATE.md | ✓ |
+| EV-003 | .github/ISSUE_TEMPLATE/external-validation.yml | ✓ |
+| QA-001 | fixture 25→30 (api-safety 2 + dependency 3) | ✓ |
+| QA-002 | benchmark report 개선 (group recall/FP/positives/negatives) + "local fixtures" 표현 | ✓ |
+| SR-005 | self-review v0.5 (Finding #H1 canWriteDecision const false / #M1 detectForbiddenActions 부정형 회피) | ✓ |
+| PH-001 | placeholder rule 7 휴리스틱 (stale-count / missing-release-note / missing-rate-limit / unsafe-error-exposure / postinstall-script / new-runtime-dependency / interactive-div) | ✓ |
+| PH-002 | Phase WF-3 prototype (src/workers/adapter.ts + shellWorkerAdapterStub) | ✓ |
+| PH-003 | examples/00-first-verdict/ — 외부 사용자 10분 walkthrough | ✓ |
+
 ## 10. 본 문서가 답하지 않는 것
 
 - 제품 정체성 → PRODUCT.md

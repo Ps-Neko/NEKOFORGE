@@ -100,12 +100,13 @@ ARCHITECTURE §13 의 실패 모드 표와 일치.
 ### 3.1 `harness init`
 
 ```text
-harness init [--force]
+harness init [--force] [--preset <cli-tool|web-ui|backend-api|library>]
 ```
 
 - `.harness/` 디렉터리와 기본 설정 생성.
 - 파일 : `.harness/config.json`, `.harness/audit.jsonl`(빈), `.harness/.gitignore`(`approval.txt`, `config.json` 등 무시).
-- 거부 : `.harness/` 이미 존재 + `--force` 미지정 → exit 11.
+- `--preset` (v0.5 Phase UX): workers (profile=standard/strict) + rule-packs default + skill-packs default + quality-contract (placeholder productIntent) 자동 시드. 자동 apply 또는 자동 코드 변경은 하지 않음.
+- 거부 : `.harness/` 이미 존재 + `--force` 미지정 → exit 11. 알 수 없는 preset → exit 1.
 
 ### 3.2 `harness ask "<goal>"`
 
@@ -368,24 +369,28 @@ harness workers validate
 - `workers.json` (profile + 8 worker role + roleSeparation) 관리.
 - `validate`: role separation 위반 시 exit 10.
 
-### 3.21 `harness dispatch` (v0.5 신규)
+### 3.21 `harness dispatch` (v0.5 + Phase WF-2)
 
 ```text
 harness dispatch <task-id> --worker <role>
+harness dispatch <task-id> --all [--profile <minimal|standard|strict>]
 ```
 
-- worker prompt 생성 (`.harness/worker-runs/<task>/<role>.prompt.md`).
-- worker 가 직접 result.md/json 작성 후 다음 명령으로 import.
+- 단일 worker: prompt 생성 (`.harness/worker-runs/<task>/<role>.prompt.md`).
+- `--all`: workers.json 의 profile required 전체 worker 에 대해 prompt + `worker-run-manifest.json` + `worker-handoff.md` 생성.
+- worker 가 직접 result.md/json 작성 후 `harness worker-result import` 로 회수.
 
-### 3.22 `harness worker-result <subcommand>` (v0.5 신규)
+### 3.22 `harness worker-result <subcommand>` (v0.5 + Phase WF-2)
 
 ```text
 harness worker-result import <task-id> --worker <role> --file <result.md> [--json <result.json>]
 harness worker-result list <task-id>
 harness worker-result show <task-id> --worker <role>
+harness worker-result validate <task-id> [--profile <name>]
 ```
 
-- import 시 body 의 forbidden action 패턴 자동 검사 → critical finding 자동 추가.
+- `import` 시 body 의 forbidden action 패턴 자동 검사 → critical finding 자동 추가.
+- `validate`: required worker / schema / role / finding / evidence 경로 검증 → `.harness/worker-result-validation.{md,json}`. fail 시 exit 10.
 
 ### 3.23 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
 
@@ -410,8 +415,19 @@ harness skill-pack status
 harness skill-pack audit
 ```
 
-- 7 pack 큐레이션 (typescript-quality, backend-api-quality, web-ui-quality, cli-tool-quality, library-quality, release-readiness, evidence-writing).
+- 13 pack 큐레이션 (typescript-quality / backend-api-quality / web-ui-quality / cli-tool-quality / library-quality / release-readiness / evidence-writing + Phase RP-2 신규 6: testing-quality / security-review-writing / architecture-review-writing / release-note-writing / migration-writing / external-review-prep).
 - skill pack 누락은 직접 BLOCK 아님 — PASS_WITH_WARNINGS 압력.
+
+### 3.25 `harness doctor` (v0.5 + Phase UX)
+
+```text
+harness doctor [--json]
+```
+
+- 환경 + `.harness/` 워크스페이스 12 항목 진단 (Node 버전, git, package.json, node_modules, test script, fixtures, workers.json, rule-packs.json, skill-packs.json, quality-contract.json 등).
+- 산출: `.harness/doctor-report.{md,json}` (`.harness/` 존재 시).
+- `--json`: stdout 으로 JSON 한 줄. 자동화 친화적.
+- 비-목표: 자동 fix 시도 없음. fix hint 만 제공.
 
 ## 4. 종료 코드 우선순위
 
