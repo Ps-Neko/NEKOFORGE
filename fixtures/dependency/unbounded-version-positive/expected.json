@@ -1,0 +1,4 @@
+{
+  "verdict": "PASS_WITH_WARNINGS",
+  "triggeredRules": ["unbounded-version-risk"]
+}

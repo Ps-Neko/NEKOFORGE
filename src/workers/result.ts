@@ -163,3 +163,122 @@ export async function collectTaskWorkerResults(
   }
   return out;
 }
+
+/**
+ * Phase WF-2 — worker-result validate.
+ * required worker / schema / forbidden action / role consistency / finding 카운트.
+ */
+export interface ValidateResult {
+  taskId: string;
+  ok: boolean;
+  checks: Array<{ id: string; status: "ok" | "warn" | "fail"; message: string }>;
+  summary: { ok: number; warn: number; fail: number };
+}
+
+export async function validateWorkerResults(
+  taskId: string,
+  requiredRoles: ReadonlyArray<string>,
+  deps: StageDeps
+): Promise<ValidateResult> {
+  const checks: ValidateResult["checks"] = [];
+  const list = await listWorkerResults({ taskId }, deps);
+  const byRole = new Map(list.map((r) => [r.worker, r]));
+
+  for (const role of requiredRoles) {
+    const entry = byRole.get(role);
+    if (!entry) {
+      checks.push({
+        id: `required:${role}`,
+        status: "fail",
+        message: `worker-result missing for ${role}`
+      });
+      continue;
+    }
+    if (!entry.hasJson) {
+      checks.push({
+        id: `required:${role}`,
+        status: "fail",
+        message: `${role}.result.json missing (only .md present)`
+      });
+      continue;
+    }
+    const json = await deps.artifact
+      .readJson<WorkerResultJson>(
+        `worker-runs/${taskId}/${role}.result.json`,
+        "worker-result"
+      )
+      .catch(() => null);
+    if (!json) {
+      checks.push({
+        id: `schema:${role}`,
+        status: "fail",
+        message: `${role}.result.json schema invalid`
+      });
+      continue;
+    }
+    if (json.role !== role) {
+      checks.push({
+        id: `role-mismatch:${role}`,
+        status: "fail",
+        message: `result.json.role="${json.role}" but file name implies "${role}"`
+      });
+    }
+    const findings = json.findings ?? [];
+    const critical = findings.filter((f) => f.severity === "critical").length;
+    const high = findings.filter((f) => f.severity === "high").length;
+    if (critical > 0) {
+      checks.push({
+        id: `critical:${role}`,
+        status: "fail",
+        message: `${critical} critical finding(s) in ${role}`
+      });
+    } else if (high > 0) {
+      checks.push({
+        id: `high:${role}`,
+        status: "warn",
+        message: `${high} high finding(s) in ${role}`
+      });
+    } else {
+      checks.push({
+        id: `required:${role}`,
+        status: "ok",
+        message: `${role}.result.json valid`
+      });
+    }
+    if (json.evidence?.result) {
+      const rel = json.evidence.result.replace(/^\.harness\//, "");
+      const hasResultMd = await deps.artifact.exists(rel);
+      if (!hasResultMd) {
+        checks.push({
+          id: `evidence:${role}`,
+          status: "warn",
+          message: `evidence.result file not found: ${json.evidence.result}`
+        });
+      }
+    }
+  }
+
+  const summary = checks.reduce(
+    (acc, c) => ({ ...acc, [c.status]: acc[c.status] + 1 }),
+    { ok: 0, warn: 0, fail: 0 }
+  );
+  return { taskId, ok: summary.fail === 0, checks, summary };
+}
+
+export function renderValidateMd(r: ValidateResult): string {
+  const lines: string[] = [
+    `# Worker Result Validation — ${r.taskId}`,
+    "",
+    `- ok: ${r.summary.ok}`,
+    `- warn: ${r.summary.warn}`,
+    `- fail: ${r.summary.fail}`,
+    "",
+    "## Checks",
+    ""
+  ];
+  for (const c of r.checks) {
+    const icon = c.status === "ok" ? "✓" : c.status === "warn" ? "!" : "✗";
+    lines.push(`- [${icon}] ${c.id}: ${c.message}`);
+  }
+  return lines.join("\n");
+}

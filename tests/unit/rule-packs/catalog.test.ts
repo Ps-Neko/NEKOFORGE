@@ -12,8 +12,8 @@ import {
   isRuleEnabled
 } from "../../../src/rule-packs/resolve.js";
 
-test("catalog: 8 packs defined", () => {
-  assert.equal(RULE_PACK_CATALOG.length, 8);
+test("catalog: 13 packs defined (v0.5 Phase RP-2 adds 5)", () => {
+  assert.equal(RULE_PACK_CATALOG.length, 13);
 });
 
 test("catalog: each pack has at least 1 rule + describe", () => {

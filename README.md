@@ -10,7 +10,7 @@
 
 > NEKOFORGE 는 OMC 처럼 일을 시키는 도구가 아니고, ECC 처럼 스킬을 많이 쌓는 도구도 아니다. 그 도구들이 만든 산출물을 **품질 계약 기준으로 검증하고 출고를 통제하는 공장** 이다.
 
-**현재 상태**: `v0.5.0-alpha` · 14단계 + 24 CLI · Worker Factory (8 worker role) · Rule Pack (8종) + Skill Pack (7종) · 266 tests · benchmark 20/20 (critical recall 1.000, FP rate 0.000) · self-host 6회 통과 · external Codex review 3회 통합.
+**현재 상태**: `v0.5.0-alpha` · 14단계 + 26 CLI (init/doctor 포함) · Worker Factory (8 worker role + 3 profile) · Rule Pack 8종 + Skill Pack 7종 · benchmark = 25 local fixtures (sample recall 1.000, FP 0.000) · self-host 11회 통과 · external Codex review 3회 + self-review 1회 통합.
 
 **Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ 외부 사용자 1명 이상 PR 1개 머지.
 
@@ -41,7 +41,27 @@ Quality Score (8영역 정량) + deterministic verdict → Human Gate → explic
 
 ---
 
-## 30초 사용 흐름
+## 10-minute first verdict
+
+본 도구가 처음이라면 [GETTING-STARTED.md](GETTING-STARTED.md) 의 단계별 가이드를 따르세요. 더 빠른 시작은 preset 한 줄:
+
+```bash
+$ npm install
+$ npm run build
+$ node dist/src/cli/index.js doctor          # 환경 진단 (no .harness 도 OK)
+$ node dist/src/cli/index.js init --preset cli-tool
+$ node dist/src/cli/index.js work TASK-001   # placeholder 채운 후
+$ node dist/src/cli/index.js review
+$ node dist/src/cli/index.js gate            # → verdict
+```
+
+또는 자가 검증 단축 (실 repo .harness/ 무영향):
+
+```bash
+$ node dist/src/cli/index.js self-host --goal "(작업 요약)"
+```
+
+## 30초 사용 흐름 (전체 14단계)
 
 ```bash
 $ harness init                            # .harness/ 워크스페이스 만들기
@@ -191,10 +211,10 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 ## 현재 상태
 
-- **Phase A~E + QF + WF/RP 완료** + Codex feedback rounds (self-host **#3, #4, #5**) + QF self-audit ×2 (#6, #7) + Windows hook fix (#6) + self-host #8, #9 (stub mode).
-- `npm test` : **277/277 통과**.
-- `harness benchmark` : **20 fixture / critical recall 1.000 / FP rate 0.000** (security 9 + architecture 6 + design 5).
-- `depcruise` : **0 violations** (121 modules).
+- **Phase A~E + QF + WF/RP + UX/WF-2/RP-2/DX/EV/QA 완료** + Codex feedback rounds (self-host **#3, #4, #5**) + QF self-audit ×2 (#6, #7) + Windows hook fix (#6) + self-host #8~#11 (stub mode / 정합 / fixture 확장).
+- `npm test` : 전체 테스트 통과 확인 — `npm run verify` 통과.
+- `npm run benchmark` : **local fixtures sample recall 1.000 / FP rate 0.000** (실 외부 벤치마크 아님).
+- `depcruise` : **0 violations**.
 - GitHub Actions CI 활성 (typecheck + lint + depcheck + build + test + benchmark 자동).
 - ROADMAP §9 마일스톤 M0~M8 모두 도달.
 - 외부 검증 **3건 누적** (Codex 2026-05-18~19) + v0.5 검증 요청 발송 (`.review-requests/codex-review-v0.5.md`).

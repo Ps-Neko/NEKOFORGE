@@ -1,13 +1,21 @@
 /**
  * harness worker-result <subcommand> — Phase WF.
  */
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { Command } from "commander";
 import { buildDeps } from "../../core/stage-runner.js";
 import {
   importWorkerResult,
   listWorkerResults,
-  showWorkerResult
+  renderValidateMd,
+  showWorkerResult,
+  validateWorkerResults
 } from "../../workers/result.js";
+import {
+  profileRequiredRoles,
+  readWorkers
+} from "../../workers/index.js";
 import { runStage } from "./_run.js";
 
 export function registerWorkerResult(program: Command): void {
@@ -81,5 +89,58 @@ export function registerWorkerResult(program: Command): void {
         console.error("---");
         console.error(r.md);
       }
+    });
+
+  cmd
+    .command("validate")
+    .description(
+      "Validate worker results for a task (required / schema / forbidden action / findings)"
+    )
+    .argument("<task-id>", "task id")
+    .option(
+      "--profile <name>",
+      "override profile (otherwise read from workers.json)"
+    )
+    .action(async (taskId: string, opts: { profile?: string }) => {
+      await runStage(
+        async () => {
+          const deps = buildDeps();
+          const workers = await readWorkers(deps);
+          if (!workers) {
+            throw new Error(
+              "workers.json missing (run `harness workers init`)"
+            );
+          }
+          const profile = opts.profile ?? workers.profile;
+          const required = profileRequiredRoles(
+            profile as "minimal" | "standard" | "strict"
+          );
+          const result = await validateWorkerResults(taskId, required, deps);
+          await writeFile(
+            join(deps.cwd, ".harness", "worker-result-validation.json"),
+            JSON.stringify(result, null, 2),
+            "utf8"
+          );
+          await writeFile(
+            join(deps.cwd, ".harness", "worker-result-validation.md"),
+            renderValidateMd(result),
+            "utf8"
+          );
+          return result;
+        },
+        (r) => {
+          for (const c of r.checks) {
+            const tag = c.status === "ok" ? "[ok]" : c.status === "warn" ? "[warn]" : "[fail]";
+            console.error(`${tag} ${c.id}: ${c.message}`);
+          }
+          if (!r.ok) {
+            console.error(
+              `[error] ${r.summary.fail} fail check(s). dispatch missing workers + import results.`
+            );
+            process.exit(10);
+          }
+          console.error(`[ok] all required worker results valid.`);
+        }
+      );
     });
 }

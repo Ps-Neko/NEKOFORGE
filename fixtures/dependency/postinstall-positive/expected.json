@@ -1,0 +1,4 @@
+{
+  "verdict": "NEEDS_HUMAN_REVIEW",
+  "triggeredRules": ["hook-injection-risk"]
+}

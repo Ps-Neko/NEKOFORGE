@@ -33,6 +33,7 @@ import { registerDispatch } from "./commands/dispatch.js";
 import { registerWorkerResult } from "./commands/worker-result.js";
 import { registerRulePack } from "./commands/rule-pack.js";
 import { registerSkillPack } from "./commands/skill-pack.js";
+import { registerDoctor } from "./commands/doctor.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
 
@@ -44,7 +45,8 @@ function buildProgram(): Command {
   program
     .name("harness")
     .description(
-      "Verified AI Development Harness — local-first verified gate, deterministic rules, Human Gate, explicit apply."
+      "NEKOFORGE — local-first AI Development Factory. Command alias: nekoforge (preferred) / harness (compatible). " +
+        "Quality Contract → Worker Factory → Rule/Skill Pack → deterministic gate → Human Gate → explicit apply."
     )
     .version(VERSION, "--version", "print version");
 
@@ -78,6 +80,7 @@ function buildProgram(): Command {
   registerWorkerResult(program);
   registerRulePack(program);
   registerSkillPack(program);
+  registerDoctor(program);
 
   program.showHelpAfterError(
     "(run `harness <command> --help` for command-specific help)"

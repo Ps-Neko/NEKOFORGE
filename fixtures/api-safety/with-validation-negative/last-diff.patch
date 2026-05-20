@@ -1,0 +1,14 @@
+diff --git a/src/api/signup.ts b/src/api/signup.ts
+@@ -1,4 +1,8 @@
+ import { z } from "zod";
++const schema = z.object({ email: z.string().email(), password: z.string().min(8) });
+ export async function signup(req: Request) {
++  const input = schema.parse(req.body);
++  return create(input);
+   return next(req);
+ }
+diff --git a/tests/api/signup.test.ts b/tests/api/signup.test.ts
+@@ -1,3 +1,4 @@
+ import { test } from "node:test";
+ test("signup: pass", () => { /* stub */ });
++test("signup: validation rejects short password", () => { /* stub */ });

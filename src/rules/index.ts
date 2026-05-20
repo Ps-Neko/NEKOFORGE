@@ -22,6 +22,8 @@ import { circularDependencyRiskRule } from "./architecture/circular-dependency-r
 import { accessibilityRiskRule } from "./design/accessibility-risk.js";
 import { designTokenViolationRule } from "./design/design-token-violation.js";
 import { responsiveBreakRiskRule } from "./design/responsive-break-risk.js";
+import { missingInputValidationRiskRule } from "./api/missing-input-validation-risk.js";
+import { unboundedVersionRiskRule } from "./dependency/unbounded-version-risk.js";
 
 export const ALL_RULES: readonly DeterministicRule[] = [
   secretFallbackRule,
@@ -46,6 +48,15 @@ export const ALL_DESIGN_RULES: readonly DeterministicRule[] = [
   accessibilityRiskRule,
   designTokenViolationRule,
   responsiveBreakRiskRule
+];
+
+// Phase RP-2 — api-safety / dependency-risk pack 의 deterministic rule.
+export const ALL_API_RULES: readonly DeterministicRule[] = [
+  missingInputValidationRiskRule
+];
+
+export const ALL_DEPENDENCY_RULES: readonly DeterministicRule[] = [
+  unboundedVersionRiskRule
 ];
 
 export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./auto-apply-block.js";
