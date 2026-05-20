@@ -195,6 +195,7 @@ B4-* + B2-031..032  ──▶  T-SEC-01..16  ──▶  D-*  ──▶  M4 (ROAD
 | SH-008 | v0.5 외부 Codex 검증 요청 직후 자가 점검 | ✓ |
 | SH-009 | --with-worker-stubs 옵션 추가 (자가 검증 깊이 +1) | ✓ |
 | SH-010 | 문서 정합 마감 검증 | ✓ |
+| SH-011 | negative fixture 5→10 확장 + cross-rule interference 발견 (BENCHMARKS.md §4.A 회피 가이드 추가) | ✓ |
 
 ## 10. 본 문서가 답하지 않는 것
 
