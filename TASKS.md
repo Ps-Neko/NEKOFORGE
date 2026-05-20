@@ -222,6 +222,8 @@ B4-* + B2-031..032  ──▶  T-SEC-01..16  ──▶  D-*  ──▶  M4 (ROAD
 | PH-001 | placeholder rule 7 휴리스틱 (stale-count / missing-release-note / missing-rate-limit / unsafe-error-exposure / postinstall-script / new-runtime-dependency / interactive-div) | ✓ |
 | PH-002 | Phase WF-3 prototype (src/workers/adapter.ts + shellWorkerAdapterStub) | ✓ |
 | PH-003 | examples/00-first-verdict/ — 외부 사용자 10분 walkthrough | ✓ |
+| PH-004 | placeholder rule 10 휴리스틱 (docs +2 / release-evidence +3 / api +1 / dep +1 / frontend +3) — deterministic rule 25→35 | ✓ |
+| SH-012 | self-host #12 — placeholder rule 추가 후 자가 검증 + fixture 정밀화 (caret-version + package-lock 동반) | ✓ |
 
 ## 10. 본 문서가 답하지 않는 것
 

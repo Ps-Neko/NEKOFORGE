@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-12-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #12 — placeholder rule 10종 휴리스틱 일괄 구현 + weakness-cleanup 마감 직후 자가 검증. deterministic rule 25→35. verdict NEEDS_HUMAN_REVIEW + no-test-risk + worker-missing-required (정확).",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T03:00:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "info 등급 rule (broken-doc-link / missing-self-host / missing-migration / missing-external-review / missing-loading-state / contrast-token) 다수 — verdict 영향 없이 알림 레이어. benchmark 30/30 유지."
+}

@@ -1,0 +1,8 @@
+{
+  "id": "self-host-12-placeholder-rules-10-implemented-useful",
+  "kind": "useful_rule",
+  "summary": "Phase RP-2 의 placeholder rule 10종이 휴리스틱으로 구현됨. info 등급 6개 + warning 등급 4개. 새 rule 들이 fixture (caret-version-negative) 에 cross-rule interference 발생시켜 fixture 정밀화 (lockfile 동반 추가) — BENCHMARKS.md §4.A 회피 패턴 실적 확인.",
+  "relatedRule": "lockfile-mismatch-risk",
+  "createdAt": "2026-05-20T03:00:00Z",
+  "notes": "info 등급의 가치: verdict 영향 없이 다층 알림. release-evidence pack 의 4 rule 중 3개가 RELEASE-NOTES 갱신 동반 신호 (self-host / migration / external-review). 본 round 가 그 자체로 정직성 신호 — RELEASE-NOTES 갱신 시 본 rule 들이 발화 안 하도록 자체 정합 보장."
+}
