@@ -2,6 +2,16 @@
 
 ## v0.5.0-alpha — Worker Factory + Rule/Skill Pack Upgrade (2026-05-20)
 
+### Self-host 회차 누적 (v0.4→v0.5 동안 #6~#10)
+
+| 회차 | 발견·해결 |
+|---|---|
+| #6 | **Windows .cmd 해상도 결함** 발견. `resolveExecutable` + `cmd.exe /c` 우회로 즉시 해결 (shell:false 정책 유지). |
+| #7 | Phase WF/RP 머지 직후 자가 검증. `workerFactory.status=missing` + `worker-missing-required` 정확 발화. self-host CLI 가 workers init / rule-pack audit / skill-pack audit 자동 호출하도록 보강. |
+| #8 | v0.5 외부 Codex 검증 요청 직후 자가 점검. NEEDS_HUMAN_REVIEW + worker-missing-required (정확). |
+| #9 | `harness self-host --with-worker-stubs` 옵션 추가. 3 worker stub 시드 시 worker 신호 해소 + failedBars 강등 유지 (정직성 보존). |
+| #10 | 문서 정합 마감 검증 (README/ARCHITECTURE/WORKFLOW/SECURITY/HARNESS-DESIGN/QUALITY-POLICY/TASKS 갱신 회수). |
+
 ### Summary
 
 Phase WF (Worker Factory) + Phase RP (Rule/Skill Pack) 도입.
