@@ -23,7 +23,14 @@ import { accessibilityRiskRule } from "./design/accessibility-risk.js";
 import { designTokenViolationRule } from "./design/design-token-violation.js";
 import { responsiveBreakRiskRule } from "./design/responsive-break-risk.js";
 import { missingInputValidationRiskRule } from "./api/missing-input-validation-risk.js";
+import { missingRateLimitRiskRule } from "./api/missing-rate-limit-risk.js";
+import { unsafeErrorExposureRiskRule } from "./api/unsafe-error-exposure-risk.js";
 import { unboundedVersionRiskRule } from "./dependency/unbounded-version-risk.js";
+import { postinstallScriptRiskRule } from "./dependency/postinstall-script-risk.js";
+import { newRuntimeDependencyRiskRule } from "./dependency/new-runtime-dependency-risk.js";
+import { staleCountRiskRule } from "./docs/stale-count-risk.js";
+import { missingReleaseNoteRiskRule } from "./release-evidence/missing-release-note-risk.js";
+import { interactiveDivRiskRule } from "./frontend/interactive-div-risk.js";
 
 export const ALL_RULES: readonly DeterministicRule[] = [
   secretFallbackRule,
@@ -52,11 +59,29 @@ export const ALL_DESIGN_RULES: readonly DeterministicRule[] = [
 
 // Phase RP-2 — api-safety / dependency-risk pack 의 deterministic rule.
 export const ALL_API_RULES: readonly DeterministicRule[] = [
-  missingInputValidationRiskRule
+  missingInputValidationRiskRule,
+  missingRateLimitRiskRule,
+  unsafeErrorExposureRiskRule
 ];
 
 export const ALL_DEPENDENCY_RULES: readonly DeterministicRule[] = [
-  unboundedVersionRiskRule
+  unboundedVersionRiskRule,
+  postinstallScriptRiskRule,
+  newRuntimeDependencyRiskRule
+];
+
+// Phase RP-2 후속 — docs / release-evidence / frontend pack 의 deterministic rule.
+export const ALL_DOCS_RULES: readonly DeterministicRule[] = [
+  staleCountRiskRule
+];
+
+export const ALL_RELEASE_EVIDENCE_RULES: readonly DeterministicRule[] = [
+  missingReleaseNoteRiskRule
+];
+
+// frontend-accessibility pack 의 추가 휴리스틱. accessibility-risk 와 중복 발화 가능.
+export const ALL_FRONTEND_RULES: readonly DeterministicRule[] = [
+  interactiveDivRiskRule
 ];
 
 export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./auto-apply-block.js";

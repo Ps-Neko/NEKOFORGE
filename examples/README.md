@@ -8,6 +8,7 @@
 
 | # | 디렉터리 | 무엇을 보여주는가 |
 |---|---|---|
+| **00** | **[00-first-verdict/](00-first-verdict/)** | **외부 사용자 첫 verdict 10분 walkthrough** — preset + doctor + gate |
 | 01 | [01-basic-flow/](01-basic-flow/) | 30초 path — init → ask → ... → gate → apply |
 | 02 | [02-blocked-by-secret/](02-blocked-by-secret/) | `secret-fallback` rule → BLOCK |
 | 03 | [03-needs-human-review/](03-needs-human-review/) | `dangerous-file-write` → NEEDS_HUMAN_REVIEW + approval token |

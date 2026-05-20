@@ -18,6 +18,9 @@ import {
   ALL_DESIGN_RULES,
   ALL_API_RULES,
   ALL_DEPENDENCY_RULES,
+  ALL_DOCS_RULES,
+  ALL_RELEASE_EVIDENCE_RULES,
+  ALL_FRONTEND_RULES,
   type RuleFinding
 } from "../rules/index.js";
 import { parseUnifiedDiff } from "../utils/diff.js";
@@ -77,7 +80,10 @@ async function runScenario(
     ...ALL_ARCHITECTURE_RULES,
     ...ALL_DESIGN_RULES,
     ...ALL_API_RULES,
-    ...ALL_DEPENDENCY_RULES
+    ...ALL_DEPENDENCY_RULES,
+    ...ALL_DOCS_RULES,
+    ...ALL_RELEASE_EVIDENCE_RULES,
+    ...ALL_FRONTEND_RULES
   ]) {
     findings.push(
       ...(await r.run({ diff, highRiskFlags: {} }))
