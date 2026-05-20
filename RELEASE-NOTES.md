@@ -2,7 +2,33 @@
 
 ## v0.5.0-alpha — Worker Factory + Rule/Skill Pack Upgrade (2026-05-20)
 
-### Self-host 회차 누적 (v0.4→v0.5 동안 #6~#10)
+### 9점 미만 영역 9점화 (2026-05-20)
+
+7 Phase 일괄 — 외부 사용자 유치 / brand 정합성 / placeholder rule 휴리스틱 등 외부 신호 외 자체 가능 영역 마무리:
+
+| Phase | 영역 | 산출 |
+|---|---|---|
+| UX | 즉시 사용성 | `harness doctor` (12 검사) / `harness init --preset <cli-tool\|web-ui\|backend-api\|library>` / README quick path 10-minute first verdict |
+| WF-2 | Worker Factory 실행력 | `harness dispatch --all` + worker-run-manifest / `harness worker-result validate` / gate missing worker fix-hint 자동 첨부 / `docs/FUTURE-WORKER-RUNTIME.md` |
+| RP-2 | Rule/Skill Pack 풍부함 | 5 신규 rule pack (docs-quality / release-evidence / api-safety / frontend-accessibility / dependency-risk) + 6 신규 skill pack (testing-quality / security-review-writing / architecture-review-writing / release-note-writing / migration-writing / external-review-prep) + audit 강화 |
+| DX | 브랜드 정합성 | `package.json` bin: nekoforge + harness alias / CLI description NEKOFORGE 전면 / package-bin 회귀 테스트 |
+| EV | 외부 검증 준비도 | `docs/ALPHA-RECRUITMENT.md` + `docs/EXTERNAL-VALIDATION-TEMPLATE.md` + `.github/ISSUE_TEMPLATE/external-validation.yml` |
+| QA | benchmark 신뢰도 | fixture 25 → 30 (api-safety 2 + dependency 3) + group 별 recall/FP rate / "local fixtures" 표현 정착 |
+| Self-Review | external Codex v0.5 (메타 한계 명시) | Finding #H1 (canWriteDecision/canApply schema const false) + #M1 (detectForbiddenActions 부정형 회피) |
+
+### Placeholder rule 7 휴리스틱 + WF-3 prototype + 00-first-verdict
+
+추가 라운드:
+
+| 영역 | 신규 |
+|---|---|
+| Deterministic rule | docs/stale-count-risk (info) / release-evidence/missing-release-note / api/missing-rate-limit / api/unsafe-error-exposure / dependency/postinstall-script / dependency/new-runtime-dependency (info) / frontend/interactive-div |
+| Phase WF-3 prototype | `src/workers/adapter.ts` interface + shellWorkerAdapterStub (auto-spawn 명시 거부) + resolveWorkerAdapter |
+| 외부 사용자 진입 | `examples/00-first-verdict/` 10분 walkthrough |
+
+총 deterministic rule **25종** (9 security + 4 arch + 3 design + 3 api-safety + 3 dependency + 1 docs + 1 release-evidence + 1 frontend). Rule pack **13** / Skill pack **13** / CLI **26** (doctor 포함) / tests **292** / benchmark **30/30**.
+
+### Self-host 회차 누적 (v0.4→v0.5 동안 #6~#11)
 
 | 회차 | 발견·해결 |
 |---|---|

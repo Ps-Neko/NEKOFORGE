@@ -33,12 +33,16 @@ Quality Contract 기준으로 점수화한 뒤 / Human Gate 전에는
 NEKOFORGE 가 본 도구를 사용해 본인의 변경을 self-host 회수:
 
 ```bash
-$ harness self-host --goal "(PR 설명)"
+$ nekoforge doctor                            # (선택) 환경 점검
+$ nekoforge init --preset <적합 preset>       # (처음만) 본인 프로젝트 타입 시드
+$ nekoforge self-host --goal "(PR 설명)"
 ```
 
 verdict 가 `BLOCK` / `INSUFFICIENT_EVIDENCE` 면 그 PR 은 본 도구가 막아야 할 변경입니다. 원인을 해결해 주세요.
 
 verdict 가 `NEEDS_HUMAN_REVIEW` 면 `.harness/approval.txt` 에 토큰 추가 + PR 본문에 그 근거 명시.
+
+각 명령은 `nekoforge` 또는 `harness` 둘 다 가능 (alias).
 
 ### 2-3. PR 본문에 포함할 것
 

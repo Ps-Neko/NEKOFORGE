@@ -105,7 +105,9 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 - eval-cases : 17건+ (milestone 6 + rule 별 9건 + 외부 점검 2건).
 - 외부 검증 2건 누적 (Codex 2회) — Beta 진입 조건의 "외부 사용자 1명 이상 PR" 영역.
 - **Phase QF 완료** : decision.json schemaVersion 0.3 → 0.4. CLI 18 명령 (init, ask, context, spec, plan, design, policy, team, work, review, gate, apply, report, export, memory, contract, benchmark, run).
-- **Phase WF/RP 완료 (2026-05-20)** : decision.json schemaVersion 0.4 → 0.5. CLI 25 명령 (Phase QF + self-host + workers / dispatch / worker-result / rule-pack / skill-pack). 8 worker role + 3 profile + 8 rule pack + 7 skill pack. T-WF 5건 + T-RP 4건 e2e 통과. 277 tests / benchmark **25/25**. **self-host 11회 통과** (#6 Windows .cmd fix / #7 WF·RP 자가 검증 / #8 v0.5 외부 검증 대기 점검 / #9 --with-worker-stubs / #10 5라운드 문서 정합 / #11 negative fixture 5→10 확장 + cross-rule interference 발견).
+- **Phase WF/RP 완료 (2026-05-20)** : decision.json schemaVersion 0.4 → 0.5. CLI 25 명령. 8 worker role + 3 profile + 8 rule pack + 7 skill pack. T-WF 5건 + T-RP 4건 e2e 통과. self-host 11회 통과 (#6 Windows .cmd / #7 WF·RP 자가 검증 / #8 v0.5 외부 검증 대기 / #9 --with-worker-stubs / #10 5라운드 문서 정합 / #11 negative fixture 확장 + cross-rule interference).
+- **9점 미만 영역 9점화 완료 (2026-05-20)** : 7 Phase 일괄 — UX (`harness doctor` + `init --preset`) / WF-2 (`dispatch --all` + `worker-result validate`) / RP-2 (rule pack 8→13 / skill pack 7→13) / DX (nekoforge + harness alias) / EV (ALPHA-RECRUITMENT + EXTERNAL-VALIDATION-TEMPLATE + issue template) / QA (fixture 25→30 + group recall/FP) / Self-Review v0.5 (Finding #H1: canWriteDecision const false / #M1: detectForbiddenActions 부정형 회피). CLI 25→26.
+- **Placeholder rule 7 + WF-3 prototype + 00-first-verdict (2026-05-20)** : deterministic rule 16→**25** (api-safety 3 + dependency 3 + docs 1 + release-evidence 1 + frontend 1). `src/workers/adapter.ts` interface + shellWorkerAdapterStub (auto-spawn 거부). `examples/00-first-verdict/` 외부 사용자 10분 walkthrough. tests 277→**292** / benchmark 25→**30**.
 
 ## 5. Phase D — 외부 어댑터 실연결 (T+6 ~ T+7 주)
 
