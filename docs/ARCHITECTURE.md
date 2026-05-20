@@ -47,7 +47,16 @@ nekoforge/
 │   ├── QUALITY-POLICY.md
 │   ├── SECURITY.md
 │   ├── ROADMAP.md
-│   └── CLI.md
+│   ├── CLI.md
+│   ├── QUALITY-CONTRACT.md           # v0.4 (Phase QF)
+│   ├── QUALITY-SCORE.md              # v0.4 (Phase QF)
+│   ├── FACTORY-CELLS.md              # v0.4 (Phase QF)
+│   ├── BENCHMARKS.md                 # v0.4 (Phase QF)
+│   ├── INTEGRATIONS-OMC-ECC-HERMES.md # v0.4 (Phase QF)
+│   ├── WORKER-FACTORY.md             # v0.5 (Phase WF)
+│   ├── WORKER-SAFETY.md              # v0.5 (Phase WF)
+│   ├── RULE-PACKS.md                 # v0.5 (Phase RP)
+│   └── SKILL-PACKS.md                # v0.5 (Phase RP)
 ├── package.json
 ├── tsconfig.json
 ├── src/
@@ -67,7 +76,17 @@ nekoforge/
 │   │   │   ├── gate.ts
 │   │   │   ├── apply.ts
 │   │   │   ├── report.ts
-│   │   │   └── export.ts             # subcommand: export claude | cursor | codex
+│   │   │   ├── export.ts             # subcommand: export claude | cursor | codex | generic
+│   │   │   ├── memory.ts             # v0.4 (Phase QF)
+│   │   │   ├── contract.ts           # v0.4 (Phase QF)
+│   │   │   ├── benchmark.ts          # v0.4 (Phase QF)
+│   │   │   ├── run.ts                # v0.4 (Phase QF)
+│   │   │   ├── self-host.ts          # v0.4 후속 (#6)
+│   │   │   ├── workers.ts            # v0.5 (Phase WF) — subcommand
+│   │   │   ├── dispatch.ts           # v0.5 (Phase WF)
+│   │   │   ├── worker-result.ts      # v0.5 (Phase WF) — subcommand
+│   │   │   ├── rule-pack.ts          # v0.5 (Phase RP) — subcommand
+│   │   │   └── skill-pack.ts         # v0.5 (Phase RP) — subcommand
 │   │   └── ui/
 │   ├── core/
 │   │   ├── intake/
@@ -80,10 +99,27 @@ nekoforge/
 │   │   ├── team/
 │   │   ├── work/
 │   │   ├── review/
-│   │   ├── gate/
-│   │   ├── apply/
+│   │   ├── gate/                     # workerFactory / rulePacks / skillPacks 통합 (v0.5)
+│   │   ├── apply/                    # Evidence before Apply (v0.4 Codex review #3)
+│   │   ├── quality-contract/         # v0.4 (Phase QF)
 │   │   └── memory/
-│   ├── rules/                        # deterministic rules (9종)
+│   ├── scoring/                      # v0.4 (Phase QF) — 8 영역 정량 점수 leaf
+│   ├── workers/                      # v0.5 (Phase WF) — leaf (gate 가 import)
+│   │   ├── types.ts                  # WorkerRole / WorkerDef / WorkersJson (cycle 방지)
+│   │   ├── index.ts                  # init / status / readWorkers
+│   │   ├── dispatch.ts               # role 별 prompt 생성
+│   │   ├── validate.ts               # role separation + detectForbiddenActions
+│   │   └── result.ts                 # import / list / show / collectTaskWorkerResults
+│   ├── rule-packs/                   # v0.5 (Phase RP) — leaf
+│   │   ├── catalog.ts                # 8 pack 정의
+│   │   ├── index.ts                  # enable / disable / status
+│   │   └── resolve.ts                # template → required pack 매핑
+│   ├── skill-packs/                  # v0.5 (Phase RP) — leaf
+│   │   ├── catalog.ts                # 7 pack 정의
+│   │   ├── index.ts                  # enable / disable / status / resolve
+│   │   └── render.ts                 # worker prompt 에 guidance 주입
+│   ├── benchmark/                    # v0.4 (Phase QF) — fixture runner
+│   ├── rules/                        # deterministic rules (9 + 4 arch + 3 design)
 │   │   ├── secret-fallback.ts
 │   │   ├── auth-bypass.ts
 │   │   ├── test-deletion.ts
@@ -92,14 +128,31 @@ nekoforge/
 │   │   ├── hook-injection-risk.ts
 │   │   ├── agent-permission-risk.ts
 │   │   ├── auto-apply-block.ts
-│   │   └── codex-missing-risk.ts
-│   ├── hooks/                        # hook 정의/실행 인프라 (ECC 흡수)
+│   │   ├── codex-missing-risk.ts
+│   │   ├── architecture/             # v0.4 (Phase QF) — 4 rule
+│   │   │   ├── large-file-risk.ts
+│   │   │   ├── layer-violation.ts
+│   │   │   ├── untyped-api-risk.ts
+│   │   │   └── circular-dependency-risk.ts
+│   │   └── design/                   # v0.4 (Phase QF) — 3 rule (uiTouched 자동)
+│   │       ├── accessibility-risk.ts
+│   │       ├── design-token-violation.ts
+│   │       └── responsive-break-risk.ts
+│   ├── hooks/                        # hook 정의/실행 (Windows .cmd 우회 #6)
 │   ├── integrations/                 # 외부 도구 adapter
-│   │   ├── codex/                    # ReviewAdapter
+│   │   ├── codex/                    # ReviewAdapter + ExportAdapter
 │   │   ├── claude/                   # ReviewAdapter + ExportAdapter
 │   │   ├── cursor/                   # ExportAdapter
 │   │   └── generic/                  # 표준 export 포맷
-│   ├── schemas/                      # JSON schema (decision · team · ...)
+│   ├── schemas/                      # JSON schema 13종
+│   │   ├── decision.schema.ts        # v0.5
+│   │   ├── team / agent-routing / rules / hooks / codex-findings / eval-case
+│   │   ├── quality-contract.schema.ts  # v0.5
+│   │   ├── quality-score.schema.ts   # v0.5
+│   │   ├── workers.schema.ts         # v0.5 (Phase WF)
+│   │   ├── worker-result.schema.ts   # v0.5 (Phase WF)
+│   │   ├── rule-packs.schema.ts      # v0.5 (Phase RP)
+│   │   └── skill-packs.schema.ts     # v0.5 (Phase RP)
 │   ├── artifact/                     # Artifact 읽기/쓰기 추상화
 │   └── utils/                        # fs · diff · 로깅 무상태 헬퍼
 ├── examples/

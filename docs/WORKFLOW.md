@@ -232,6 +232,59 @@ v3:  spec → plan → harness-design → quality-policy → team
 - **출력** : `.harness/memory.md`, `.harness/eval-cases/*.json`
 - **금지 사항** : 메모리 적재가 verdict 를 사후 변경하지 않음.
 
+## 3.A Phase QF 추가 단계 (v0.4)
+
+### 3.A.1 contract — Quality Contract 강제 (work 전)
+
+- **명령** : `harness contract --template <web-ui|cli-tool|backend-api|library|custom> --task <id>`
+- **책임** : 5 template 의 기본 qualityBars + productIntent 7문항 → `.harness/quality-contract.json` + `QUALITY-CONTRACT.md`.
+- **금지** : `work` 단계가 contract 없으면 진입 거부.
+
+### 3.A.2 benchmark — fixture 기반 정확도 측정
+
+- **명령** : `harness benchmark [--group <name>]`
+- **출력** : `.harness/benchmark-report.md`, `benchmark-results.json` (critical recall / FP rate).
+- **연결** : release mode gate 가 benchmark 결과 강제.
+
+## 3.B Phase WF 추가 단계 (v0.5)
+
+> work 단계 안에서 worker dispatch + result import 가 일어남. 단계 자체는 14단계 유지.
+
+### 3.B.1 workers init — Worker Factory 구성
+
+- **명령** : `harness workers init --profile <minimal|standard|strict>`
+- **책임** : 8 worker role + roleSeparation 정의 → `.harness/workers.json`.
+- **profile** : minimal (impl 1) / standard (impl+test+sec 3) / strict (architect+impl+test+sec+design+release 6).
+
+### 3.B.2 dispatch — worker prompt 생성
+
+- **명령** : `harness dispatch <task-id> --worker <role>`
+- **출력** : `.harness/worker-runs/<task>/<role>.prompt.md`
+- **금지** : worker 가 직접 decision.json 작성 / commit/push/deploy/apply.
+
+### 3.B.3 worker-result import — worker 산출 evidence 저장
+
+- **명령** : `harness worker-result import <task-id> --worker <role> --file <result.md>`
+- **출력** : `.harness/worker-runs/<task>/<role>.result.{md,json}`
+- **자동 검사** : body 의 forbidden action 패턴 (git push, decision.json, harness apply 등) → critical finding 자동 추가.
+- **연결** : gate 가 collectTaskWorkerResults 로 모든 worker result 수집 → decision.json.workerFactory.
+
+## 3.C Phase RP 추가 단계 (v0.5)
+
+> rule pack / skill pack 은 policy 단계의 확장. gate 가 verdict 산출 시 활용.
+
+### 3.C.1 rule-pack — 8 큐레이션 pack
+
+- **명령** : `harness rule-pack <list|enable|disable|status|audit>`
+- **책임** : 16 deterministic rule + 메타 finding 을 8 pack 으로 묶고, template 별 required pack 매핑.
+- **연결** : gate 가 enabled pack 과 template required 비교 → 누락 시 verdict 강등 (INSUFFICIENT_EVIDENCE 또는 NEEDS_HUMAN_REVIEW).
+
+### 3.C.2 skill-pack — 7 큐레이션 pack
+
+- **명령** : `harness skill-pack <list|enable|disable|status|audit>`
+- **책임** : worker prompt 에 흡수되는 행동 지침 (typescript-quality / web-ui-quality / evidence-writing 등).
+- **연결** : skill pack 누락은 직접 BLOCK 아님 — PASS_WITH_WARNINGS 압력.
+
 ## 4. 단계 간 책임 분리 표 (v3)
 
 | 결정 | 책임 단계 | 다른 단계가 대신할 수 있는가 |
