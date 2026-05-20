@@ -1,5 +1,10 @@
 # NEKOFORGE
 
+[![CI](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
+[![Version](https://img.shields.io/badge/version-0.5.0--alpha.0-blue.svg)](RELEASE-NOTES.md)
+
 > **Quality Contract 기반 Local-first AI Development Factory**.
 > AI 가 만든 산출물을 품질 계약 기준으로 검사하고, 점수화하고, 위험하면 막고, 사람 승인 전에는 apply 하지 못하게 한다.
 
@@ -8,6 +13,9 @@
 **현재 상태**: `v0.5.0-alpha` · 14단계 + 24 CLI · Worker Factory (8 worker role) · Rule Pack (8종) + Skill Pack (7종) · 266 tests · benchmark 20/20 (critical recall 1.000, FP rate 0.000) · self-host 6회 통과 · external Codex review 3회 통합.
 
 **Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ 외부 사용자 1명 이상 PR 1개 머지.
+
+**빠른 시작**: [GETTING-STARTED.md](GETTING-STARTED.md) — 10분 안에 첫 verdict.
+**기여 가이드**: [CONTRIBUTING.md](CONTRIBUTING.md) — 외부 사용자 PR 환영 (Beta 진입 마지막 조건).
 
 **한 문장 요약**
 
