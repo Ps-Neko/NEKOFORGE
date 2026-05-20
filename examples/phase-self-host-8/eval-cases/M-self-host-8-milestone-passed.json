@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-8-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #8 — v0.5 외부 Codex 검증 요청 직후 자가 점검. examples 4개 + .review-requests 1개 docs-only 변경에 대해 no-test-risk 미발화 (정확), worker-missing-required 발화 (정확), verdict NEEDS_HUMAN_REVIEW. 외부 검증 대기 중 자가 정직성 확인.",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T00:50:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "외부 Codex review request 발송 + self-host 자동 점검 동시 진행 패턴. 검증 응답 도착 시 self-host #9 로 후속 대응."
+}
