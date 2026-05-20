@@ -1,0 +1,59 @@
+name: Feature request
+description: 새 rule / pack / 명령 / 워크플로 제안
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        먼저 [docs/PRODUCT.md](../docs/PRODUCT.md) 와 [docs/ROADMAP.md §8 영구 비-목표](../docs/ROADMAP.md#8-영구-비-목표) 를 확인해 주세요.
+        본 도구는 OMC/ECC 클론이 되지 않습니다.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇을 추가하고 싶은가
+      placeholder: "새 rule: SQL injection 패턴 감지"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: 왜 필요한가
+      description: 실제 발견된 사고 또는 반복 false-negative 사례
+      placeholder: "OWASP top 10 대응. 본 사용 사례에서 3건 발견."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 어느 영역에 속하는가
+      options:
+        - 새 deterministic rule
+        - 새 rule pack 후보
+        - 새 skill pack 후보
+        - 새 export adapter
+        - 새 worker role
+        - 새 CLI 명령
+        - 문서 개선
+        - 그 외
+    validations:
+      required: true
+
+  - type: textarea
+    id: identity-check
+    attributes:
+      label: 정체성 self-check
+      description: 본 제안이 ROADMAP §8 비-목표 (자동 commit/push/deploy, SaaS, agent 100개 카탈로그 등) 와 충돌하는가
+      placeholder: "본 제안은 deterministic 휴리스틱이므로 §8 비-목표 어느 항목과도 충돌하지 않음"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 다른 대안은 시도했는가
+      placeholder: "기존 secret-fallback rule 을 확장해서 SQL injection 도 잡으려고 했지만 패턴 차이가 큼"
+    validations:
+      required: false

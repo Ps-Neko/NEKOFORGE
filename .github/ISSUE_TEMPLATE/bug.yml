@@ -1,0 +1,59 @@
+name: Bug report
+description: 본 도구의 동작이 docs 와 다르거나 검증이 의도와 다르게 작동
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 무슨 일이 일어났는가
+      description: 1-3문장으로
+      placeholder: "harness gate 가 PASS 를 줬는데 BLOCK 이 발화해야 했음"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 명령어 시퀀스 또는 fixture
+      placeholder: |
+        1. harness init
+        2. harness ask "..."
+        3. ...
+        4. harness gate → verdict=PASS (기대: BLOCK)
+    validations:
+      required: true
+
+  - type: textarea
+    id: harness-output
+    attributes:
+      label: .harness/decision.json (핵심 부분)
+      render: json
+      description: triggeredRules / failedBars / workerFactory / rulePacks 등
+    validations:
+      required: false
+
+  - type: textarea
+    id: self-host
+    attributes:
+      label: harness self-host 결과
+      description: 본 도구로 본 버그를 회수했을 때 verdict
+      placeholder: "[verdict] NEEDS_HUMAN_REVIEW [rules] no-test-risk"
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: nekoforge --version
+      placeholder: "0.5.0-alpha.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS + Node version
+      placeholder: "Windows 10 + Node 20.18"
+    validations:
+      required: true
