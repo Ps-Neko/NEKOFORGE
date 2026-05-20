@@ -1,6 +1,6 @@
 # QUALITY CONTRACT — Phase QF
 
-> 버전 0.4 · 2026-05-19 · `work` 단계 진입 전 강제되는 품질 계약.
+> 버전 0.5 · 2026-05-19 · `work` 단계 진입 전 강제되는 품질 계약.
 
 ## 1. 본 단계의 책임
 
@@ -34,7 +34,7 @@
 
 ```json
 {
-  "schemaVersion": "0.4",
+  "schemaVersion": "0.5",
   "taskId": "TASK-001",
   "productIntent": { "user": "", "problem": "", "coreValue": "", "nonGoals": [] },
   "acceptanceCriteria": [],

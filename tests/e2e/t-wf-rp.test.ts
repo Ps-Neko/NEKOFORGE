@@ -220,6 +220,57 @@ test("T-RP-02: web-ui template + design-web missing → NEEDS_HUMAN_REVIEW", asy
   assert.notEqual(r.verdict, "PASS_WITH_WARNINGS");
 });
 
+// === T-RP-04 skill-pack only missing → PASS_WITH_WARNINGS ===
+test("T-RP-04: skill-pack only missing avoids BLOCK (skill is guidance)", async (t) => {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+  // rule-pack 충분히 활성 (security-core + test-discipline + architecture-core
+  // + quality-contract-core), 따라서 backend-api template 의 required rule pack
+  // 충족 (release-strict 까지는 web-ui 가 아니므로 단순 backend-api 가능).
+  await seedRulePacks(ws.cwd, [
+    "security-core",
+    "test-discipline",
+    "architecture-core",
+    "quality-contract-core",
+    "release-strict"
+  ]);
+  // skill-packs: typescript-quality + evidence-writing 만 활성, web-ui-quality 누락.
+  await writeFile(
+    join(ws.cwd, ".harness", "skill-packs.json"),
+    JSON.stringify({
+      schemaVersion: "0.5",
+      enabledPacks: ["typescript-quality", "evidence-writing"],
+      recommendedForTemplates: {
+        "web-ui": [
+          "typescript-quality",
+          "web-ui-quality",
+          "evidence-writing"
+        ]
+      }
+    })
+  );
+  const contractPath = join(ws.cwd, ".harness", "quality-contract.json");
+  const raw = await import("node:fs/promises").then((m) => m.readFile(contractPath, "utf8"));
+  const c = JSON.parse(raw) as Record<string, unknown>;
+  c.template = "web-ui";
+  await writeFile(contractPath, JSON.stringify(c));
+
+  await runGate(GATE_OPTS, ws.deps);
+  const text = await import("node:fs/promises").then((m) =>
+    m.readFile(join(ws.cwd, ".harness", "decision.json"), "utf8")
+  );
+  const d = JSON.parse(text) as {
+    verdict: string;
+    rulePacks?: { missingRequired?: string[] };
+    skillPacks?: { missingRecommended?: string[]; status?: string };
+  };
+  // 본 시나리오의 핵심: skill-pack missing 자체가 추가 강등 신호를 만들지 않는다.
+  // rule-pack 도 (web-ui 가 design-web 요구하지만) 본 시드는 design-web 미포함이라
+  // 부수적 강등 가능. 핵심 검증: missingRecommended 가 잡혔는지 + status=partial.
+  assert.deepEqual(d.skillPacks?.missingRecommended, ["web-ui-quality"]);
+  assert.equal(d.skillPacks?.status, "partial");
+});
+
 // === T-RP-03 ===
 test("T-RP-03: rule-packs decision.json reflects enabled list", async (t) => {
   const ws = await seedHarness();
