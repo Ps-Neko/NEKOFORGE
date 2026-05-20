@@ -79,3 +79,37 @@ test("detectForbiddenActions: harness apply triggers", () => {
   const hits = detectForbiddenActions("After this I will harness apply --approved.");
   assert.ok(hits.some((h) => h.rule === "harness-apply"));
 });
+
+// codex review v0.5 Finding #M1 — negation context 회피
+test("detectForbiddenActions: 'do not git push' is NOT hit (negation)", () => {
+  const hits = detectForbiddenActions(
+    "Reminder: do not git push from worker context."
+  );
+  assert.equal(hits.length, 0);
+});
+
+test("detectForbiddenActions: 'decision.json 작성 금지' is NOT hit", () => {
+  const hits = detectForbiddenActions(
+    "본 worker 는 decision.json 작성 금지."
+  );
+  assert.equal(hits.length, 0);
+});
+
+test("detectForbiddenActions: 'avoid kubectl apply' is NOT hit", () => {
+  const hits = detectForbiddenActions(
+    "Workers must avoid kubectl apply on production."
+  );
+  assert.equal(hits.length, 0);
+});
+
+test("detectForbiddenActions: 'git push 는 금지' (Korean) is NOT hit", () => {
+  const hits = detectForbiddenActions(
+    "이 worker 는 git push 는 금지된다."
+  );
+  assert.equal(hits.length, 0);
+});
+
+test("detectForbiddenActions: real positive still hits ('I ran git push')", () => {
+  const hits = detectForbiddenActions("I ran git push to deploy the change.");
+  assert.ok(hits.some((h) => h.rule === "git-push"));
+});
