@@ -31,6 +31,9 @@ import { runReview } from "../../core/review/index.js";
 import { runGate } from "../../core/gate/index.js";
 import { readGitDiff, diffHash } from "../../utils/git.js";
 import { isoNow, systemClock } from "../../utils/time.js";
+import { runWorkersInit } from "../../workers/index.js";
+import { ensureRulePacks } from "../../rule-packs/index.js";
+import { ensureSkillPacks } from "../../skill-packs/index.js";
 
 interface SelfHostOpts {
   goal?: string;
@@ -93,6 +96,12 @@ export function registerSelfHost(program: Command): void {
           { taskId, template: "custom", answersFile: contractAnswers },
           deps
         );
+
+        // self-host #7 후속 — Phase WF/RP 도 자동 시드.
+        // workers (standard profile) + rule-packs default + skill-packs default.
+        await runWorkersInit({ profile: "standard", force: true }, deps);
+        await ensureRulePacks(deps);
+        await ensureSkillPacks(deps);
 
         // work 단계 우회 — readGitDiff 가 tmpdir 에서 동작 못함.
         // 실 repo (process.cwd()) 의 git diff 를 self-host 가 직접 캡처해서
