@@ -21,6 +21,8 @@ coverage/
 !examples/**/.harness/**
 # REPORT.md 는 harness gate 가 cwd 루트에 작성하는 산출물 (커밋 대상 아님)
 /REPORT.md
+# review-requests/ 는 외부 Codex 검증 요청/응답 보존 (선택적 추적)
+# .review-requests/ 는 git 에 포함 — 검증 사이클의 evidence trail.
 
 # OS
 Thumbs.db
