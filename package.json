@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/cli/index.js",
+    "start": "node dist/src/cli/index.js",
     "dev": "tsx src/cli/index.ts",
     "test": "node --test --import tsx tests/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

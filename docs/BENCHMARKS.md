@@ -1,6 +1,6 @@
 # BENCHMARKS — Phase QF
 
-> 버전 0.4 · 2026-05-19 · 본 도구의 정확도(critical recall · false positive rate) 를 측정하기 위한 fixture 기반 벤치마크.
+> 버전 0.5 · 2026-05-20 · 본 도구의 정확도(critical recall · false positive rate) 를 측정하기 위한 fixture 기반 벤치마크.
 
 ## 1. 디렉터리 구조
 
@@ -32,14 +32,14 @@ $ harness benchmark --fixtures ./my-fixtures
 
 ## 4. 지표
 
-| 지표 | 정의 | 현재 (25 fixture, v0.5.0-alpha) |
+| 지표 | 정의 | 현재 (30 fixture, v0.5.0-alpha) |
 |---|---|---|
-| `criticalRecall` | expected ∈ {BLOCK, NEEDS_HUMAN_REVIEW} 중 본 도구가 잡은 비율 | **1.000** |
-| `falsePositiveRate` | expected = PASS 중 본 도구가 잘못 BLOCK/REVIEW 처리한 비율 | **0.000** |
+| `criticalRecall` | expected ∈ {BLOCK, NEEDS_HUMAN_REVIEW, INSUFFICIENT_EVIDENCE} 중 본 도구가 잡은 비율 | **1.000 (sample)** |
+| `falsePositiveRate` | expected = PASS 중 본 도구가 잘못 BLOCK/REVIEW 처리한 비율 | **0.000 (sample)** |
 
-**그룹별** : security 10 (positive 5 + negative 5) / architecture 6 (positive 4 + negative 2) / design 5 (positive 3 + negative 2) = **25 fixture** 모두 expected 매칭.
+**그룹별 (Phase QA 후)** : security 10 / architecture 6 / design 5 / api-safety 2 / dependency 3 = **30 fixture** 모두 expected 매칭.
 
-PASS-expected negative **10개** 누적 (Beta 진입 조건 #2 의 5배 마진). critical recall 1.0 + FP rate 0.0 는 본 25 fixture 한정. 사용자 환경에 fixture 추가 시 지표 변동.
+PASS-expected negative **12개** 누적 (Beta 진입 조건 #2 의 2배 마진). critical recall 1.0 + FP rate 0.0 는 본 30 fixture 한정 — local sample 이며 외부 real-world benchmark 아님. 사용자 환경에 fixture 추가 시 지표 변동.
 
 ## 4.A Cross-rule interference 회피 패턴 (self-host #11 발견)
 
