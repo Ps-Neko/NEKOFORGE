@@ -3,9 +3,14 @@
 > Phase WF (Worker Factory Upgrade) — Quality Contract 위에 **통제된 작업자 계층** 을 추가한다.
 > Worker 는 evidence 를 만들 뿐, 결재자가 아니다.
 
+## 0. 한 줄 정체성
+
+**Worker Factory is controlled evidence orchestration, not unattended execution.**
+**Worker Factory 는 무인 실행기가 아니라, 작업자 지시서 생성과 결과 증거 회수 계층이다.**
+
 ## 1. 정체성
 
-NEKOFORGE 의 worker layer 는 OMC 식 무인 작업반이 아니다. **prompt 생성 + result import + gate 입력** 이 1차 MVP 의 책임이다. 자동 LLM 실행은 Phase WF-2 이후.
+NEKOFORGE 의 worker layer 는 OMC 식 무인 작업반이 아니다. **prompt 생성 + result import + validate + gate 입력** 이 책임의 전부다. 자동 LLM 실행은 Phase WF-3 후보 (`docs/FUTURE-WORKER-RUNTIME.md`) — 외부 신호 2건 이상 누적 시 검토.
 
 ```text
 worker 책임:
