@@ -156,30 +156,59 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 ## 문서
 
+### 핵심 (모든 사용자)
+
 | 문서 | 답하는 질문 |
 |---|---|
+| [GETTING-STARTED.md](GETTING-STARTED.md) | 10분 안에 첫 verdict |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 외부 사용자 PR 절차 + 정체성 보호 |
 | [docs/PRODUCT.md](docs/PRODUCT.md) | 무엇을 위한 도구인가, 무엇이 아닌가 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 어떻게 구성되어 있는가 |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | 단계별로 무엇이 어떤 순서로 일어나는가 |
+| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 (25 명령) |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 와 마일스톤 |
+| [TASKS.md](TASKS.md) | 구현 task 분해 |
+
+### 영역별 (필요 시)
+
+| 문서 | 답하는 질문 |
+|---|---|
 | [docs/HARNESS-DESIGN.md](docs/HARNESS-DESIGN.md) | 팀 패턴 6종 중 언제 어떤 것을 쓰는가 |
 | [docs/QUALITY-POLICY.md](docs/QUALITY-POLICY.md) | rules/hooks/context-policy 묶음 |
 | [docs/SECURITY.md](docs/SECURITY.md) | 위협 모델과 차단 메커니즘 |
-| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 와 마일스톤 |
-| [TASKS.md](TASKS.md) | 구현 task 분해 |
-| [examples/](examples/) | 6개 시나리오 (basic-flow · blocked-by-secret · needs-human-review · codex-missing · export-claude · self-host 3회차) |
+| [docs/QUALITY-CONTRACT.md](docs/QUALITY-CONTRACT.md) | 5 template 의 quality bars + productIntent (Phase QF) |
+| [docs/QUALITY-SCORE.md](docs/QUALITY-SCORE.md) | 8 영역 정량 점수 (Phase QF) |
+| [docs/FACTORY-CELLS.md](docs/FACTORY-CELLS.md) | product/architecture/build/quality/review/gate 상태 (Phase QF) |
+| [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | fixture 운영 + critical recall / FP rate (Phase QF) |
+| [docs/INTEGRATIONS-OMC-ECC-HERMES.md](docs/INTEGRATIONS-OMC-ECC-HERMES.md) | 대체 아니라 병행 (Phase QF) |
+| [docs/WORKER-FACTORY.md](docs/WORKER-FACTORY.md) | 8 worker role + 3 profile + role separation (Phase WF) |
+| [docs/WORKER-SAFETY.md](docs/WORKER-SAFETY.md) | worker 가 할 수 없는 것 + forbidden action (Phase WF) |
+| [docs/RULE-PACKS.md](docs/RULE-PACKS.md) | 8 rule pack + template 자동 추천 (Phase RP) |
+| [docs/SKILL-PACKS.md](docs/SKILL-PACKS.md) | 7 skill pack + worker prompt 흡수 (Phase RP) |
+| [examples/](examples/) | 10 시나리오 + 8 phase 흔적 ([index](examples/README.md)) |
 
 ---
 
 ## 현재 상태
 
-- **Phase A~E 완료** + Phase C/D 후속 + Codex feedback rounds (self-host **#3, #4**) + **Phase QF — Quality Factory Upgrade (#5)** + QF self-audit ×2 (#6, #7).
-- `npm test` : **227/227 통과**.
-- `harness benchmark` : **14 fixture / critical recall 1.000 / FP rate 0.000** (security 7 + architecture 3 + design 4).
+- **Phase A~E + QF + WF/RP 완료** + Codex feedback rounds (self-host **#3, #4, #5**) + QF self-audit ×2 (#6, #7) + Windows hook fix (#6) + self-host #8, #9 (stub mode).
+- `npm test` : **277/277 통과**.
+- `harness benchmark` : **20 fixture / critical recall 1.000 / FP rate 0.000** (security 9 + architecture 6 + design 5).
+- `depcruise` : **0 violations** (121 modules).
 - GitHub Actions CI 활성 (typecheck + lint + depcheck + build + test + benchmark 자동).
 - ROADMAP §9 마일스톤 M0~M8 모두 도달.
-- 외부 검증 **2건 누적** (Codex 2026-05-19).
+- 외부 검증 **3건 누적** (Codex 2026-05-18~19) + v0.5 검증 요청 발송 (`.review-requests/codex-review-v0.5.md`).
 - Phase F (협업 모델) 만 보류 (외부 수요 조건부).
+
+### Phase WF/RP 추가 산출 (v0.5)
+
+- 8 worker role + 3 profile (`harness workers init/list/status/validate`).
+- `harness dispatch <task> --worker <role>` — prompt 생성 + worker-result import.
+- 8 rule pack (`harness rule-pack <list/enable/disable/status/audit>`).
+- 7 skill pack (`harness skill-pack <…>`).
+- `decision.json` v0.4 → v0.5 (`workerFactory` / `rulePacks` / `skillPacks` 3 필드 신규).
+- `docs/WORKER-FACTORY.md`, `WORKER-SAFETY.md`, `RULE-PACKS.md`, `SKILL-PACKS.md` 신규.
+- T-WF 5건 + T-RP 4건 e2e + 단위 18건 추가.
 
 ### Phase QF 추가 산출 (v0.4)
 
