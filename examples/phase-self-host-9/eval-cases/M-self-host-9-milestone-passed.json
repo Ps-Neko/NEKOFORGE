@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-9-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #9 — harness self-host --with-worker-stubs 옵션 도입. 3 worker stub 자동 시드 후에도 verdict 가 NEEDS_HUMAN_REVIEW 에 머무름 (failedBars 강등 유지). stub 으로 본 도구가 자동 PASS 되지 않는 정직성 layer 검증.",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T01:00:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "stub 모드는 자가 검증 깊이 +1 + cli-help 회귀 확장 (14 → 24 명령). 다음 회차의 평가 도구로 활용."
+}

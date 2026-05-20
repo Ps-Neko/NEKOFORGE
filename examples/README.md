@@ -33,6 +33,8 @@
 | Self-host #6 | [phase-self-host-6/](phase-self-host-6/) | self-host #6 | Windows .cmd 결함 발견 → 즉시 해결 |
 | Self-host #7 | [phase-self-host-7/](phase-self-host-7/) | self-host #7 | Phase WF/RP 자가 검증 (workerFactory 약속 발화) |
 | Self-host #8 | [phase-self-host-8/](phase-self-host-8/) | self-host #8 | v0.5 외부 검증 요청 직후 자가 점검 |
+| Self-host #9 | [phase-self-host-9/](phase-self-host-9/) | self-host #9 | `--with-worker-stubs` 옵션 도입 + 정직성 layer 검증 |
+| Self-host #10 | [phase-self-host-10/](phase-self-host-10/) | self-host #10 | 5라운드 문서 정합 마감 후 회수 |
 
 ## 3. 어떻게 활용하는가
 
