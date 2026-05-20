@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 const cliPath = resolve(__dirname, "../../src/cli/index.ts");
 
 const COMMANDS = [
+  // M1 14 명령
   "init",
   "ask",
   "context",
@@ -28,7 +29,19 @@ const COMMANDS = [
   "gate",
   "apply",
   "report",
-  "export"
+  "export",
+  // Phase QF / self-host 신규
+  "memory",
+  "contract",
+  "benchmark",
+  "run",
+  "self-host",
+  // Phase WF/RP 신규
+  "workers",
+  "dispatch",
+  "worker-result",
+  "rule-pack",
+  "skill-pack"
 ] as const;
 
 interface RunResult {
@@ -62,7 +75,7 @@ test("harness --version exits 0 and prints version", () => {
   assert.match(r.stdout, /0\.5\.0/);
 });
 
-test("harness lists all 14 commands in --help", () => {
+test("harness lists all 24 commands in --help", () => {
   const r = runCli(["--help"]);
   assert.equal(r.status, 0);
   for (const cmd of COMMANDS) {

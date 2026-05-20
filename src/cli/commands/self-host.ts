@@ -12,7 +12,7 @@
  * - 본 명령이 apply 까지 가지 않는다. apply 는 사람이 명시적으로.
  * - 실패하면 어느 단계에서 실패했는지 + exit code 보고.
  */
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
@@ -38,6 +38,7 @@ import { ensureSkillPacks } from "../../skill-packs/index.js";
 interface SelfHostOpts {
   goal?: string;
   taskId?: string;
+  withWorkerStubs?: boolean;
 }
 
 const DEFAULT_SPEC = {
@@ -56,6 +57,45 @@ const DEFAULT_CONTRACT = {
   coreValue: "본 도구가 본 작업을 자동 PASS 시키지 않는 정직성 확인"
 };
 
+const STUB_ROLES = [
+  "implementation-worker",
+  "test-worker",
+  "security-reviewer"
+] as const;
+
+async function seedWorkerStubs(cwd: string, taskId: string): Promise<void> {
+  const dir = join(cwd, ".harness", "worker-runs", taskId);
+  await mkdir(dir, { recursive: true });
+  for (const role of STUB_ROLES) {
+    const body = [
+      `# ${role} stub result`,
+      "",
+      `self-host --with-worker-stubs 가 생성한 placeholder.`,
+      `실 결과 아님. verdict 의 PASS 여부는 본 stub 영향이 아닌 다른 약속 (failedBars / rule pack 등) 으로 판단해야 함.`,
+      ""
+    ].join("\n");
+    await writeFile(join(dir, `${role}.result.md`), body, "utf8");
+    const json = {
+      schemaVersion: "0.5",
+      taskId,
+      workerId: `${role.split("-")[0]}-stub`,
+      role,
+      status: "completed",
+      summary: "self-host stub — placeholder result for deeper self-check",
+      findings: [],
+      evidence: {
+        result: `.harness/worker-runs/${taskId}/${role}.result.md`
+      },
+      forbiddenActionsDeclared: ["no-commit", "no-push", "no-deploy", "no-apply"]
+    };
+    await writeFile(
+      join(dir, `${role}.result.json`),
+      JSON.stringify(json, null, 2),
+      "utf8"
+    );
+  }
+}
+
 export function registerSelfHost(program: Command): void {
   program
     .command("self-host")
@@ -64,6 +104,11 @@ export function registerSelfHost(program: Command): void {
     )
     .option("--goal <text>", "user goal", "self-host 자가 검증")
     .option("--task-id <id>", "task id from TASKS.md", "TASK-001")
+    .option(
+      "--with-worker-stubs",
+      "seed minimal worker-result stubs (impl/test/sec) for deeper self-check",
+      false
+    )
     .action(async (opts: SelfHostOpts) => {
       const taskId = opts.taskId ?? "TASK-001";
       const goal = opts.goal ?? "self-host 자가 검증";
@@ -102,6 +147,14 @@ export function registerSelfHost(program: Command): void {
         await runWorkersInit({ profile: "standard", force: true }, deps);
         await ensureRulePacks(deps);
         await ensureSkillPacks(deps);
+
+        // --with-worker-stubs — 3 worker (impl/test/sec) 의 result 도 stub 시드.
+        // 정직성 주의: stub 은 항상 status=completed + findings=[] 이므로
+        // verdict 를 인위적으로 올리는 위험이 있다. 본 옵션은 self-host 깊이
+        // 검증용으로만 사용. 실 사용에서는 사람/AI 가 진짜 result 를 작성.
+        if (opts.withWorkerStubs) {
+          await seedWorkerStubs(tmpWs, taskId);
+        }
 
         // work 단계 우회 — readGitDiff 가 tmpdir 에서 동작 못함.
         // 실 repo (process.cwd()) 의 git diff 를 self-host 가 직접 캡처해서
