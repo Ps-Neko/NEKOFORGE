@@ -12,18 +12,30 @@
 
 **현재 상태**: `v0.5.0-alpha` · 14단계 + 26 CLI (init/doctor 포함) · Worker Factory (8 worker role + 3 profile) · Rule Pack 13종 + Skill Pack 13종 · benchmark = 30 local fixtures (sample recall 1.000, FP 0.000) · self-host 11회 통과 · external Codex review 3회 + self-review 1회 통합.
 
-**Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ 외부 사용자 1명 이상 PR 1개 머지.
+**Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ **외부 사용자 1명 이상이 본인 PR 에 NEKOFORGE 를 실행해 REPORT.md + decision.json + quality-score.json 을 제출**.
 
-**빠른 시작**: [GETTING-STARTED.md](GETTING-STARTED.md) — 10분 안에 첫 verdict.
-**기여 가이드**: [CONTRIBUTING.md](CONTRIBUTING.md) — 외부 사용자 PR 환영 (Beta 진입 마지막 조건).
+**빠른 시작**: [GETTING-STARTED.md](GETTING-STARTED.md) · [examples/00-first-verdict](examples/00-first-verdict/) — 10분 안에 첫 verdict.
+**기여 가이드**: [CONTRIBUTING.md](CONTRIBUTING.md) · [docs/ALPHA-RECRUITMENT.md](docs/ALPHA-RECRUITMENT.md) · [docs/EXTERNAL-VALIDATION-TEMPLATE.md](docs/EXTERNAL-VALIDATION-TEMPLATE.md) — 외부 사용자 PR 환영.
 
 **한 문장 요약**
 
 ```text
-AI 산출물 → Quality Contract (사전 계약) → Worker Factory (8 worker role)
-+ Rule Pack 13종 + Skill Pack 13종 → Quality Score (8영역 정량)
-+ deterministic verdict → Human Gate → explicit apply.
+NEKOFORGE 는 AI 작업자와 Rule/Skill Pack 을 통제하고,
+Quality Contract 와 Worker Evidence 를 기준으로 산출물을 점수화하며,
+deterministic gate 와 Human Gate 없이는 출고하지 않는
+local-first AI Development Factory 다.
 ```
+
+흐름:
+
+```text
+AI 작업자 배치 → Rule/Skill Pack 적용 → Quality Contract →
+Worker Evidence → Quality Score + deterministic verdict →
+Human Gate → explicit apply.
+```
+
+> **Worker Factory is controlled evidence orchestration, not unattended execution.**
+> 자동 LLM 실행기가 아니라, 작업자 지시서 생성 + 결과 증거 회수 + gate 입력 계층.
 
 **누구를 위한 도구인가**
 
@@ -42,27 +54,52 @@ AI 산출물 → Quality Contract (사전 계약) → Worker Factory (8 worker r
 
 ---
 
-## 10-minute first verdict
+## A. 10-minute first verdict (외부 사용자 빠른 시작)
 
-본 도구가 처음이라면 [GETTING-STARTED.md](GETTING-STARTED.md) 의 단계별 가이드를 따르세요. 더 빠른 시작은 preset 한 줄:
+본 도구가 처음이면 preset + self-host 한 줄:
 
 ```bash
 $ npm install
 $ npm run build
-$ node dist/src/cli/index.js doctor          # 환경 진단 (no .harness 도 OK)
-$ node dist/src/cli/index.js init --preset cli-tool
-$ node dist/src/cli/index.js work TASK-001   # placeholder 채운 후
-$ node dist/src/cli/index.js review
-$ node dist/src/cli/index.js gate            # → verdict
+$ node dist/src/cli/index.js doctor                                # 환경 진단
+$ node dist/src/cli/index.js init --preset cli-tool                # 본인 프로젝트 타입 시드
+$ node dist/src/cli/index.js self-host --goal "first verdict smoke"
 ```
 
-또는 자가 검증 단축 (실 repo .harness/ 무영향):
+전역 alias (`nekoforge` / `harness`) 사용 시 `npm link` 후:
 
 ```bash
-$ node dist/src/cli/index.js self-host --goal "(작업 요약)"
+$ nekoforge doctor
+$ nekoforge init --preset cli-tool
+$ nekoforge self-host --goal "first verdict smoke"
 ```
 
-## 30초 사용 흐름 (전체 14단계)
+본 흐름이 막히면 [examples/00-first-verdict/](examples/00-first-verdict/) 의 단계별 가이드 참조.
+
+## B. Full factory path (실제 14단계 + Worker Factory)
+
+```bash
+$ nekoforge init --preset backend-api
+$ nekoforge ask "<목표 한 줄>"
+$ nekoforge context
+$ nekoforge spec
+$ nekoforge plan
+$ nekoforge workers init --profile standard      # init --preset 했으면 생략 가능
+$ nekoforge rule-pack audit                      # template 별 required pack 확인
+$ nekoforge skill-pack audit                     # template 별 recommended pack 확인
+$ nekoforge dispatch TASK-001 --all              # 전체 worker prompt 생성
+# (사용자가 각 worker prompt 를 LLM 에 입력해 result.md 작성)
+$ nekoforge worker-result import TASK-001 --worker implementation-worker --file impl.md
+# ... 다른 worker 들도 import
+$ nekoforge worker-result validate TASK-001
+$ nekoforge review
+$ nekoforge gate                                  # → verdict
+$ nekoforge apply --approved                      # PASS/PASS_WITH_WARNINGS 시
+```
+
+local checkout (npm link 없이) 에서는 `nekoforge` 대신 `node dist/src/cli/index.js` 또는 `npm run dev --` 사용.
+
+## 30초 명령 시퀀스 (참고용 — 실제 작성 시간 별도)
 
 ```bash
 $ harness init                            # .harness/ 워크스페이스 만들기

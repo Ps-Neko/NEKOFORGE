@@ -110,6 +110,17 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
 | 자동 LLM 실행 / agent autonomous loop | ❌ 비-목표 (영구 §8) |
 | SaaS dashboard / 클라우드 동기화 | ❌ 비-목표 |
 
+## 4-A. 외부 알파 검증자 모집
+
+본 도구의 Beta 진입 마지막 조건은 외부 사용자 1명 이상의 PR 1건이다. 직접 적용해 보고 결과를 보고하길 원한다면:
+
+1. [docs/ALPHA-RECRUITMENT.md](docs/ALPHA-RECRUITMENT.md) — 모집 가이드 + 적합한 repo 특성
+2. [docs/EXTERNAL-VALIDATION-TEMPLATE.md](docs/EXTERNAL-VALIDATION-TEMPLATE.md) — 보고 양식
+3. GitHub Issue: `external-validation` 템플릿으로 결과 제출 (REPORT.md + decision.json + quality-score.json 첨부)
+4. [examples/00-first-verdict/](examples/00-first-verdict/) — 10분 walkthrough
+
+검증 결과는 RELEASE-NOTES.md 의 외부 검증 누적 표에 등록되며, false positive 발견 시 fixture 로 누적되어 회귀 보장.
+
 ## 5. 외부 검증 cycle 도입 (선택)
 
 본 레포는 Codex review 사이클을 4회 통합한 기록 있음 (`examples/phase-codex-{feedback,rereview,review-3}/`). 큰 변경 시 외부 검증 받고 결과를 `.review-requests/<topic>.response.md` 에 보존하는 패턴 권장.
