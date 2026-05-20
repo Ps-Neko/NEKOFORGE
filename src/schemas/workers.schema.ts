@@ -35,8 +35,8 @@ export const workersSchema = {
             type: "array",
             items: { type: "string" }
           },
-          canWriteDecision: { type: "boolean" },
-          canApply: { type: "boolean" },
+          canWriteDecision: { type: "boolean", const: false },
+          canApply: { type: "boolean", const: false },
           forbiddenActionsDeclared: {
             type: "array",
             items: { type: "string" }
