@@ -142,6 +142,60 @@ B2-020 → B2-021 → B2-022 → B2-023 → B2-024
 B4-* + B2-031..032  ──▶  T-SEC-01..16  ──▶  D-*  ──▶  M4 (ROADMAP §9)
 ```
 
+## 7.A Phase QF — Quality Factory Upgrade (v0.4 통과, 2026-05-19)
+
+| id | 제목 | 결과 |
+|---|---|---|
+| QF-001 | quality-contract template 5종 + work 전 강제 | ✓ |
+| QF-002 | quality-score 8 영역 (src/scoring/) | ✓ |
+| QF-003 | factory-cells 6 영역 | ✓ |
+| QF-004 | architecture rule 4종 (large-file/layer/untyped/circular) | ✓ |
+| QF-005 | design rule 3종 (a11y/token/responsive) | ✓ |
+| QF-006 | benchmark runner | ✓ |
+| QF-007 | harness contract/memory add/benchmark/run CLI | ✓ |
+| QF-008 | decision.json schemaVersion 0.3 → 0.4 + 5 신규 필드 | ✓ |
+| QF-009 | Phase QF self-host #4, #5 + Codex review #3 통합 | ✓ |
+| QF-010 | apply Evidence before Apply + UI diff 자동 감지 | ✓ |
+
+## 7.B Phase WF — Worker Factory (v0.5 통과, 2026-05-20)
+
+| id | 제목 | 결과 |
+|---|---|---|
+| WF-001 | docs/WORKER-FACTORY.md + WORKER-SAFETY.md | ✓ |
+| WF-002 | workers.schema + worker-result.schema | ✓ |
+| WF-003 | src/workers/{types,index,dispatch,validate,result}.ts | ✓ |
+| WF-004 | harness workers (init/list/status/validate) CLI | ✓ |
+| WF-005 | harness dispatch CLI | ✓ |
+| WF-006 | harness worker-result (import/list/show) CLI | ✓ |
+| WF-007 | role separation validator + detectForbiddenActions | ✓ |
+| WF-008 | gate decision.json.workerFactory 통합 | ✓ |
+| WF-009 | examples/07-worker-dispatch + 10-worker-role-violation | ✓ |
+| WF-010 | T-WF e2e 5건 + 단위 6건 | ✓ |
+
+## 7.C Phase RP — Rule/Skill Pack (v0.5 통과, 2026-05-20)
+
+| id | 제목 | 결과 |
+|---|---|---|
+| RP-001 | docs/RULE-PACKS.md + SKILL-PACKS.md | ✓ |
+| RP-002 | rule-packs.schema + skill-packs.schema | ✓ |
+| RP-003 | src/rule-packs/ (8 pack 큐레이션) | ✓ |
+| RP-004 | src/skill-packs/ (7 pack 큐레이션) | ✓ |
+| RP-005 | harness rule-pack / skill-pack CLI | ✓ |
+| RP-006 | quality-contract template ↔ recommended pack 연결 | ✓ |
+| RP-007 | gate decision.json.{rulePacks,skillPacks} 통합 | ✓ |
+| RP-008 | examples/08-rule-pack-missing + 09-skill-pack-web-ui | ✓ |
+| RP-009 | T-RP e2e 4건 + 단위 12건 | ✓ |
+
+## 7.D self-host 추가 회차 (#6 ~ #10)
+
+| id | 제목 | 결과 |
+|---|---|---|
+| SH-006 | Windows .cmd 해상도 결함 발견 + 즉시 해결 | ✓ |
+| SH-007 | Phase WF/RP 자가 검증 (workerFactory 약속 발화) | ✓ |
+| SH-008 | v0.5 외부 Codex 검증 요청 직후 자가 점검 | ✓ |
+| SH-009 | --with-worker-stubs 옵션 추가 (자가 검증 깊이 +1) | ✓ |
+| SH-010 | 문서 정합 마감 검증 | ✓ |
+
 ## 10. 본 문서가 답하지 않는 것
 
 - 제품 정체성 → PRODUCT.md

@@ -234,6 +234,28 @@ quality-policy 가 한 번 정해진 뒤 변경되어야 한다면 :
 
 위 점검 실패 시 본 단계는 거부(exit 10).
 
+## 11.A Phase RP — rule pack / skill pack 의 위치 (v0.5)
+
+본 단계 (`harness policy`) 가 `rules.json` 의 활성 rule 집합을 결정한다면, Phase RP 의 `harness rule-pack` 은 **rule 묶음의 enable/disable 운영**을 담당한다. 둘은 충돌이 아니라 보완:
+
+| 도구 | 책임 |
+|---|---|
+| `harness policy` | rules.json 의 owner/sub-rule 묶음 구성 |
+| `harness rule-pack` (v0.5) | 8 큐레이션 pack (security-core / test-discipline / architecture-core / design-web / release-strict / ai-generated-code-risk / worker-safety-core / quality-contract-core) 의 활성 상태 |
+| `harness skill-pack` (v0.5) | 7 행동 지침 pack (typescript-quality / web-ui-quality / evidence-writing 등) — worker prompt 에 흡수 |
+
+연결 방식:
+
+- `harness rule-pack audit` 가 `.harness/rule-packs.json` 을 생성·유지.
+- `harness contract --template <web-ui|backend-api|...>` 가 template 별 required pack 매핑 (`requiredForTemplates`) 을 가져옴.
+- `gate` 가 enabledPacks 와 template required 비교 → 누락 시 `rule-pack-missing` finding (SECURITY.md §3.15.1).
+- skill pack 은 verdict 강등 안 함 (PASS_WITH_WARNINGS 압력만).
+
+자세한 내용:
+
+- 8 rule pack 목록 → `docs/RULE-PACKS.md`
+- 7 skill pack 목록 → `docs/SKILL-PACKS.md`
+
 ## 12. 본 문서가 답하지 않는 것
 
 - 단계 시퀀스 → WORKFLOW.md §3.7
@@ -241,3 +263,4 @@ quality-policy 가 한 번 정해진 뒤 변경되어야 한다면 :
 - deterministic rule 9종 상세 → SECURITY.md §3
 - decision.json 에 들어가는 qualityPolicy 필드 → ARCHITECTURE.md §9
 - 본 단계의 CLI 인자 → CLI.md `harness policy`
+- rule pack / skill pack 의 큐레이션 → docs/RULE-PACKS.md, SKILL-PACKS.md (v0.5)

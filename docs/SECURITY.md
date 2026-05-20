@@ -186,6 +186,60 @@ Node.js 20+ 가 CVE-2024-27980 fix 로 `.cmd`/`.bat` 의 `shell:false` 실행을
 - `harness gate --mode release` 호출 시 `.harness/benchmark-results.json` 부재 또는 critical recall < 0.8 이면 발화.
 - 등급 : `high` → NEEDS_HUMAN_REVIEW.
 
+### 3.14 Worker safety findings (Phase WF, v0.5 신규)
+
+본 6 finding 은 deterministic rule 이 아니라 gate 가 worker-result + workers.json 평가 시 직접 발화하는 gate finding. `rules/index.ts` 의 ALL_RULES 에는 등록되지 않음.
+
+#### 3.14.1 `worker-safety-risk`
+
+- worker result body 안에 forbidden action 패턴 (`decision.json`, `git commit`, `git push`, `harness apply`, `kubectl apply`, `terraform apply`, `audit.jsonl`) 발견.
+- 휴리스틱: `src/workers/validate.ts` 의 `detectForbiddenActions`.
+- 등급: `critical` → BLOCK.
+
+#### 3.14.2 `worker-missing-required`
+
+- `workers.json` 의 profile (minimal/standard/strict) 이 요구하는 worker role 중 `.harness/worker-runs/<task>/<role>.result.json` 이 status=completed 로 존재하지 않는 경우.
+- 등급:
+  - release mode + security-reviewer 누락 → `critical` → INSUFFICIENT_EVIDENCE.
+  - 그 외 → `high` → NEEDS_HUMAN_REVIEW.
+
+#### 3.14.3 `worker-role-separation`
+
+- `validateRoleSeparation` 에서 같은 worker.id 가 분리되어야 할 두 역할을 모두 보유 (impl + security, impl + release).
+- 등급: `high` → NEEDS_HUMAN_REVIEW.
+
+#### 3.14.4 `worker-critical-finding`
+
+- 임의 worker-result.json 의 findings 중 severity=critical 1건 이상.
+- 등급: `critical` → BLOCK.
+
+#### 3.14.5 `worker-high-finding`
+
+- worker-result findings 중 severity=high 1건 이상 (critical 없을 때).
+- 등급: `high` → NEEDS_HUMAN_REVIEW.
+
+#### 3.14.6 `worker-factory-missing`
+
+- release mode 인데 `workers.json` 자체가 없음.
+- 등급: `critical` → INSUFFICIENT_EVIDENCE.
+
+### 3.15 Rule pack findings (Phase RP, v0.5 신규)
+
+#### 3.15.1 `rule-pack-missing`
+
+- `quality-contract.template` 의 `requiredForTemplates` 에 명시된 rule pack 중 enabled 가 아닌 것이 1개 이상.
+- 휴리스틱: `src/rule-packs/resolve.ts` 의 `resolveRulePacks`.
+- 등급:
+  - 일반 → `critical` → INSUFFICIENT_EVIDENCE.
+  - web-ui template + design-web 만 단독 누락 → NEEDS_HUMAN_REVIEW (덜 엄격).
+
+### 3.16 Quality contract findings (Phase QF, v0.4 신규)
+
+#### 3.16.1 `quality-contract-invalid`
+
+- `quality-contract.json` 존재하지만 schema validation 실패.
+- 등급: `critical` → INSUFFICIENT_EVIDENCE (`scoreCap`).
+
 ## 4. Rule 추가/수정 절차
 
 1. `src/rules/<new-id>.ts` 생성, `DeterministicRule` 인터페이스 구현.

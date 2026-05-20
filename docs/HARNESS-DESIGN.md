@@ -44,6 +44,35 @@ team.json 에 등장할 수 있는 role 후보. **모두 채택해야 한다는 
 - **`implementation-agent` 와 `security-reviewer` 는 동일 ID 가 될 수 없다.** (PRODUCT §7.4 독립성)
 - **`harness-designer` 와 `quality-policy-designer` 는 동일 ID 가 될 수 없다.** (설계·정책 분리)
 
+### 2.A team.json agent role ↔ workers.json worker role 매핑 (v0.5 Phase WF)
+
+Phase WF 는 8 worker role 을 별도 계층으로 도입했다 (`docs/WORKER-FACTORY.md`). team.json 의 11 agent role 은 **harness-design 단계의 설계 어휘**, workers.json 의 8 worker role 은 **work 단계의 실행 어휘**. 두 계층은 1:N 관계.
+
+| team.json agent role | 대응 workers.json worker role | 비고 |
+|---|---|---|
+| product-questioner | product-questioner | 1:1 |
+| domain-analyst | architect | 도메인 분석을 architect 가 흡수 |
+| architect | architect | 1:1 |
+| harness-designer | (없음) | 설계 단계 전용. work 단계 worker 아님 |
+| quality-policy-designer | (없음) | 동일 |
+| implementation-agent | implementation-worker | 1:1 |
+| test-agent | test-worker | 1:1 |
+| refactor-agent | refactor-worker | 1:1 |
+| security-reviewer | security-reviewer | 1:1 |
+| codex-review-coordinator | (없음) | review 단계는 worker 가 아닌 adapter 책임 |
+| release-gatekeeper | release-gatekeeper | 1:1 |
+
+workers.json 신규 role:
+
+| workers.json role | 대응 team.json agent role | 신규 이유 |
+|---|---|---|
+| **design-reviewer** (v0.5) | (해당 없음) | uiTouched=true 시 디자인 검토 강제. design rule 3종 (accessibility/design-token/responsive) 의 사람측 짝 |
+
+Phase WF 의 role separation 규칙 (`workers.json.roleSeparation`) 은 HARNESS-DESIGN 의 agent separation 규칙과 일치:
+
+- `implementation-worker` ↔ `security-reviewer` 분리 (== agent role 의 impl ↔ security).
+- `implementation-worker` ↔ `release-gatekeeper` 분리.
+
 ## 3. 6개 팀 패턴
 
 ### 3.1 Pipeline
