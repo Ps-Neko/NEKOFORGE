@@ -9,6 +9,8 @@ import {
   ALL_RULES,
   ALL_ARCHITECTURE_RULES,
   ALL_DESIGN_RULES,
+  ALL_API_RULES,
+  ALL_DEPENDENCY_RULES,
   type RuleContext,
   type RuleFinding
 } from "../../rules/index.js";
@@ -256,6 +258,13 @@ export async function runGate(
   for (const r of ALL_DESIGN_RULES) {
     designFindings.push(...(await r.run(ctxWithFlags)));
   }
+  // Phase RP-2 — api-safety / dependency-risk rule 추가.
+  for (const r of ALL_API_RULES) {
+    passTwo.push(...(await r.run(ctxWithFlags)));
+  }
+  for (const r of ALL_DEPENDENCY_RULES) {
+    passTwo.push(...(await r.run(ctxWithFlags)));
+  }
 
   // Phase QF — quality-contract 읽기 + quality-score 계산.
   // Codex review #3 (Critical #2) — schema invalid 와 not found 구분.
@@ -400,11 +409,18 @@ export async function runGate(
       } else {
         workerCap = "NEEDS_HUMAN_REVIEW";
       }
+      const taskId = input.taskId ?? "TASK-001";
+      const fixHints = missingWorkers
+        .map(
+          (w) =>
+            `dispatch+import ${w}: harness dispatch ${taskId} --worker ${w} → harness worker-result import ${taskId} --worker ${w} --file <result.md>`
+        )
+        .join("; ");
       passTwo.push(
         makeFinding(
           "worker-missing-required",
           input.mode === "release" && sec ? "critical" : "high",
-          `required worker(s) missing: ${missingWorkers.join(", ")}`
+          `required worker(s) missing: ${missingWorkers.join(", ")}. Fix: ${fixHints}`
         )
       );
     }

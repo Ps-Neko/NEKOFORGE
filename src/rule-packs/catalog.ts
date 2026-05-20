@@ -65,6 +65,58 @@ export const RULE_PACK_CATALOG: readonly RulePackDef[] = [
       "failed-required-bars"
     ],
     describe: "계약/점수 강제 — schema valid + score 산출 + bar 충족"
+  },
+  // Phase RP-2 (v0.5) — 5 신규 pack
+  {
+    id: "docs-quality",
+    rules: [
+      "stale-count-risk",
+      "missing-release-note-risk",
+      "missing-cli-doc-risk",
+      "broken-doc-link-risk"
+    ],
+    describe: "문서 정합 — README/RELEASE-NOTES/CLI docs 일관성 (placeholder rule, 다음 회차 휴리스틱 추가 예정)"
+  },
+  {
+    id: "release-evidence",
+    rules: [
+      "release-benchmark-required",
+      "missing-self-host-risk",
+      "missing-migration-note-risk",
+      "missing-external-review-risk"
+    ],
+    describe: "release 전 evidence 누락 방지 (benchmark / self-host / migration / external review)"
+  },
+  {
+    id: "api-safety",
+    rules: [
+      "missing-input-validation-risk",
+      "missing-rate-limit-risk",
+      "unsafe-error-exposure-risk",
+      "missing-auth-boundary-risk"
+    ],
+    describe: "backend-api 실질 보안 강화 — missing-input-validation 1 신규 + 3 placeholder"
+  },
+  {
+    id: "frontend-accessibility",
+    rules: [
+      "accessibility-risk",
+      "missing-focus-state-risk",
+      "interactive-div-risk",
+      "missing-loading-state-risk",
+      "contrast-token-risk"
+    ],
+    describe: "web-ui template 품질 강화 — accessibility-risk + 4 placeholder"
+  },
+  {
+    id: "dependency-risk",
+    rules: [
+      "unbounded-version-risk",
+      "new-runtime-dependency-risk",
+      "postinstall-script-risk",
+      "lockfile-mismatch-risk"
+    ],
+    describe: "package / dependency 변경 위험 — unbounded-version 1 신규 + 3 placeholder"
   }
 ];
 

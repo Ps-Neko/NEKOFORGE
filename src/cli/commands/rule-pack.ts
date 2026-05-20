@@ -69,9 +69,45 @@ export function registerRulePack(program: Command): void {
 
   cmd
     .command("audit")
-    .description("Ensure rule-packs.json exists with defaults if missing")
+    .description(
+      "Ensure rule-packs.json + report coverage (template / unknown / disabled / recommended)"
+    )
     .action(async () => {
-      const r = await ensureRulePacks(buildDeps());
-      console.error(`[ok] rule-packs.json present. enabled: ${r.enabledPacks.join(", ")}`);
+      const deps = buildDeps();
+      const r = await ensureRulePacks(deps);
+      const s = await getRulePackStatus(deps);
+      console.error(`[ok] rule-packs.json present.`);
+      console.error(`enabled: ${r.enabledPacks.join(", ")}`);
+      console.error(`disabled: ${(r.disabledPacks ?? []).join(", ") || "(none)"}`);
+      if (s.unknownEnabled.length > 0) {
+        console.error(`[warn] unknown enabled pack(s): ${s.unknownEnabled.join(", ")}`);
+      }
+      const contract = await deps.artifact
+        .readJson<{ template?: string }>("quality-contract.json")
+        .catch(() => null);
+      const tpl = contract?.template;
+      if (tpl) {
+        const required = s.templateRequirements[tpl] ?? [];
+        const missing = required.filter((p) => !s.enabledPacks.includes(p));
+        const disabled = required.filter((p) => (r.disabledPacks ?? []).includes(p));
+        console.error(`template: ${tpl}`);
+        console.error(`required: ${required.join(", ") || "(none)"}`);
+        if (missing.length > 0) {
+          console.error(`[warn] missing required: ${missing.join(", ")}`);
+          for (const m of missing) {
+            console.error(`       fix: harness rule-pack enable ${m}`);
+          }
+        }
+        if (disabled.length > 0) {
+          console.error(`[error] disabled required: ${disabled.join(", ")}`);
+        }
+        if (missing.length === 0 && disabled.length === 0) {
+          console.error(`[ok] template coverage complete.`);
+        }
+      } else {
+        console.error(
+          `[note] no quality-contract.json found — run \`harness contract --template <name>\` for template-aware coverage check.`
+        );
+      }
     });
 }

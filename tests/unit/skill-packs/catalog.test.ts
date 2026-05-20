@@ -10,8 +10,8 @@ import {
 import { resolveSkillPacks } from "../../../src/skill-packs/index.js";
 import { renderSkillGuidance } from "../../../src/skill-packs/render.js";
 
-test("catalog: 7 packs defined", () => {
-  assert.equal(SKILL_PACK_CATALOG.length, 7);
+test("catalog: 13 packs defined (v0.5 Phase RP-2 adds 6)", () => {
+  assert.equal(SKILL_PACK_CATALOG.length, 13);
 });
 
 test("findSkillPack: known + unknown", () => {

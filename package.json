@@ -5,7 +5,8 @@
   "private": true,
   "type": "module",
   "bin": {
-    "harness": "./dist/cli/index.js"
+    "nekoforge": "./dist/src/cli/index.js",
+    "harness": "./dist/src/cli/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -41,7 +41,9 @@ const COMMANDS = [
   "dispatch",
   "worker-result",
   "rule-pack",
-  "skill-pack"
+  "skill-pack",
+  // Phase UX 9점화 신규
+  "doctor"
 ] as const;
 
 interface RunResult {
@@ -66,7 +68,7 @@ function runCli(args: string[]): RunResult {
 test("harness --help exits 0 and prints program description", () => {
   const r = runCli(["--help"]);
   assert.equal(r.status, 0, `unexpected stderr: ${r.stderr}`);
-  assert.match(r.stdout, /Verified AI Development Harness/);
+  assert.match(r.stdout, /NEKOFORGE/);
 });
 
 test("harness --version exits 0 and prints version", () => {

@@ -16,6 +16,8 @@ import {
   ALL_RULES,
   ALL_ARCHITECTURE_RULES,
   ALL_DESIGN_RULES,
+  ALL_API_RULES,
+  ALL_DEPENDENCY_RULES,
   type RuleFinding
 } from "../rules/index.js";
 import { parseUnifiedDiff } from "../utils/diff.js";
@@ -70,7 +72,13 @@ async function runScenario(
   }
   const diff = parseUnifiedDiff(diffText);
   const findings: RuleFinding[] = [];
-  for (const r of [...ALL_RULES, ...ALL_ARCHITECTURE_RULES, ...ALL_DESIGN_RULES]) {
+  for (const r of [
+    ...ALL_RULES,
+    ...ALL_ARCHITECTURE_RULES,
+    ...ALL_DESIGN_RULES,
+    ...ALL_API_RULES,
+    ...ALL_DEPENDENCY_RULES
+  ]) {
     findings.push(
       ...(await r.run({ diff, highRiskFlags: {} }))
     );
@@ -172,22 +180,82 @@ function emptyReport(): BenchmarkReport {
 }
 
 export function renderBenchmarkMd(r: BenchmarkReport): string {
-  const groupRows = Object.entries(r.byGroup)
-    .map(([g, v]) => `| ${g} | ${v.passed}/${v.passed + v.failed} |`)
+  // group 별 recall / FP rate 계산 (Phase QA — benchmark 신뢰도 9점화).
+  const groupAggregates: Record<
+    string,
+    {
+      passed: number;
+      failed: number;
+      positives: number;
+      detectedPositives: number;
+      negatives: number;
+      fpInNegatives: number;
+    }
+  > = {};
+  for (const x of r.results) {
+    const g = (groupAggregates[x.group] ??= {
+      passed: 0,
+      failed: 0,
+      positives: 0,
+      detectedPositives: 0,
+      negatives: 0,
+      fpInNegatives: 0
+    });
+    if (x.passed) g.passed += 1;
+    else g.failed += 1;
+    const isBlocking =
+      x.expectedVerdict === "BLOCK" ||
+      x.expectedVerdict === "NEEDS_HUMAN_REVIEW" ||
+      x.expectedVerdict === "INSUFFICIENT_EVIDENCE";
+    if (isBlocking) {
+      g.positives += 1;
+      if (
+        x.observedVerdict === "BLOCK" ||
+        x.observedVerdict === "NEEDS_HUMAN_REVIEW" ||
+        x.observedVerdict === "INSUFFICIENT_EVIDENCE"
+      ) {
+        g.detectedPositives += 1;
+      }
+    } else if (x.expectedVerdict === "PASS") {
+      g.negatives += 1;
+      if (x.observedVerdict !== "PASS") g.fpInNegatives += 1;
+    }
+  }
+  const groupRows = Object.entries(groupAggregates)
+    .map(([g, v]) => {
+      const recall = v.positives === 0 ? "n/a" : (v.detectedPositives / v.positives).toFixed(3);
+      const fp = v.negatives === 0 ? "n/a" : (v.fpInNegatives / v.negatives).toFixed(3);
+      return `| ${g} | ${v.passed}/${v.passed + v.failed} | ${recall} | ${fp} | ${v.positives}/${v.negatives} |`;
+    })
     .join("\n");
+  const positivesTotal = r.results.filter(
+    (x) =>
+      x.expectedVerdict !== "PASS" && x.expectedVerdict !== "PASS_WITH_WARNINGS"
+  ).length;
+  const negativesTotal = r.results.filter((x) => x.expectedVerdict === "PASS").length;
   return [
-    `# Benchmark Report`,
+    `# Benchmark Report — local fixtures`,
+    "",
+    "> 본 보고서는 본 레포의 `fixtures/` 디렉터리 sample 에 한정. 외부 real-world benchmark 아님.",
     "",
     `- total scenarios: ${r.totalScenarios}`,
     `- passed: ${r.passed}`,
     `- failed: ${r.failed}`,
-    `- critical recall: ${r.criticalRecall.toFixed(3)} (sample)`,
-    `- false positive rate: ${r.falsePositiveRate.toFixed(3)} (sample)`,
+    `- total positives (expected BLOCK/REVIEW/INSUFF): ${positivesTotal}`,
+    `- total negatives (expected PASS): ${negativesTotal}`,
+    `- critical recall (sample): ${r.criticalRecall.toFixed(3)}`,
+    `- false positive rate (sample): ${r.falsePositiveRate.toFixed(3)}`,
     "",
     "## By Group",
-    "| group | passed/total |",
-    "|---|---|",
-    groupRows || "| (none) | — |",
+    "| group | passed/total | recall (sample) | FP rate (sample) | positives/negatives |",
+    "|---|---|---|---|---|",
+    groupRows || "| (none) | — | — | — | — |",
+    "",
+    "## Known weak areas",
+    "",
+    "- ux/performance 점수의 신뢰도 약함 (의도된 한계 — QUALITY-SCORE 가중치 0.05).",
+    "- worker/rule-pack/skill-pack 영역은 fixture 가 적음 (다음 회차 확장 후보).",
+    "- design rule 은 uiTouched 자동 감지 시만 실행 (paths heuristic).",
     "",
     "## Details",
     ...r.results.map(

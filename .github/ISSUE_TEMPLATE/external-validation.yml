@@ -1,0 +1,104 @@
+name: External validation report
+description: 알파 검증자가 본 도구를 본인 repo 에 적용한 후 결과 보고
+labels: [external-validation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        먼저 [docs/ALPHA-RECRUITMENT.md](../docs/ALPHA-RECRUITMENT.md) 와 [docs/EXTERNAL-VALIDATION-TEMPLATE.md](../docs/EXTERNAL-VALIDATION-TEMPLATE.md) 를 참고해 주세요.
+
+  - type: input
+    id: project
+    attributes:
+      label: 적용한 프로젝트
+      placeholder: "open-source CLI / 사내 라이브러리 등 (공개해도 되는 수준)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: 주요 언어
+      options:
+        - TypeScript / JavaScript
+        - Python
+        - Go
+        - 기타
+    validations:
+      required: true
+
+  - type: input
+    id: template
+    attributes:
+      label: harness contract --template
+      placeholder: "cli-tool / web-ui / backend-api / library / custom"
+    validations:
+      required: true
+
+  - type: input
+    id: verdict
+    attributes:
+      label: 최종 verdict
+      placeholder: "PASS_WITH_WARNINGS / NEEDS_HUMAN_REVIEW / BLOCK 등"
+    validations:
+      required: true
+
+  - type: textarea
+    id: triggered
+    attributes:
+      label: triggered rules / failed quality bars
+      description: decision.json 의 deterministicRules.triggeredRules + qualityContract.failedBars 핵심
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: useful
+    attributes:
+      label: 무엇이 유용했는가
+      placeholder: "예: secret-fallback rule 이 .env 의 process.env.X || \"\" 패턴을 잡아냄"
+    validations:
+      required: true
+
+  - type: textarea
+    id: noisy
+    attributes:
+      label: 무엇이 noisy / FP 였는가
+      placeholder: "예: untyped-api-risk 가 어떤 코드에서 잘못 발화. 다음 코드: ..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: blocked-at
+    attributes:
+      label: 어느 단계 / 명령에서 막혔는가
+      placeholder: "예: harness work TASK-001 → pre-tool hook failed. resolveExecutable 갱신 후 통과"
+    validations:
+      required: false
+
+  - type: textarea
+    id: time-to-verdict
+    attributes:
+      label: 설치 → 첫 verdict 까지 걸린 시간
+      placeholder: "예: 12분"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: future-use
+    attributes:
+      label: 다음에도 사용할 의향
+      options:
+        - Yes
+        - Maybe
+        - "No (이유는 추가 설명에)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 첨부 파일 경로 또는 gist
+      placeholder: "REPORT.md / .harness/decision.json / .harness/quality-score.json"
+    validations:
+      required: false

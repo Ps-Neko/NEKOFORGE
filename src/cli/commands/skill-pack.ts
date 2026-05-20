@@ -69,9 +69,40 @@ export function registerSkillPack(program: Command): void {
 
   cmd
     .command("audit")
-    .description("Ensure skill-packs.json exists with defaults if missing")
+    .description(
+      "Ensure skill-packs.json + report template coverage (recommended)"
+    )
     .action(async () => {
-      const r = await ensureSkillPacks(buildDeps());
-      console.error(`[ok] skill-packs.json present. enabled: ${r.enabledPacks.join(", ")}`);
+      const deps = buildDeps();
+      const r = await ensureSkillPacks(deps);
+      const s = await getSkillPackStatus(deps);
+      console.error(`[ok] skill-packs.json present.`);
+      console.error(`enabled: ${r.enabledPacks.join(", ")}`);
+      console.error(`disabled: ${(r.disabledPacks ?? []).join(", ") || "(none)"}`);
+      if (s.unknownEnabled.length > 0) {
+        console.error(`[warn] unknown enabled pack(s): ${s.unknownEnabled.join(", ")}`);
+      }
+      const contract = await deps.artifact
+        .readJson<{ template?: string }>("quality-contract.json")
+        .catch(() => null);
+      const tpl = contract?.template;
+      if (tpl) {
+        const recommended = s.templateRecommendations[tpl] ?? [];
+        const missing = recommended.filter((p) => !s.enabledPacks.includes(p));
+        console.error(`template: ${tpl}`);
+        console.error(`recommended: ${recommended.join(", ") || "(none)"}`);
+        if (missing.length > 0) {
+          console.error(`[warn] missing recommended: ${missing.join(", ")}`);
+          for (const m of missing) {
+            console.error(`       fix: harness skill-pack enable ${m}`);
+          }
+        } else {
+          console.error(`[ok] template recommendation complete.`);
+        }
+      } else {
+        console.error(
+          `[note] no quality-contract.json — run \`harness contract --template <name>\` for template-aware recommendation check.`
+        );
+      }
     });
 }
