@@ -11,6 +11,9 @@ import {
   ALL_DESIGN_RULES,
   ALL_API_RULES,
   ALL_DEPENDENCY_RULES,
+  ALL_DOCS_RULES,
+  ALL_RELEASE_EVIDENCE_RULES,
+  ALL_FRONTEND_RULES,
   type RuleContext,
   type RuleFinding
 } from "../../rules/index.js";
@@ -258,11 +261,21 @@ export async function runGate(
   for (const r of ALL_DESIGN_RULES) {
     designFindings.push(...(await r.run(ctxWithFlags)));
   }
-  // Phase RP-2 — api-safety / dependency-risk rule 추가.
+  // Phase RP-2 — api-safety / dependency-risk / docs / release-evidence /
+  // frontend-accessibility rule 추가.
   for (const r of ALL_API_RULES) {
     passTwo.push(...(await r.run(ctxWithFlags)));
   }
   for (const r of ALL_DEPENDENCY_RULES) {
+    passTwo.push(...(await r.run(ctxWithFlags)));
+  }
+  for (const r of ALL_DOCS_RULES) {
+    passTwo.push(...(await r.run(ctxWithFlags)));
+  }
+  for (const r of ALL_RELEASE_EVIDENCE_RULES) {
+    passTwo.push(...(await r.run(ctxWithFlags)));
+  }
+  for (const r of ALL_FRONTEND_RULES) {
     passTwo.push(...(await r.run(ctxWithFlags)));
   }
 
