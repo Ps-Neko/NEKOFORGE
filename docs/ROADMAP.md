@@ -105,6 +105,7 @@ PRODUCT.md §10 성공 기준 7개를 만족하는 동작 가능한 CLI.
 - eval-cases : 17건+ (milestone 6 + rule 별 9건 + 외부 점검 2건).
 - 외부 검증 2건 누적 (Codex 2회) — Beta 진입 조건의 "외부 사용자 1명 이상 PR" 영역.
 - **Phase QF 완료** : decision.json schemaVersion 0.3 → 0.4. CLI 18 명령 (init, ask, context, spec, plan, design, policy, team, work, review, gate, apply, report, export, memory, contract, benchmark, run).
+- **Phase WF/RP 완료 (2026-05-20)** : decision.json schemaVersion 0.4 → 0.5. CLI 25 명령 (Phase QF + self-host + workers / dispatch / worker-result / rule-pack / skill-pack). 8 worker role + 3 profile + 8 rule pack + 7 skill pack. T-WF 5건 + T-RP 4건 e2e 통과. 277 tests / benchmark 20/20. self-host 9회 통과.
 
 ## 5. Phase D — 외부 어댑터 실연결 (T+6 ~ T+7 주)
 

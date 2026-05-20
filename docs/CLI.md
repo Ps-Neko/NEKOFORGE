@@ -1,8 +1,10 @@
 # CLI — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 WORKFLOW.md §3 의 14개 단계를 사용자가 호출할 수 있는 명령으로 노출한다. ARCHITECTURE.md §3 의 `src/cli/commands/*.ts` 와 1:1 대응한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 WORKFLOW.md §3 의 14개 단계 + Phase QF + Phase WF/RP + self-host 단축을 사용자가 호출할 수 있는 명령으로 노출한다. ARCHITECTURE.md §3 의 `src/cli/commands/*.ts` 와 1:1 대응한다.
 
 ## 1. 전체 명령 목록
+
+### 1.1 M1 14단계 (intake → memory)
 
 ```text
 harness init
@@ -21,7 +23,37 @@ harness report
 harness export <tool>        # tool ∈ {claude, cursor, codex, generic}
 ```
 
-14개. PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 18개를 넘는다" 상한 내.
+### 1.2 Phase QF — Quality Factory (v0.4)
+
+```text
+harness contract --template <web-ui|cli-tool|backend-api|library|custom>
+harness memory add --kind <K> --summary <S>
+harness benchmark [--group <name>]
+harness run --mode <fast|safe|release>
+```
+
+### 1.3 Phase WF — Worker Factory (v0.5)
+
+```text
+harness workers <init|list|status|validate>
+harness dispatch <task-id> --worker <role>
+harness worker-result <import|list|show>
+```
+
+### 1.4 Phase RP — Rule/Skill Pack (v0.5)
+
+```text
+harness rule-pack <list|enable|disable|status|audit>
+harness skill-pack <list|enable|disable|status|audit>
+```
+
+### 1.5 자가 검증 (v0.4 후속)
+
+```text
+harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
+```
+
+총 25개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 25개를 넘는다" 상한 내.
 
 ## 2. 공통 동작
 
@@ -273,6 +305,113 @@ harness export generic      # .export/<team|policy>.* + manifest.json
   - `.harness/team.json` 없음 → 10.
 - **결정적**: 동일 입력 → 동일 출력. 시간/랜덤 의존 금지.
 - **단방향**: 본 명령은 `.claude/`, `.cursor/`, `.codex/`, `.export/` 를 읽지 않는다.
+
+### 3.15 `harness contract` (v0.4 신규, Phase QF)
+
+```text
+harness contract --template <web-ui|cli-tool|backend-api|library|custom>
+                 --task <task-id>
+                 [--answers <file>]
+                 [--non-interactive]
+```
+
+- `work` 진입 전 강제. 5 template 의 기본 qualityBars + productIntent 7문항.
+- 산출: `.harness/quality-contract.json`, `.harness/QUALITY-CONTRACT.md`.
+- 거부: invalid template → 1, productIntent placeholder → 10.
+
+### 3.16 `harness memory add` (v0.4 신규)
+
+```text
+harness memory add --kind <K> --summary <text> [--rule <id>] [--task <id>]
+```
+
+- `K ∈ {false_positive, false_negative, missed_risk, useful_rule, noisy_rule, improved_prompt, changed_workflow, milestone_passed}`.
+- 산출: `.harness/eval-cases/<id>.json` + `.harness/memory.md` append.
+
+### 3.17 `harness benchmark` (v0.4 신규)
+
+```text
+harness benchmark [--group <name>]
+```
+
+- `fixtures/<group>/<scenario>/{last-diff.patch,expected.json}` 스캔.
+- 산출: `.harness/benchmark-report.md`, `benchmark-results.json` (critical recall / FP rate).
+- release mode gate 가 본 결과 강제.
+
+### 3.18 `harness run --mode` (v0.4 신규)
+
+```text
+harness run --mode <fast|safe|release> [goal]
+```
+
+- 모드별 권장 명령 시퀀스 안내 (실행 미포함). release 는 benchmark 강제.
+
+### 3.19 `harness self-host` (v0.4 후속)
+
+```text
+harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
+```
+
+- tmpdir 격리 워크스페이스에 14단계 + WF/RP 자동 시드 + gate 까지.
+- `--with-worker-stubs`: 3 worker (impl/test/sec) 의 result.{md,json} 자동 stub.
+- 실 repo `.harness/audit.jsonl` 무영향.
+
+### 3.20 `harness workers <subcommand>` (v0.5 신규, Phase WF)
+
+```text
+harness workers init --profile <minimal|standard|strict> [--force]
+harness workers list
+harness workers status
+harness workers validate
+```
+
+- `workers.json` (profile + 8 worker role + roleSeparation) 관리.
+- `validate`: role separation 위반 시 exit 10.
+
+### 3.21 `harness dispatch` (v0.5 신규)
+
+```text
+harness dispatch <task-id> --worker <role>
+```
+
+- worker prompt 생성 (`.harness/worker-runs/<task>/<role>.prompt.md`).
+- worker 가 직접 result.md/json 작성 후 다음 명령으로 import.
+
+### 3.22 `harness worker-result <subcommand>` (v0.5 신규)
+
+```text
+harness worker-result import <task-id> --worker <role> --file <result.md> [--json <result.json>]
+harness worker-result list <task-id>
+harness worker-result show <task-id> --worker <role>
+```
+
+- import 시 body 의 forbidden action 패턴 자동 검사 → critical finding 자동 추가.
+
+### 3.23 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
+
+```text
+harness rule-pack list
+harness rule-pack enable <pack>
+harness rule-pack disable <pack>
+harness rule-pack status
+harness rule-pack audit
+```
+
+- 8 pack 큐레이션 (security-core, test-discipline, architecture-core, design-web, release-strict, ai-generated-code-risk, worker-safety-core, quality-contract-core).
+- gate 가 enabledPacks 와 template requiredPacks 비교 → INSUFFICIENT_EVIDENCE 강등.
+
+### 3.24 `harness skill-pack <subcommand>` (v0.5 신규)
+
+```text
+harness skill-pack list
+harness skill-pack enable <pack>
+harness skill-pack disable <pack>
+harness skill-pack status
+harness skill-pack audit
+```
+
+- 7 pack 큐레이션 (typescript-quality, backend-api-quality, web-ui-quality, cli-tool-quality, library-quality, release-readiness, evidence-writing).
+- skill pack 누락은 직접 BLOCK 아님 — PASS_WITH_WARNINGS 압력.
 
 ## 4. 종료 코드 우선순위
 

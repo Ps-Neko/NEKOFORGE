@@ -66,7 +66,7 @@ $ harness export claude                   # (선택) .claude/agents 로 export
 
 ## 무엇이 차단되는가
 
-이 도구가 자동으로 잡는 9가지 위험 패턴(deterministic rules) :
+이 도구가 자동으로 잡는 16+ 위험 패턴 (9 security + 4 architecture + 3 design + worker safety, deterministic rules) :
 
 | Rule | 잡는 것 | 어떤 verdict |
 |---|---|---|
