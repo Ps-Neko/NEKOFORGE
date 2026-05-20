@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-11-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #11 — negative fixture 5 → 10 확장. benchmark 25/25 통과 (recall 1.000, FP 0.000). Beta 진입 조건 #2 마진 2배.",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T02:00:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "self-host #11 본 회차 verdict 는 정확. fixture 운영 가이드 후보 (cross-rule interference) 발견."
+}
