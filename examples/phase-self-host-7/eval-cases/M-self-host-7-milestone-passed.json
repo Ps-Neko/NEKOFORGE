@@ -1,0 +1,9 @@
+{
+  "id": "M-self-host-7-milestone-passed",
+  "kind": "milestone_passed",
+  "summary": "self-host #7 — Phase WF (Worker Factory) + Phase RP (Rule/Skill Pack) 머지 직후 자가 검증. decision.json 의 workerFactory/rulePacks/skillPacks 3 신규 필드가 모두 정상 작성. verdict NEEDS_HUMAN_REVIEW (자동 PASS 안됨 = 양호).",
+  "relatedTaskId": "TASK-001",
+  "createdAt": "2026-05-20T00:30:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "self-host CLI 가 workers init + rule-pack audit + skill-pack audit 도 자동 호출. 2차 결과에서 no-test-risk + worker-missing-required 두 발화로 자가 정직성 확인. 다음 외부 검증 사이클의 사전 신호."
+}

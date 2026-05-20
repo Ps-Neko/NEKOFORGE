@@ -1,0 +1,9 @@
+{
+  "id": "self-host-7-worker-missing-required-useful",
+  "kind": "useful_rule",
+  "summary": "Phase WF 의 worker-missing-required finding 이 self-host #7 에서 본 도구 자신에 발화. self-host 가 workers init 후 worker-result 를 시드하지 않으므로 standard profile 의 required 3 worker (impl/test/sec) 가 모두 missing 으로 잡힘.",
+  "relatedRule": "worker-missing-required",
+  "createdAt": "2026-05-20T00:30:00Z",
+  "sourceVerdict": "NEEDS_HUMAN_REVIEW",
+  "notes": "Phase WF gate 통합의 정확한 동작 확인. 본 도구의 새 약속이 본 도구 자신을 자동 PASS 시키지 않음. 다음 회차에서 worker-result 자동 시드 모드 추가 가능."
+}
