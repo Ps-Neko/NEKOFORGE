@@ -25,12 +25,22 @@ import { responsiveBreakRiskRule } from "./design/responsive-break-risk.js";
 import { missingInputValidationRiskRule } from "./api/missing-input-validation-risk.js";
 import { missingRateLimitRiskRule } from "./api/missing-rate-limit-risk.js";
 import { unsafeErrorExposureRiskRule } from "./api/unsafe-error-exposure-risk.js";
+import { missingAuthBoundaryRiskRule } from "./api/missing-auth-boundary-risk.js";
 import { unboundedVersionRiskRule } from "./dependency/unbounded-version-risk.js";
 import { postinstallScriptRiskRule } from "./dependency/postinstall-script-risk.js";
 import { newRuntimeDependencyRiskRule } from "./dependency/new-runtime-dependency-risk.js";
+import { lockfileMismatchRiskRule } from "./dependency/lockfile-mismatch-risk.js";
 import { staleCountRiskRule } from "./docs/stale-count-risk.js";
+import { missingCliDocRiskRule } from "./docs/missing-cli-doc-risk.js";
+import { brokenDocLinkRiskRule } from "./docs/broken-doc-link-risk.js";
 import { missingReleaseNoteRiskRule } from "./release-evidence/missing-release-note-risk.js";
+import { missingSelfHostRiskRule } from "./release-evidence/missing-self-host-risk.js";
+import { missingMigrationNoteRiskRule } from "./release-evidence/missing-migration-note-risk.js";
+import { missingExternalReviewRiskRule } from "./release-evidence/missing-external-review-risk.js";
 import { interactiveDivRiskRule } from "./frontend/interactive-div-risk.js";
+import { missingFocusStateRiskRule } from "./frontend/missing-focus-state-risk.js";
+import { missingLoadingStateRiskRule } from "./frontend/missing-loading-state-risk.js";
+import { contrastTokenRiskRule } from "./frontend/contrast-token-risk.js";
 
 export const ALL_RULES: readonly DeterministicRule[] = [
   secretFallbackRule,
@@ -61,27 +71,37 @@ export const ALL_DESIGN_RULES: readonly DeterministicRule[] = [
 export const ALL_API_RULES: readonly DeterministicRule[] = [
   missingInputValidationRiskRule,
   missingRateLimitRiskRule,
-  unsafeErrorExposureRiskRule
+  unsafeErrorExposureRiskRule,
+  missingAuthBoundaryRiskRule
 ];
 
 export const ALL_DEPENDENCY_RULES: readonly DeterministicRule[] = [
   unboundedVersionRiskRule,
   postinstallScriptRiskRule,
-  newRuntimeDependencyRiskRule
+  newRuntimeDependencyRiskRule,
+  lockfileMismatchRiskRule
 ];
 
 // Phase RP-2 후속 — docs / release-evidence / frontend pack 의 deterministic rule.
 export const ALL_DOCS_RULES: readonly DeterministicRule[] = [
-  staleCountRiskRule
+  staleCountRiskRule,
+  missingCliDocRiskRule,
+  brokenDocLinkRiskRule
 ];
 
 export const ALL_RELEASE_EVIDENCE_RULES: readonly DeterministicRule[] = [
-  missingReleaseNoteRiskRule
+  missingReleaseNoteRiskRule,
+  missingSelfHostRiskRule,
+  missingMigrationNoteRiskRule,
+  missingExternalReviewRiskRule
 ];
 
 // frontend-accessibility pack 의 추가 휴리스틱. accessibility-risk 와 중복 발화 가능.
 export const ALL_FRONTEND_RULES: readonly DeterministicRule[] = [
-  interactiveDivRiskRule
+  interactiveDivRiskRule,
+  missingFocusStateRiskRule,
+  missingLoadingStateRiskRule,
+  contrastTokenRiskRule
 ];
 
 export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./auto-apply-block.js";

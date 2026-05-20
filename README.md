@@ -48,7 +48,7 @@ Human Gate → explicit apply.
 - ❶ **Quality Contract before Work** — `quality-contract.json` 없으면 `work` 진입 거부.
 - ❷ **Quality Score before PASS** — 8 영역 점수 미달이면 `PASS` 불가, 상한 자동 강등.
 - ❸ verdict `BLOCK` / `INSUFFICIENT_EVIDENCE` 는 **어떤 플래그로도** apply 안 됨.
-- ❹ secret 하드코딩 · auth 우회 · 테스트 삭제 · input validation 누락 등 **25 deterministic rule (9 security + 4 architecture + 3 design + 3 api + 3 dependency + 1 docs + 1 release-evidence + 1 frontend)** 을 즉시 차단.
+- ❹ secret 하드코딩 · auth 우회 · 테스트 삭제 · input validation 누락 등 **35 deterministic rule (9 security + 4 architecture + 3 design + 4 api-safety + 4 dependency + 3 docs + 4 release-evidence + 4 frontend)** 을 즉시 차단 (다수는 info 등급 알림).
 - ❺ 모든 의사결정은 `.md` + `.json` 으로 동시에 남고, audit chain hash + anchor 로 위변조 감지.
 - ❻ Codex/Claude/Cursor 어댑터는 검증자이지 **최종 승인자가 아니다**. 사람 토큰 매칭 필수.
 
@@ -124,7 +124,7 @@ $ harness export claude                   # (선택) .claude/agents 로 export
 
 ## 무엇이 차단되는가
 
-이 도구가 자동으로 잡는 **25 deterministic rule** (9 security + 4 architecture + 3 design + 3 api-safety + 3 dependency + 1 docs + 1 release-evidence + 1 frontend) — 주요 9종:
+이 도구가 자동으로 잡는 **35 deterministic rule** (9 security + 4 architecture + 3 design + 4 api-safety + 4 dependency + 3 docs + 4 release-evidence + 4 frontend) — 주요 9종:
 
 | Rule | 잡는 것 | 어떤 verdict |
 |---|---|---|

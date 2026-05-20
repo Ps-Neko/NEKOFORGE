@@ -37,6 +37,7 @@
 | Self-host #9 | [phase-self-host-9/](phase-self-host-9/) | self-host #9 | `--with-worker-stubs` 옵션 도입 + 정직성 layer 검증 |
 | Self-host #10 | [phase-self-host-10/](phase-self-host-10/) | self-host #10 | 5라운드 문서 정합 마감 후 회수 |
 | Self-host #11 | [phase-self-host-11/](phase-self-host-11/) | self-host #11 | Negative fixture 5 → 10 확장 + cross-rule interference 발견 |
+| Self-host #12 | [phase-self-host-12/](phase-self-host-12/) | self-host #12 | placeholder rule 10종 휴리스틱 (25→35 deterministic rule) + weakness-cleanup 마감 |
 
 ## 3. 어떻게 활용하는가
 

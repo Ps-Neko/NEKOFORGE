@@ -7,6 +7,16 @@ diff --git a/package.json b/package.json
      "pino": "^9.0.0"
    }
  }
+diff --git a/package-lock.json b/package-lock.json
+@@ -10,5 +10,9 @@
+     "express": { "version": "4.19.0" },
++    "lodash": {
++      "version": "4.17.21",
++      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
++    },
+     "zod": { "version": "3.22.0" }
+   }
+ }
 diff --git a/tests/deps.test.ts b/tests/deps.test.ts
 @@ -1,2 +1,3 @@
  import { test } from "node:test";
