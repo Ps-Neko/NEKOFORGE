@@ -12,7 +12,6 @@
  *   - 외부 SaaS API key 자동 로드
  */
 import type { WorkerRole } from "./types.js";
-import { createClaudeWorkerAdapter } from "./adapters/claude.js";
 
 export interface WorkerAdapterInput {
   role: WorkerRole;
@@ -58,16 +57,21 @@ export function createShellWorkerAdapterStub(): WorkerAdapter {
   };
 }
 
+/** 외부에서 어댑터를 등록해 순환 의존성 없이 resolver 를 확장한다. */
+const _registry = new Map<string, () => WorkerAdapter>();
+
+export function registerWorkerAdapter(id: string, factory: () => WorkerAdapter): void {
+  _registry.set(id, factory);
+}
+
 /**
  * adapter resolver — 미래 어댑터 등록 지점.
- * 현재는 shell-stub 만 반환. codex/claude/gemini adapter 는 Phase WF-3 에서.
+ * shell/shell-stub 는 내장. claude 등 추가 어댑터는 registerWorkerAdapter 로 등록.
  */
 export function resolveWorkerAdapter(id: string): WorkerAdapter | null {
   if (id === "shell" || id === "shell-stub") {
     return createShellWorkerAdapterStub();
   }
-  if (id === "claude") {
-    return createClaudeWorkerAdapter();
-  }
-  return null;
+  const factory = _registry.get(id);
+  return factory ? factory() : null;
 }

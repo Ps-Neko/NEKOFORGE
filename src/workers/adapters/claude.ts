@@ -5,6 +5,7 @@
  */
 import { spawnSync as nodeSpawnSync } from "node:child_process";
 import type { WorkerAdapter, WorkerAdapterInput, WorkerAdapterResult } from "../adapter.js";
+import { registerWorkerAdapter } from "../adapter.js";
 
 export interface SpawnResult { status: number | null; stdout: string; stderr: string; }
 export interface SpawnOptions { input?: string; timeoutMs?: number; env?: NodeJS.ProcessEnv; }
@@ -62,3 +63,6 @@ export function createClaudeWorkerAdapter(opts: ClaudeAdapterOptions = {}): Work
     }
   };
 }
+
+// 모듈 로드 시 자동으로 registry 에 등록 — adapter.ts ↔ claude.ts 순환 방지.
+registerWorkerAdapter("claude", () => createClaudeWorkerAdapter());
