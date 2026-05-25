@@ -7,6 +7,8 @@ import {
   createShellWorkerAdapterStub,
   resolveWorkerAdapter
 } from "../../../src/workers/adapter.js";
+// claude 어댑터를 registry 에 등록하기 위해 import (side-effect).
+import "../../../src/workers/adapters/claude.js";
 
 test("shell stub: available true + dispatch returns skipped (no auto-spawn)", async () => {
   const a = createShellWorkerAdapterStub();

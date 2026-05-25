@@ -12,9 +12,13 @@ module.exports = {
     {
       name: "no-cross-stage-core",
       comment:
-        "core/<stage> 끼리 직접 import 금지. 단계간 통신은 artifact 파일을 통해서만.",
+        "core/<stage> 끼리 직접 import 금지. 단계간 통신은 artifact 파일을 통해서만. " +
+        "단, auto/ 는 오케스트레이터이므로 모든 stage 를 조합 허용.",
       severity: "error",
-      from: { path: "^src/core/([^/]+)/" },
+      from: {
+        path: "^src/core/([^/]+)/",
+        pathNot: "^src/core/auto/"
+      },
       to: {
         path: "^src/core/([^/]+)/",
         pathNot: "^src/core/$1/"
