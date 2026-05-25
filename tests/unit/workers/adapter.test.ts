@@ -20,9 +20,10 @@ test("shell stub: available true + dispatch returns skipped (no auto-spawn)", as
   assert.match(r.resultMd, /stub/);
 });
 
-test("resolveWorkerAdapter: shell + unknown", () => {
+test("resolveWorkerAdapter: shell + claude known, unknown null", () => {
   assert.ok(resolveWorkerAdapter("shell"));
   assert.ok(resolveWorkerAdapter("shell-stub"));
-  assert.equal(resolveWorkerAdapter("codex"), null);
-  assert.equal(resolveWorkerAdapter("claude"), null);
+  assert.ok(resolveWorkerAdapter("claude")); // WF-3: claude 워커 어댑터 등록됨
+  assert.equal(resolveWorkerAdapter("codex"), null); // codex 는 review 어댑터(worker 아님)
+  assert.equal(resolveWorkerAdapter("gemini"), null);
 });
