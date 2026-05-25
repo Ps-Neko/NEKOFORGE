@@ -36,8 +36,9 @@ import { registerSkillPack } from "./commands/skill-pack.js";
 import { registerDoctor } from "./commands/doctor.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
+import { ENGINE_VERSION } from "../version.js";
 
-const VERSION = "0.5.0-alpha.0";
+const VERSION = ENGINE_VERSION;
 
 function buildProgram(): Command {
   const program = new Command();

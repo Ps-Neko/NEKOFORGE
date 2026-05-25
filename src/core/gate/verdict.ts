@@ -87,10 +87,23 @@ export function computeVerdict(input: VerdictInputs): VerdictOutput {
     };
   }
 
-  if (warning.length > 0 || input.reviewStatus === "warnings") {
+  // ⓐ 미검증=미통과: 독립 review 가 실행되지 않았거나(not_run) 실패했으면(failed)
+  // 깨끗한 결과라도 PASS 로 묻지 않고 PASS_WITH_WARNINGS 로 가시화한다.
+  // (--strict 게이트가 이 verdict 를 non-zero exit 으로 차단한다)
+  const reviewIncomplete =
+    input.reviewStatus === "not_run" || input.reviewStatus === "failed";
+
+  if (warning.length > 0 || input.reviewStatus === "warnings" || reviewIncomplete) {
     reasons.push(...warning.map((f) => `[${f.ruleId}] ${f.message}`));
     if (input.reviewStatus === "warnings") {
       reasons.push("review adapter returned warnings");
+    }
+    if (reviewIncomplete) {
+      reasons.push(
+        input.reviewStatus === "failed"
+          ? "no independent review (adapter failed)"
+          : "no independent review run"
+      );
     }
     return {
       verdict: "PASS_WITH_WARNINGS",
@@ -106,4 +119,29 @@ export function computeVerdict(input: VerdictInputs): VerdictOutput {
     humanApprovalRequired: false,
     reasons: ["no triggered rules; tests passed; review ok"]
   };
+}
+
+/**
+ * ⓑ `gate --strict` 의 verdict → process exit code 매핑.
+ *
+ * apply 와 통일한다: BLOCK/INSUFFICIENT_EVIDENCE=4, NEEDS_HUMAN_REVIEW=3.
+ * strict 모드에서는 PASS_WITH_WARNINGS 도 사람이 검토해야 통과로 인정하므로 3 으로 차단한다.
+ * 비-strict gate 는 이 함수를 호출하지 않고 항상 0 으로 종료한다(호환성 보존).
+ */
+export function gateStrictExitCode(verdict: Verdict): number {
+  switch (verdict) {
+    case "BLOCK":
+    case "INSUFFICIENT_EVIDENCE":
+      return 4;
+    case "NEEDS_HUMAN_REVIEW":
+    case "PASS_WITH_WARNINGS":
+      return 3;
+    case "PASS":
+      return 0;
+    default: {
+      // 모든 Verdict 를 처리했는지 컴파일 타임에 강제
+      const _exhaustive: never = verdict;
+      return _exhaustive;
+    }
+  }
 }

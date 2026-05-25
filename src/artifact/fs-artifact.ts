@@ -5,7 +5,7 @@
  */
 import { mkdir, readFile, writeFile, appendFile, stat } from "node:fs/promises";
 import { dirname, join, isAbsolute } from "node:path";
-import { harnessRoot } from "../utils/paths.js";
+import { harnessRoot, withinHarness } from "../utils/paths.js";
 import type { ArtifactReader, ArtifactWriter } from "./types.js";
 import type { SchemaValidator } from "../schemas/loader.js";
 
@@ -16,9 +16,11 @@ export interface FsArtifactOptions {
 
 export class FsArtifact implements ArtifactReader, ArtifactWriter {
   private readonly root: string;
+  private readonly cwd: string | undefined;
   private readonly validator: SchemaValidator | undefined;
 
   constructor(opts: FsArtifactOptions = {}) {
+    this.cwd = opts.cwd;
     this.root = harnessRoot(opts.cwd);
     this.validator = opts.validator;
   }
@@ -29,7 +31,12 @@ export class FsArtifact implements ArtifactReader, ArtifactWriter {
         `artifact path must be relative to .harness/: ${relativePath}`
       );
     }
-    return join(this.root, relativePath);
+    const abs = join(this.root, relativePath);
+    // `..` 정규화로 .harness/ 밖으로 탈출하는 것을 차단(B 감사 — withinHarness 연결).
+    if (!withinHarness(abs, this.cwd)) {
+      throw new Error(`artifact path escapes .harness/: ${relativePath}`);
+    }
+    return abs;
   }
 
   async writeMarkdown(relativePath: string, content: string): Promise<void> {

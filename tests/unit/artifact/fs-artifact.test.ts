@@ -81,3 +81,29 @@ test("FsArtifact: appendJsonLines appends each call", async () => {
     assert.equal(lines.length, 2);
   });
 });
+
+test("FsArtifact: path traversal with .. is rejected (escapes .harness/)", async () => {
+  await inTmp(async (dir) => {
+    const fa = new FsArtifact({ cwd: dir });
+    await assert.rejects(
+      () => fa.writeMarkdown("../escape.md", "x"),
+      /escapes \.harness/
+    );
+    await assert.rejects(
+      () => fa.writeJson("../../evil.json", {}),
+      /escapes \.harness/
+    );
+    await assert.rejects(
+      () => fa.appendJsonLines("../sneak.jsonl", { a: 1 }),
+      /escapes \.harness/
+    );
+  });
+});
+
+test("FsArtifact: nested relative path inside .harness/ still works", async () => {
+  await inTmp(async (dir) => {
+    const fa = new FsArtifact({ cwd: dir });
+    await fa.writeMarkdown("pending/TASK-1.patch", "diff");
+    assert.equal(await fa.readMarkdown("pending/TASK-1.patch"), "diff");
+  });
+});

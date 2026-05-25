@@ -29,6 +29,7 @@ import { runTeam } from "../../core/team/index.js";
 import { runQualityContract } from "../../core/quality-contract/index.js";
 import { runReview } from "../../core/review/index.js";
 import { runGate } from "../../core/gate/index.js";
+import { gateStrictExitCode } from "../../core/gate/verdict.js";
 import { readGitDiff, diffHash } from "../../utils/git.js";
 import { isoNow, systemClock } from "../../utils/time.js";
 import { runWorkersInit } from "../../workers/index.js";
@@ -39,6 +40,7 @@ interface SelfHostOpts {
   goal?: string;
   taskId?: string;
   withWorkerStubs?: boolean;
+  strict?: boolean;
 }
 
 const DEFAULT_SPEC = {
@@ -108,6 +110,10 @@ export function registerSelfHost(program: Command): void {
       "--with-worker-stubs",
       "seed minimal worker-result stubs (impl/test/sec) for deeper self-check",
       false
+    )
+    .option(
+      "--strict",
+      "exit non-zero when self-host verdict is not a clean PASS (CI self-check gating)"
     )
     .action(async (opts: SelfHostOpts) => {
       const taskId = opts.taskId ?? "TASK-001";
@@ -185,6 +191,16 @@ export function registerSelfHost(program: Command): void {
         console.error(
           `[note] 실 repo 의 .harness/audit.jsonl 은 영향 없음 (격리 워크스페이스).`
         );
+        // --strict: self-host verdict 가 clean PASS 가 아니면 non-zero exit (CI self-check 게이팅).
+        if (opts.strict) {
+          const code = gateStrictExitCode(r.verdict);
+          if (code !== 0) {
+            console.error(
+              `[strict] verdict ${r.verdict} is not a clean PASS → exit ${code}`
+            );
+            process.exit(code);
+          }
+        }
       } catch (err) {
         const e = err as Error & { exitCode?: number };
         console.error(`[error] self-host failed: ${e.message}`);

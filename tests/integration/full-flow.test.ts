@@ -139,6 +139,33 @@ test("M3a: full 30초 path runs end-to-end", async (t) => {
   // REPORT.md exists
   await stat(join(cwd, "REPORT.md"));
 
+  // ⓒ 무결성: decision.json 을 gate 이후 사후 변조하면 apply 가 거부한다.
+  // (무결성 체크는 evidence/drift 검사보다 먼저 early-throw 하므로 .harness 상태를
+  //  건드리지 않는다 → 원복 후 정상 apply 가 그대로 이어진다)
+  {
+    const tampered = JSON.parse(decisionText) as { verdict: string };
+    tampered.verdict =
+      tampered.verdict === "PASS" ? "PASS_WITH_WARNINGS" : "PASS";
+    await writeFile(
+      join(cwd, ".harness", "decision.json"),
+      JSON.stringify(tampered, null, 2) + "\n",
+      "utf8"
+    );
+    const bad = runCli(["apply", "--approved"], cwd);
+    assert.notEqual(bad.status, 0, "tampered decision.json must be rejected");
+    assert.match(
+      bad.stderr,
+      /integrity check failed/,
+      `expected integrity rejection, got: ${bad.stderr}`
+    );
+    // 원복 — 이후 정상 apply 가 동작하도록 원본 바이트로 복구.
+    await writeFile(
+      join(cwd, ".harness", "decision.json"),
+      decisionText,
+      "utf8"
+    );
+  }
+
   // 12. apply (only if verdict permits)
   if (decision.verdict === "PASS" || decision.verdict === "PASS_WITH_WARNINGS") {
     r = runCli(["apply", "--approved"], cwd);
@@ -168,4 +195,23 @@ test("M3a: full 30초 path runs end-to-end", async (t) => {
   assert.ok(types.has("command_start"));
   assert.ok(types.has("command_end"));
   assert.ok(types.has("gate_verdict"));
+
+  // 4,5 — gate_verdict 가 입력 diff 와 decision 을 content hash 로 결박(증거 추적성).
+  const gv = auditLines
+    .map(
+      (l) =>
+        JSON.parse(l) as {
+          type: string;
+          inputDiffHash?: string;
+          decisionHash?: string;
+        }
+    )
+    .find((e) => e.type === "gate_verdict");
+  assert.match(gv?.inputDiffHash ?? "", /^[0-9a-f]{64}$/, "gate_verdict.inputDiffHash 결박");
+  assert.match(gv?.decisionHash ?? "", /^[0-9a-f]{64}$/, "gate_verdict.decisionHash 결박");
+  // 2 — 어느 엔진 버전이 판정했는지 audit 에 기록(추적성)
+  assert.ok(
+    (gv as { engineVersion?: string })?.engineVersion,
+    "gate_verdict.engineVersion 기록"
+  );
 });
