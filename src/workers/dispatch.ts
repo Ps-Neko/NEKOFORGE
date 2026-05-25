@@ -64,7 +64,9 @@ export async function runDispatch(
       `worker role "${input.worker}" not configured in workers.json`
     );
   }
-  const body = renderPrompt(input.taskId, input.worker, workers);
+  const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
+  const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
+  const body = renderPrompt(input.taskId, input.worker, workers, { spec, plan });
   const path = `worker-runs/${input.taskId}/${input.worker}.prompt.md`;
   await deps.artifact.writeMarkdown(path, body);
   return {
@@ -88,9 +90,11 @@ export async function runDispatchAll(
   // workers.json 안에 정의된 role 만 dispatch (required 와 교차).
   const definedRoles = new Set(workers.workers.map((w) => w.role));
   const roles = required.filter((r) => definedRoles.has(r));
+  const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
+  const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
   const prompts: Array<{ role: WorkerRole; path: string }> = [];
   for (const role of roles) {
-    const body = renderPrompt(input.taskId, role, workers);
+    const body = renderPrompt(input.taskId, role, workers, { spec, plan });
     const rel = `worker-runs/${input.taskId}/${role}.prompt.md`;
     await deps.artifact.writeMarkdown(rel, body);
     prompts.push({ role, path: `.harness/${rel}` });
@@ -137,12 +141,24 @@ export async function runDispatchAll(
   };
 }
 
-function renderPrompt(
+export interface PromptContext { spec?: string; plan?: string; }
+
+export function renderPrompt(
   taskId: string,
   role: WorkerRole,
-  workers: WorkersJson
+  workers: WorkersJson,
+  context: PromptContext = {}
 ): string {
   const profile = workers.profile;
+  const contextBlock = (context.spec || context.plan)
+    ? [
+        `## 작업 맥락 (SPEC/PLAN 발췌)`,
+        "",
+        context.spec ? `### SPEC\n${context.spec.slice(0, 3000)}` : "",
+        context.plan ? `### PLAN\n${context.plan.slice(0, 2000)}` : "",
+        ""
+      ].filter(Boolean).join("\n")
+    : "";
   return [
     `# Worker Prompt — ${role}`,
     "",
@@ -151,6 +167,7 @@ function renderPrompt(
     `- role: ${role}`,
     `- forbidden actions: no-commit, no-push, no-deploy, no-apply, no-decision-write`,
     "",
+    contextBlock,
     `## 임무`,
     "",
     ROLE_PROMPT[role],
