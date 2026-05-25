@@ -53,3 +53,20 @@ test("runAuto: --max-cost 0 이면 AI 호출 전 CostExceededError", async () =>
     /상한|CostExceeded/
   );
 });
+
+test("runAuto: work 어댑터가 failed 면 exitCode 6 으로 throw", async () => {
+  const failWorker = {
+    id: "fail", estimateCostUsd: 0.1,
+    async available() { return true; },
+    async dispatch() { return { status: "failed" as const, resultMd: "boom", notes: "test failure" }; }
+  };
+  const passReview = { id: "fake-codex", async available() { return true; },
+    async run() { return { adapterId: "fake-codex", status: "passed" as const, findings: [] }; } };
+  await assert.rejects(
+    () => runAuto({
+      goal: "x", taskId: "TASK-001", maxCostUsd: 5,
+      workerAdapter: failWorker, reviewAdapter: passReview, captureDiff: () => ""
+    }),
+    (e: unknown) => { assert.equal((e as { exitCode?: number }).exitCode, 6); return true; }
+  );
+});
