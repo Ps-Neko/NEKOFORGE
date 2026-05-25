@@ -200,9 +200,18 @@ v3:  spec → plan → harness-design → quality-policy → team
   else if dangerous-file-write 트리거                   → NEEDS_HUMAN_REVIEW
   else if hook-injection-risk 또는 agent-permission-risk → NEEDS_HUMAN_REVIEW
   else if review adapter critical 또는 tests=failed    → NEEDS_HUMAN_REVIEW
-  else if no-test-risk 또는 warning 존재                → PASS_WITH_WARNINGS
+  else if no-test-risk · warning · review 미실행/실패(not_run/failed) → PASS_WITH_WARNINGS
   else                                                  → PASS
   ```
+  - **미검증 = 미통과** : review 가 not_run/failed 면 깨끗한 변경이라도 PASS 로 묻지 않고
+    PASS_WITH_WARNINGS 로 강등해 가시화한다. `--no-review-adapter` 도 reviewStatus 를
+    not_run 으로 강제하므로 동일하게 강등된다.
+- **`--strict`** : verdict 가 clean PASS 가 아니면 non-zero exit
+  (BLOCK/INSUFFICIENT_EVIDENCE=4, NEEDS_HUMAN_REVIEW/PASS_WITH_WARNINGS=3). CI 게이팅용.
+  기본 모드(strict 미지정)는 exit 0 유지(호환).
+- **증거 결박** : decision.json canonical sha256 + 입력 diff hash + codex findings hash +
+  engineVersion 을 `gate_verdict` audit 이벤트에 박는다(추적성). decision 본문 해시는 apply 가
+  재해싱 대조한다.
 - **출력** : `REPORT.md`, `.harness/decision.json`
 - **금지 사항** : verdict 의 직접 손편집 경로 없음.
 
@@ -210,9 +219,9 @@ v3:  spec → plan → harness-design → quality-policy → team
 
 - **명령** : `harness apply --approved`
 - **책임** :
-  1. `decision.json` 로드 + schema 검증
+  1. `decision.json` 로드 + schema 검증 + audit 결박 content hash 대조(gate 이후 변조 거부)
   2. verdict 검사 (ARCHITECTURE.md §10)
-  3. NEEDS_HUMAN_REVIEW 시 `.harness/approval.txt` 토큰 매칭
+  3. NEEDS_HUMAN_REVIEW 시 `.harness/approval.txt` 토큰 매칭(decision hash 바인딩 — 재사용·드리프트 차단)
   4. pre-apply hook 실행
   5. 적용 + `.harness/apply-log.md` 기록
   6. post-review hook 트리거 (선택)

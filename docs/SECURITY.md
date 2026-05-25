@@ -154,11 +154,14 @@ Node.js 20+ 가 CVE-2024-27980 fix 로 `.cmd`/`.bat` 의 `shell:false` 실행을
 ### 3.10 audit-integrity (Phase C 후속 신규)
 
 - `.harness/audit.jsonl` 의 chain hash 검증 + audit-anchor.json 의 append-only 위반 감지.
-- 두 가지 위반:
+- 위반 유형:
   - **chain 무결성**: 각 라인의 `prev_hash` 가 직전 라인의 `line_hash` 와 불일치하거나, `line_hash` 재계산이 다른 경우.
   - **anchor append-only 위반**: 이전 gate 의 anchor 와 비교해 `firstHash` 가 바뀌었거나 `lineCount` 가 감소한 경우.
+  - **chain 재작성 / anchor 삭제** (`detectAnchorTampering`): 이전 anchor 의 `lastHash` 가 현재 chain 에 없으면(통째 재계산) 또는 anchor 부재인데 chain 에 이전 `gate_verdict` 가 있으면(anchor 삭제) 감지. prevAnchor/prior gate_verdict 가 있을 때만 발화 → 정상 첫 실행 무영향.
+- **증거 content-hash 결박**: gate 가 `decision.json` canonical sha256 + 입력 diff hash + codex findings hash + engineVersion 을 `gate_verdict` audit 이벤트에 박는다. apply 가 decision 을 재해싱해 대조 → gate 이후 `decision.json` 변조 시 거부. (평문 위변조를 휴리스틱이 아니라 chain-anchored hash 로 방어)
 - 등급 : `high` → NEEDS_HUMAN_REVIEW.
 - 본 finding 은 `src/rules/` 하의 deterministic rule 카탈로그가 아니라 gate 모듈이 직접 생성한다 (audit 입력이 diff 가 아닌 audit.jsonl 자체이기 때문).
+- **로컬-first 한계**: chain 과 anchor 를 **동시에** 재작성하는 공격은 외부 신뢰 앵커(원격/서명) 없이는 막을 수 없다 — 의도된 한계.
 
 ### 3.11 architecture rules (Phase QF 신규, 4종)
 
@@ -265,12 +268,12 @@ Node.js 20+ 가 CVE-2024-27980 fix 로 `.cmd`/`.bat` 의 `shell:false` 실행을
 - 파일 : `.harness/approval.txt`
 - 형식 :
   ```text
-  approve TASK-001 verdict=NEEDS_HUMAN_REVIEW finding=DFW-2026-05-18-001 by=mmjs1220 at=2026-05-18T10:30Z
+  approve TASK-001 verdict=NEEDS_HUMAN_REVIEW decision=3f9a1c2b7d04 by=mmjs1220 at=2026-05-18T10:30Z
   ```
 - 규칙 :
-  - taskId, verdict, finding, by, at 모두 필수.
-  - 토큰 1개 = finding 1개 승인 (부분 승인 불가).
-  - gate 재실행 시 verdict 또는 finding 이 바뀌면 토큰 무효화.
+  - `approve <taskId>` + `verdict=<verdict>` + `decision=<hash12>` 모두 필수 (by/at 은 메타).
+  - `decision=` 은 현재 `decision.json` content hash(canonicalHash) 앞 12자. 오래된/다른 decision 의 승인 토큰은 hash 불일치로 거부 → 재사용·드리프트 차단.
+  - gate 재실행으로 decision 이 바뀌면 hash 가 달라져 기존 토큰이 자동 무효화된다.
 
 ### 5.3 검증 알고리즘
 
