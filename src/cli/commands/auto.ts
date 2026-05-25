@@ -6,7 +6,7 @@ import { createCodexStubAdapter } from "../../integrations/codex/stub.js";
 import { readGitDiff } from "../../utils/git.js";
 import { gateStrictExitCode } from "../../core/gate/verdict.js";
 
-interface AutoOpts { task?: string; adapter?: string; maxCost?: string; strict?: boolean; }
+interface AutoOpts { task?: string; adapter?: string; maxCost?: string; strict?: boolean; workerPermission?: string; }
 
 export function registerAuto(program: Command): void {
   program
@@ -15,20 +15,28 @@ export function registerAuto(program: Command): void {
     .option("--task <id>", "task id", "TASK-001")
     .option("--adapter <id>", "review adapter (codex | codex-stub)", "codex")
     .option("--max-cost <usd>", "AI 호출 비용 상한(USD)", "5")
+    .option("--worker-permission <mode>", "워커(claude) 편집 권한 수위 (acceptEdits | bypassPermissions | default)", "acceptEdits")
     .option("--strict", "verdict 가 clean PASS 아니면 non-zero exit")
     .action(async (goal: string, opts: AutoOpts) => {
       const reviewAdapter = opts.adapter === "codex-stub"
         ? createCodexStubAdapter({ enabled: true })
         : createCodexRealAdapter();
+      // 단일 projectCwd: claude 가 편집하는 곳과 diff 를 읽는 곳을 한 줄기로 묶는다.
+      // 둘이 어긋나면 편집은 됐는데 diff 가 빈다 → "헛바퀴". 같은 값이라야 한 바퀴가 닫힌다.
+      const projectCwd = process.cwd();
       try {
         const r = await runAuto({
           goal,
           taskId: opts.task ?? "TASK-001",
           maxCostUsd: Number(opts.maxCost ?? "5"),
-          workerAdapter: createClaudeWorkerAdapter(),
+          workerAdapter: createClaudeWorkerAdapter({
+            cwd: projectCwd,
+            permissionMode: opts.workerPermission ?? "acceptEdits"
+          }),
           reviewAdapter,
-          captureDiff: () => readGitDiff(process.cwd()) ?? ""
+          captureDiff: () => readGitDiff(projectCwd) ?? ""
         });
+        console.error(`[worker]  claude @ ${projectCwd} (permission: ${opts.workerPermission ?? "acceptEdits"})`);
         console.error(`[verdict] ${r.verdict}`);
         console.error(`[rules]   ${r.triggeredRules.join(", ") || "(none)"}`);
         console.error(`[cost]    $${r.spentUsd.toFixed(2)}`);
