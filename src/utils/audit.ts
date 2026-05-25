@@ -38,6 +38,13 @@ export interface AuditEvent {
   exitCode?: number;
   verdict?: string;
   reason?: string;
+  /** ⓒ gate_verdict 이벤트에 박는 decision.json canonical content hash. */
+  decisionHash?: string;
+  /** 4,5 — gate_verdict 가 박는 입력 diff / codex 결과 content hash(증거 추적성). */
+  inputDiffHash?: string;
+  codexFindingsHash?: string;
+  /** 2 — 어느 엔진 버전이 verdict 를 냈는지(추적성). */
+  engineVersion?: string;
   at?: string;
 }
 
@@ -261,7 +268,10 @@ export function compareAnchor(
   current: AuditAnchor
 ): AnchorComparison {
   if (!prev) return { match: true };
-  if (prev.firstHash !== current.firstHash) {
+  // prev.firstHash 가 null 이면 빈 chain 으로 계산된 anchor(첫 gate 가 gate_verdict
+  // append 전에 anchor 를 쓴 경우). null → non-null 은 정상 성장이지 chain 재구성이
+  // 아니므로 firstHash 비교를 건너뛴다(연속 gate 오탐 방지). lineCount 가드는 유지.
+  if (prev.firstHash !== null && prev.firstHash !== current.firstHash) {
     return {
       match: false,
       reason: `firstHash changed (chain reorganized): ${prev.firstHash} → ${current.firstHash}`
@@ -274,6 +284,28 @@ export function compareAnchor(
     };
   }
   return { match: true };
+}
+
+/**
+ * 2,7 — anchor 위변조 감지(compareAnchor 보완).
+ *
+ * - prev.lastHash 가 현재 chain 텍스트에 없으면 chain 을 통째 재계산한 것(append-only 위반).
+ * - anchor 가 없는데 chain 에 이전 gate_verdict 가 있으면 anchor 파일 삭제 의심.
+ *
+ * prevAnchor 또는 prior gate_verdict 가 있을 때만 발화하므로 정상 첫 실행에는 영향이 없다.
+ * (로컬-first 한계: chain+anchor 를 동시에 재작성하는 공격은 외부 신뢰 앵커 없이는 못 막는다.)
+ */
+export function detectAnchorTampering(
+  prev: AuditAnchor | null,
+  currentText: string
+): string | null {
+  if (prev?.lastHash && !currentText.includes(prev.lastHash)) {
+    return "previous anchor lastHash absent from current chain (audit chain rewritten)";
+  }
+  if (!prev && currentText.includes('"type":"gate_verdict"')) {
+    return "audit anchor missing but prior gate_verdict exists (anchor deleted?)";
+  }
+  return null;
 }
 
 export async function readAuditAnchor(

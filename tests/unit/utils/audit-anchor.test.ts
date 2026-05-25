@@ -67,6 +67,15 @@ test("compareAnchor: append-only (lineCount increased, firstHash same) → match
   assert.deepEqual(compareAnchor(prev, cur), { match: true });
 });
 
+test("compareAnchor: prev firstHash null (empty-chain anchor) → non-null current is NOT a mismatch", () => {
+  // 첫 gate 가 gate_verdict append 전 빈 chain 으로 anchor 를 계산하면 firstHash=null.
+  // 다음 gate 는 gate_verdict 가 있어 non-null → null→X 는 정상 성장이지 chain 재구성이 아니다.
+  // (dogfooding 발견: 연속 gate 시 firstHash null→X 오탐)
+  const prev = { schemaVersion: "0.3" as const, lineCount: 0, firstHash: null, lastHash: null, recordedAt: "t" };
+  const cur = { schemaVersion: "0.3" as const, lineCount: 2, firstHash: "X", lastHash: "Y", recordedAt: "t2" };
+  assert.deepEqual(compareAnchor(prev, cur), { match: true });
+});
+
 test("readAuditAnchor / writeAuditAnchor: roundtrip", async () => {
   await inTmp(async (dir) => {
     await mkdir(join(dir, ".harness"), { recursive: true });
