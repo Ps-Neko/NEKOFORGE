@@ -116,6 +116,7 @@ $ harness team                            # 실행 routing
 $ harness work TASK-001                   # diff 캡처 + pending patch 격리
 $ harness review --adapter codex          # self-review + 외부 어댑터
 $ harness gate                            # verdict 산출 → REPORT.md + decision.json
+$ harness gate --strict                   # (CI) clean PASS 아니면 non-zero exit
 $ harness apply --approved                # verdict + Human Gate 통과 시에만 적용
 $ harness export claude                   # (선택) .claude/agents 로 export
 ```

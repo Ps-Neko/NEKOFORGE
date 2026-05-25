@@ -2,6 +2,21 @@
 
 ## v0.5.0-alpha — Worker Factory + Rule/Skill Pack Upgrade (2026-05-20)
 
+### 검증 불변식 강화 — verified advisory → autopilot (2026-05-24)
+
+코드 실측 평가에서 드러난 "주장 vs 보장" 격차를 코드 불변식으로 봉쇄(PR #65/#66, main 머지, tests 292 → 322):
+
+| 영역 | 강화 |
+|---|---|
+| 미검증 = 미통과 | review `not_run`/`failed` → PASS 대신 `PASS_WITH_WARNINGS` 강등(verdict.ts). `--no-review-adapter` 도 `reviewStatus` 를 not_run 으로 강제 |
+| `gate --strict` | verdict 가 clean PASS 아니면 non-zero exit (BLOCK/INSUFFICIENT=4, NEEDS_HUMAN/PWW=3). CI 게이팅용. 기본 모드는 exit 0(호환) |
+| 증거 무결성 | decision.json content-hash + 입력 diff·codex findings·engineVersion 을 `gate_verdict` audit 에 결박. apply 가 재해싱 대조 → 사후 변조 거부 |
+| 쓰기 경계 | fs-artifact `withinHarness` 연결 → `..` 경로탈출(.harness/ 밖 쓰기) 차단 |
+| 승인 위변조 | `approval.txt` 토큰을 현재 decision hash 에 바인딩 → 오래된/다른 decision 의 승인 재사용 차단 |
+| audit 위변조 | chain 재작성(prev.lastHash 소실)·anchor 삭제 감지(`detectAnchorTampering`) |
+
+신규 스킬 `verified-gate`("슬래시 신규 금지" 정책에 따라 스킬+CLI 로). 구조적 보류 2건: rule-packs 부재 강제(opt-in 설계 — required 정책이 파일 자체에 저장), audit chain+anchor **동시** 재작성(외부 신뢰 앵커 필요 = 로컬-first 한계).
+
 ### 9점 미만 영역 9점화 (2026-05-20)
 
 7 Phase 일괄 — 외부 사용자 유치 / brand 정합성 / placeholder rule 휴리스틱 등 외부 신호 외 자체 가능 영역 마무리:
