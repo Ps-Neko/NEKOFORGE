@@ -6,7 +6,22 @@ import { createCodexStubAdapter } from "../../integrations/codex/stub.js";
 import { readGitDiff } from "../../utils/git.js";
 import { gateStrictExitCode } from "../../core/gate/verdict.js";
 
-interface AutoOpts { task?: string; adapter?: string; maxCost?: string; strict?: boolean; workerPermission?: string; }
+const DEFAULT_WORKER_TIMEOUT_SEC = 600;
+
+/**
+ * --worker-timeout(초) → ms. 자율 codegen 은 다수 파일 편집에 분 단위가 걸릴 수
+ * 있어 기본 600초. 잘못된/0 이하 입력은 기본값으로 떨어뜨려, 초↔ms 혼동이나
+ * 오입력이 즉시-타임아웃(예: 600ms) footgun 으로 이어지지 않게 한다.
+ */
+export function parseWorkerTimeoutMs(raw: string | undefined): number {
+  const sec = Number(raw);
+  if (!Number.isFinite(sec) || sec <= 0) {
+    return DEFAULT_WORKER_TIMEOUT_SEC * 1000;
+  }
+  return Math.floor(sec * 1000);
+}
+
+interface AutoOpts { task?: string; adapter?: string; maxCost?: string; strict?: boolean; workerPermission?: string; workerTimeout?: string; }
 
 export function registerAuto(program: Command): void {
   program
@@ -16,6 +31,7 @@ export function registerAuto(program: Command): void {
     .option("--adapter <id>", "review adapter (codex | codex-stub)", "codex")
     .option("--max-cost <usd>", "AI 호출 비용 상한(USD)", "5")
     .option("--worker-permission <mode>", "워커(claude) 편집 권한 수위 (acceptEdits | bypassPermissions | default)", "acceptEdits")
+    .option("--worker-timeout <seconds>", "워커(claude) 1회 호출 타임아웃(초)", "600")
     .option("--strict", "verdict 가 clean PASS 아니면 non-zero exit")
     .action(async (goal: string, opts: AutoOpts) => {
       const reviewAdapter = opts.adapter === "codex-stub"
@@ -31,12 +47,13 @@ export function registerAuto(program: Command): void {
           maxCostUsd: Number(opts.maxCost ?? "5"),
           workerAdapter: createClaudeWorkerAdapter({
             cwd: projectCwd,
-            permissionMode: opts.workerPermission ?? "acceptEdits"
+            permissionMode: opts.workerPermission ?? "acceptEdits",
+            timeoutMs: parseWorkerTimeoutMs(opts.workerTimeout)
           }),
           reviewAdapter,
           captureDiff: () => readGitDiff(projectCwd) ?? ""
         });
-        console.error(`[worker]  claude @ ${projectCwd} (permission: ${opts.workerPermission ?? "acceptEdits"})`);
+        console.error(`[worker]  claude @ ${projectCwd} (permission: ${opts.workerPermission ?? "acceptEdits"}, timeout: ${opts.workerTimeout ?? "600"}s)`);
         console.error(`[verdict] ${r.verdict}`);
         console.error(`[rules]   ${r.triggeredRules.join(", ") || "(none)"}`);
         console.error(`[cost]    $${r.spentUsd.toFixed(2)}`);
