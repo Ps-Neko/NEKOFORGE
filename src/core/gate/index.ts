@@ -24,10 +24,33 @@ import {
   readAuditChain,
   computeAnchor,
   compareAnchor,
+  detectAnchorTampering,
   readAuditAnchor,
   writeAuditAnchor
 } from "../../utils/audit.js";
 import { makeFinding } from "../../rules/types.js";
+import { canonicalHash } from "../../utils/integrity.js";
+import { ENGINE_VERSION } from "../../version.js";
+
+/**
+ * 3번 — review adapter 무시(--no-review-adapter) 시 reviewStatus 를 not_run 으로
+ * 강제해 "검증 안 함"이 verdict 에 가시화되게 한다(ⓐ 강등 + strict 차단과 연동).
+ * codex status 가 임의값이어도 유효 union 으로 정규화한다.
+ */
+export function resolveReviewStatus(
+  noReviewAdapter: boolean,
+  codexStatus: string | undefined
+): "passed" | "warnings" | "failed" | "not_run" {
+  if (noReviewAdapter) return "not_run";
+  if (
+    codexStatus === "passed" ||
+    codexStatus === "warnings" ||
+    codexStatus === "failed"
+  ) {
+    return codexStatus;
+  }
+  return "not_run";
+}
 import { computeVerdict, type Verdict } from "./verdict.js";
 import {
   calculateQualityScore,
@@ -167,7 +190,10 @@ export async function runGate(
 
   const team = (await deps.artifact.readJson<TeamJson>("team.json").catch(() => null)) ?? null;
   const codexRaw = (await deps.artifact.readJson<CodexFindings>("codex-findings.json").catch(() => null)) ?? null;
-  const reviewStatus = codexRaw?.status ?? "not_run";
+  const reviewStatus = resolveReviewStatus(
+    input.noReviewAdapter ?? false,
+    codexRaw?.status
+  );
   const reviewCritical = (codexRaw?.findings ?? []).filter(
     (f) => f.severity === "critical"
   ).length;
@@ -225,6 +251,11 @@ export async function runGate(
         `audit anchor mismatch: ${anchorCmp.reason}`
       )
     );
+  }
+  // 2,7 — anchor 재작성/삭제 감지(prevAnchor 또는 prior gate_verdict 있을 때만 발화).
+  const anchorTamper = detectAnchorTampering(prevAnchor, auditChain.rawText);
+  if (anchorTamper) {
+    passTwo.push(makeFinding("audit-integrity", "high", anchorTamper));
   }
   await writeAuditAnchor(currentAnchor, deps.cwd);
 
@@ -749,7 +780,11 @@ export async function runGate(
     {
       type: "gate_verdict",
       verdict: verdict.verdict,
-      reason: triggered.length === 0 ? "no triggered rules" : triggered.join(", ")
+      reason: triggered.length === 0 ? "no triggered rules" : triggered.join(", "),
+      decisionHash: canonicalHash(decision),
+      inputDiffHash: canonicalHash(rawDiff),
+      engineVersion: ENGINE_VERSION,
+      ...(codexRaw ? { codexFindingsHash: canonicalHash(codexRaw) } : {})
     },
     deps.cwd
   );

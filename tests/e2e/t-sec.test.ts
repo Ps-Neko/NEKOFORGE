@@ -18,6 +18,7 @@ import {
 import { runGate } from "../../src/core/gate/index.js";
 import { runApply, ApplyApprovalError, ApplyPrecondError } from "../../src/core/apply/index.js";
 import { AutoApplyBlockedError } from "../../src/rules/auto-apply-block.js";
+import { canonicalHash } from "../../src/utils/integrity.js";
 
 const GATE_OPTS = { taskId: "TASK-001" as const, testStatus: "passed" as const };
 
@@ -287,6 +288,86 @@ test("T-SEC-10: approval.txt mismatch → apply exit 3", async (t) => {
   try {
     await runApply({ approved: true }, ws.deps);
     assert.fail();
+  } catch (err) {
+    assert.ok(err instanceof ApplyApprovalError);
+    assert.equal((err as ApplyApprovalError).exitCode, 3);
+  }
+});
+
+// ===== T-SEC-10a approval token bound to decision content hash ============
+// 보안 강화: NEEDS_HUMAN_REVIEW 의 approval 토큰은 현재 decision.json 의
+// canonicalHash 앞 12자(decision=<hash12>)에 바인딩되어야 한다.
+// 올바른 hash → 통과 / hash 불일치(다른 decision) → 거부 / decision= 누락 → 거부.
+
+/** decision.json 전체 객체를 읽어 canonicalHash 앞 12자를 반환한다(runApply 와 동일 계산). */
+async function decisionHash12(cwd: string): Promise<string> {
+  const text = await readFile(join(cwd, ".harness", "decision.json"), "utf8");
+  return canonicalHash(JSON.parse(text)).slice(0, 12);
+}
+
+/** NEEDS_HUMAN_REVIEW verdict 까지 도달한 시드 워크스페이스를 만든다(.env 변경 경로). */
+async function seedNeedsHumanReview(
+  t: { after: (fn: () => Promise<void>) => void }
+): Promise<Awaited<ReturnType<typeof seedHarness>>> {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+  await overwriteJson(ws.cwd, "codex-findings.json", {
+    schemaVersion: "0.3",
+    adapterId: "codex-stub",
+    status: "passed",
+    findings: [],
+    summary: "stub"
+  });
+  await writeLastDiff(
+    ws.cwd,
+    diffLines("diff --git a/.env b/.env", "@@ -1 +1 @@", "-A=1", "+A=2")
+  );
+  await runGate(GATE_OPTS, ws.deps);
+  const d = await readDecision(ws.cwd);
+  assert.equal(d.verdict, "NEEDS_HUMAN_REVIEW");
+  return ws;
+}
+
+test("T-SEC-10a: approval bound to correct decision hash → apply permitted", async (t) => {
+  const ws = await seedNeedsHumanReview(t);
+  const hash12 = await decisionHash12(ws.cwd);
+  await writeApproval(
+    ws.cwd,
+    `approve TASK-001 verdict=NEEDS_HUMAN_REVIEW decision=${hash12} by=u at=2026-05-24T00:00Z\n`
+  );
+  const r = await runApply({ approved: true }, ws.deps);
+  assert.equal(r.applied, true);
+});
+
+test("T-SEC-10b: approval with wrong decision hash → apply exit 3", async (t) => {
+  const ws = await seedNeedsHumanReview(t);
+  // 다른/오래된 decision 의 hash (12자, 현재 decision 과 불일치) → 재사용 차단.
+  const wrong = "0".repeat(12);
+  const real = await decisionHash12(ws.cwd);
+  assert.notEqual(wrong, real); // 시드 hash 와 우연히 같지 않음을 보장
+  await writeApproval(
+    ws.cwd,
+    `approve TASK-001 verdict=NEEDS_HUMAN_REVIEW decision=${wrong} by=u at=2026-05-24T00:00Z\n`
+  );
+  try {
+    await runApply({ approved: true }, ws.deps);
+    assert.fail("apply should refuse approval bound to a different decision");
+  } catch (err) {
+    assert.ok(err instanceof ApplyApprovalError);
+    assert.equal((err as ApplyApprovalError).exitCode, 3);
+  }
+});
+
+test("T-SEC-10c: approval missing decision= token → apply exit 3", async (t) => {
+  const ws = await seedNeedsHumanReview(t);
+  // 구(舊) 포맷(decision= 토큰 없음)은 더 이상 통과해서는 안 된다.
+  await writeApproval(
+    ws.cwd,
+    "approve TASK-001 verdict=NEEDS_HUMAN_REVIEW finding=x by=u at=2026-05-24T00:00Z\n"
+  );
+  try {
+    await runApply({ approved: true }, ws.deps);
+    assert.fail("apply should refuse legacy approval lacking decision= token");
   } catch (err) {
     assert.ok(err instanceof ApplyApprovalError);
     assert.equal((err as ApplyApprovalError).exitCode, 3);
