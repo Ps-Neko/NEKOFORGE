@@ -31,3 +31,38 @@ test("claude adapter: non-zero exit 이면 failed", async () => {
   const r = await a.dispatch({ role: "implementation-worker", prompt: "x", taskId: "T" });
   assert.equal(r.status, "failed");
 });
+
+test("claude adapter: dispatch 는 설정된 cwd 를 spawn 에 전달한다", async () => {
+  let sentCwd: string | undefined = "(unset)";
+  const spy: SpawnLike = (_cmd, _args, opts) => {
+    sentCwd = opts?.cwd;
+    return { status: 0, stdout: "done", stderr: "" };
+  };
+  const a = createClaudeWorkerAdapter({ spawn: spy, cwd: "/tmp/project-x" });
+  await a.dispatch({ role: "implementation-worker", prompt: "x", taskId: "T" });
+  assert.equal(sentCwd, "/tmp/project-x");
+});
+
+test("claude adapter: 기본 args 에 편집 권한(--permission-mode acceptEdits)이 붙는다", async () => {
+  let sentArgs: readonly string[] = [];
+  const spy: SpawnLike = (_cmd, args) => {
+    sentArgs = args;
+    return { status: 0, stdout: "done", stderr: "" };
+  };
+  const a = createClaudeWorkerAdapter({ spawn: spy });
+  await a.dispatch({ role: "implementation-worker", prompt: "x", taskId: "T" });
+  assert.ok(sentArgs.includes("--permission-mode"), "--permission-mode 플래그가 있어야 한다");
+  assert.ok(sentArgs.includes("acceptEdits"), "기본 권한 수위는 acceptEdits");
+});
+
+test("claude adapter: permissionMode 옵션이 기본 권한을 덮어쓴다", async () => {
+  let sentArgs: readonly string[] = [];
+  const spy: SpawnLike = (_cmd, args) => {
+    sentArgs = args;
+    return { status: 0, stdout: "done", stderr: "" };
+  };
+  const a = createClaudeWorkerAdapter({ spawn: spy, permissionMode: "bypassPermissions" });
+  await a.dispatch({ role: "implementation-worker", prompt: "x", taskId: "T" });
+  assert.ok(sentArgs.includes("bypassPermissions"), "권한 수위가 bypassPermissions 로 바뀌어야 한다");
+  assert.ok(!sentArgs.includes("acceptEdits"), "기본 acceptEdits 는 더 이상 없어야 한다");
+});
