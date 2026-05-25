@@ -28,6 +28,7 @@ import { registerContract } from "./commands/contract.js";
 import { registerBenchmark } from "./commands/benchmark.js";
 import { registerRun } from "./commands/run.js";
 import { registerSelfHost } from "./commands/self-host.js";
+import { registerAuto } from "./commands/auto.js";
 import { registerWorkers } from "./commands/workers.js";
 import { registerDispatch } from "./commands/dispatch.js";
 import { registerWorkerResult } from "./commands/worker-result.js";
@@ -76,6 +77,7 @@ function buildProgram(): Command {
   registerBenchmark(program);
   registerRun(program);
   registerSelfHost(program);
+  registerAuto(program);
   registerWorkers(program);
   registerDispatch(program);
   registerWorkerResult(program);
