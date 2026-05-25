@@ -12,6 +12,7 @@
  *   - 외부 SaaS API key 자동 로드
  */
 import type { WorkerRole } from "./types.js";
+import { createClaudeWorkerAdapter } from "./adapters/claude.js";
 
 export interface WorkerAdapterInput {
   role: WorkerRole;
@@ -64,6 +65,9 @@ export function createShellWorkerAdapterStub(): WorkerAdapter {
 export function resolveWorkerAdapter(id: string): WorkerAdapter | null {
   if (id === "shell" || id === "shell-stub") {
     return createShellWorkerAdapterStub();
+  }
+  if (id === "claude") {
+    return createClaudeWorkerAdapter();
   }
   return null;
 }
