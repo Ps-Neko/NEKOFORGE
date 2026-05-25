@@ -8,7 +8,7 @@
  *
  * 불변식: onApply 콜백은 절대 호출되지 않는다.
  */
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildDeps } from "../stage-runner.js";
@@ -79,74 +79,80 @@ export async function runAuto(input: AutoInput): Promise<AutoResult> {
   const ws = await mkdtemp(join(tmpdir(), "nekoforge-auto-"));
 
   await runInit({ cwd: ws });
-  const deps = buildDeps(ws);
 
-  await runIntake({ goal: input.goal }, deps);
-  await runClarify(deps);
-  await runContext(deps);
+  try {
+    const deps = buildDeps(ws);
 
-  const specAnswers = join(ws, "spec-answers.json");
-  await writeFile(specAnswers, JSON.stringify(DEFAULT_SPEC), "utf8");
-  await runSpec({ answersFile: specAnswers }, deps);
+    await runIntake({ goal: input.goal }, deps);
+    await runClarify(deps);
+    await runContext(deps);
 
-  await runPlan({}, deps);
-  await runDesign({ pattern: "Pipeline" }, deps);
-  await runPolicy({}, deps);
-  await runTeam(deps);
+    const specAnswers = join(ws, "spec-answers.json");
+    await writeFile(specAnswers, JSON.stringify(DEFAULT_SPEC), "utf8");
+    await runSpec({ answersFile: specAnswers }, deps);
 
-  const contractAnswers = join(ws, "contract-answers.json");
-  await writeFile(contractAnswers, JSON.stringify(DEFAULT_CONTRACT), "utf8");
-  await runQualityContract({ taskId, template: "custom", answersFile: contractAnswers }, deps);
+    await runPlan({}, deps);
+    await runDesign({ pattern: "Pipeline" }, deps);
+    await runPolicy({}, deps);
+    await runTeam(deps);
 
-  await runWorkersInit({ profile: "standard", force: true }, deps);
-  await ensureRulePacks(deps);
-  await ensureSkillPacks(deps);
+    const contractAnswers = join(ws, "contract-answers.json");
+    await writeFile(contractAnswers, JSON.stringify(DEFAULT_CONTRACT), "utf8");
+    await runQualityContract({ taskId, template: "custom", answersFile: contractAnswers }, deps);
 
-  // ① work — AI 가 코드 작성 (cost-guarded)
-  const workers = await readWorkers(deps);
-  const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
-  const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
-  const prompt = workers
-    ? renderPrompt(taskId, "implementation-worker", workers, { spec, plan })
-    : `# Worker Prompt\ntask: ${taskId}\nrole: implementation-worker\n`;
+    await runWorkersInit({ profile: "standard", force: true }, deps);
+    await ensureRulePacks(deps);
+    await ensureSkillPacks(deps);
 
-  const est = input.workerAdapter.estimateCostUsd ?? 0.5;
-  guard.assertCanSpend(est);
-  const work = await input.workerAdapter.dispatch({
-    role: "implementation-worker",
-    prompt,
-    taskId
-  });
-  guard.record(est);
+    // ① work — AI 가 코드 작성 (cost-guarded)
+    const workers = await readWorkers(deps);
+    const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
+    const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
+    const prompt = workers
+      ? renderPrompt(taskId, "implementation-worker", workers, { spec, plan })
+      : `# Worker Prompt\ntask: ${taskId}\nrole: implementation-worker\n`;
 
-  if (work.status === "failed") {
-    const e = new Error(`work 단계 실패: ${work.notes ?? "adapter failed"}`) as Error & { exitCode?: number };
-    e.exitCode = 6;
-    throw e;
+    const est = input.workerAdapter.estimateCostUsd ?? 0.5;
+    guard.assertCanSpend(est);
+    const work = await input.workerAdapter.dispatch({
+      role: "implementation-worker",
+      prompt,
+      taskId
+    });
+    guard.record(est);
+
+    if (work.status === "failed") {
+      const e = new Error(`work 단계 실패: ${work.notes ?? "adapter failed"}`) as Error & { exitCode?: number };
+      e.exitCode = 6;
+      throw e;
+    }
+
+    const diff = input.captureDiff();
+    await deps.artifact.writeMarkdown("last-diff.patch", diff);
+    await deps.artifact.writeMarkdown(`pending/${taskId}.patch`, diff);
+    await deps.artifact.writeMarkdown(
+      "worklog.md",
+      `## ${taskId} — ${isoNow(systemClock)}\n- diff hash: ${diffHash(diff)}\n- via: auto (claude work)\n\n`
+    );
+
+    // ② review — codex 독립 리뷰 (cost-guarded)
+    guard.assertCanSpend(0.2);
+    await runReview({ adapters: [input.reviewAdapter] }, deps);
+    guard.record(0.2);
+
+    // ③ gate — verdict 산출 후 STOP (apply 없음)
+    const r = await runGate({ taskId }, deps);
+
+    return {
+      verdict: r.verdict,
+      triggeredRules: r.triggeredRules,
+      reportPath: r.reportPath,
+      workspace: ws,
+      applied: false,
+      spentUsd: guard.spent()
+    };
+  } catch (err) {
+    await rm(ws, { recursive: true, force: true }).catch(() => {});
+    throw err;
   }
-
-  const diff = input.captureDiff();
-  await deps.artifact.writeMarkdown("last-diff.patch", diff);
-  await deps.artifact.writeMarkdown(`pending/${taskId}.patch`, diff);
-  await deps.artifact.writeMarkdown(
-    "worklog.md",
-    `## ${taskId} — ${isoNow(systemClock)}\n- diff hash: ${diffHash(diff)}\n- via: auto (claude work)\n\n`
-  );
-
-  // ② review — codex 독립 리뷰 (cost-guarded)
-  guard.assertCanSpend(0.2);
-  await runReview({ adapters: [input.reviewAdapter] }, deps);
-  guard.record(0.2);
-
-  // ③ gate — verdict 산출 후 STOP (apply 없음)
-  const r = await runGate({ taskId }, deps);
-
-  return {
-    verdict: r.verdict,
-    triggeredRules: r.triggeredRules,
-    reportPath: r.reportPath,
-    workspace: ws,
-    applied: false,
-    spentUsd: guard.spent()
-  };
 }
