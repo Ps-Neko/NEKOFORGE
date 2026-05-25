@@ -76,7 +76,8 @@ goal
 ## 6. `work` 단계 메커니즘 (가장 위험한 핵심 — 스켈레톤의 주 증명 대상)
 
 1. `auto`가 작업 브랜치(또는 격리 워크스페이스)에서 시작.
-2. claude 어댑터에 task 프롬프트(spec/plan 기반) 전달 → AI가 파일 편집.
+2. claude 어댑터에 **work 프롬프트** 전달 → AI가 파일 편집.
+   - ⚠️ 현재 `dispatch` 프롬프트는 *역할 템플릿 + task-id* 수준(SPEC/PLAN 내용 미주입). **이 스켈레톤은 프롬프트에 SPEC/PLAN/task 맥락을 실제 주입**해야 AI가 목표에 맞는 코드를 짠다(미주입 시 헛코드).
 3. `auto`가 `git diff` 캡처 → `last-diff.patch`.
 4. 이후 **기존 gate가 그 diff를 검사**(룰은 결정적 유지).
 
@@ -104,6 +105,7 @@ goal
 
 - **AC1**: `harness auto "<goal>"` 한 줄이 intake → gate까지 자동 진행한다.
 - **AC2**: `work` 단계에서 (fake) 어댑터가 코드 diff를 생성하고 그 diff가 gate로 흐른다.
+- **AC2b**: `work` 프롬프트에 SPEC/PLAN/task 맥락이 **실제 주입**되어 dispatch 된다(역할 템플릿만 아님).
 - **AC3**: gate 후 Human Gate에서 정지 — 어떤 경로로도 자동 apply 하지 않는다.
 - **AC4**: `--max-cost` 초과 예상 시 AI 호출 전 중단 + 지출 보고.
 - **AC5**: 수동 smoke 1회 — 실제 claude(`work` 코드 생성) + 실제 codex(`review` 독립 검수)가 **Windows에서 spawn 동작**하고 gate까지 흐르는지 확인. (codex Windows .cmd 이슈는 SH-006에서 해결됨 — 실측 필요.)
