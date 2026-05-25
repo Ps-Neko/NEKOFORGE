@@ -141,7 +141,7 @@ export async function runDispatchAll(
   };
 }
 
-export interface PromptContext { spec?: string; plan?: string; }
+export interface PromptContext { spec?: string; plan?: string; autonomous?: boolean; }
 
 export function renderPrompt(
   taskId: string,
@@ -159,6 +159,39 @@ export function renderPrompt(
         ""
       ].filter(Boolean).join("\n")
     : "";
+
+  // autonomous(auto-factory): 워커가 result.md 에 '제안서'를 쓰는 게 아니라
+  // cwd 의 소스 파일을 *직접 편집*한다. 산출물 = 워킹트리 diff. harness 메타
+  // (.harness/)는 건드리지 않게 막아 캡처되는 diff 오염을 방지한다.
+  if (context.autonomous) {
+    const mission =
+      role === "implementation-worker"
+        ? "주어진 task 를 **실제로 구현하라**. 작업 디렉터리(cwd)의 소스 파일을 직접 생성/편집해 동작하는 코드를 남겨라 — 너에겐 편집 권한이 있다. 구현안을 글로 *설명*만 하지 말고 *파일을 실제로 바꿔라*. 너의 산출물은 워킹트리의 변경(diff) 그 자체다. 테스트 코드는 test-worker 담당이라 여기선 필수가 아니다."
+        : ROLE_PROMPT[role];
+    return [
+      `# Worker Prompt — ${role} (autonomous · 직접 편집)`,
+      "",
+      `- task: ${taskId}`,
+      `- profile: ${profile}`,
+      `- role: ${role}`,
+      `- mode: 실제 파일 편집 (산출물 = 워킹트리 diff, result.md 아님)`,
+      "",
+      contextBlock,
+      `## 임무`,
+      "",
+      mission,
+      "",
+      `## 절대 하지 않을 것`,
+      "",
+      "- git commit / push / deploy 실행, `harness apply` 실행 — 변경은 워킹트리에 남기기만 하라(게이트·사람이 이후 판단).",
+      "- `.harness/` 디렉터리에 파일 쓰기 — harness 전용 영역이라 여기 쓰면 캡처되는 diff 가 오염된다.",
+      "- decision.json / audit.jsonl 직접 작성·수정",
+      "- 기존 테스트 삭제 또는 .skip 마커 추가",
+      "- quality-contract.json 의 qualityBars 약화",
+      ""
+    ].join("\n");
+  }
+
   return [
     `# Worker Prompt — ${role}`,
     "",

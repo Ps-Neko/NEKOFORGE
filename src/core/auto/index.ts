@@ -109,7 +109,7 @@ export async function runAuto(input: AutoInput): Promise<AutoResult> {
     const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
     const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
     const prompt = workers
-      ? renderPrompt(taskId, "implementation-worker", workers, { spec, plan })
+      ? renderPrompt(taskId, "implementation-worker", workers, { spec, plan, autonomous: true })
       : `# Worker Prompt\ntask: ${taskId}\nrole: implementation-worker\n`;
 
     const est = input.workerAdapter.estimateCostUsd ?? 0.5;
