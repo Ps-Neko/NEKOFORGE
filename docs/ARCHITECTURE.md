@@ -425,15 +425,16 @@ v3 변경점 주석:
 ```text
 1. .harness/decision.json 존재?              아니면 exit(2)
 2. schema 검증 통과?                         아니면 exit(2) + verdict 강제 INSUFFICIENT_EVIDENCE
-3. verdict ∈ {PASS, PASS_WITH_WARNINGS}?
+3. decision content hash == audit gate_verdict 결박값?  아니면 exit(2) (gate 이후 decision.json 변조)
+4. verdict ∈ {PASS, PASS_WITH_WARNINGS}?
    - 아니라면, verdict === NEEDS_HUMAN_REVIEW 이고
-     모든 humanApprovalRequired finding 이 .harness/approval.txt 의 토큰과 매칭?
+     .harness/approval.txt 토큰이 매칭(verdict + 현재 decision hash 바인딩)?
        그렇다면 통과
        아니라면 exit(3)
    - verdict ∈ {BLOCK, INSUFFICIENT_EVIDENCE}? 어떤 플래그로도 차단. exit(4)
-4. pre-apply hook 실행 (실패 시 거부)
-5. apply 모듈이 변경 적용 후 .harness/apply-log.md 기록
-6. post-review hook 트리거 (선택)
+5. pre-apply hook 실행 (실패 시 거부)
+6. apply 모듈이 변경 적용 후 .harness/apply-log.md 기록
+7. post-review hook 트리거 (선택)
 ```
 
 자동 commit/push/deploy 는 어느 분기에서도 발생하지 않는다.

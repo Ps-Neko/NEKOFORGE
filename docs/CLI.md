@@ -223,11 +223,12 @@ harness review [--adapter <id|all|none>] [--skip-self]
 ### 3.11 `harness gate`
 
 ```text
-harness gate [--no-review-adapter]
+harness gate [--no-review-adapter] [--strict]
 ```
 
 - verdict 산출 + REPORT.md + decision.json.
-- `--no-review-adapter` : 어댑터 무시. verdict 상한 PASS_WITH_WARNINGS. 고위험 변경 시 `codex-missing-risk` 자동 발화.
+- `--no-review-adapter` : 어댑터 무시. `reviewStatus` 를 not_run 으로 강제 → verdict 상한 PASS_WITH_WARNINGS. 고위험 변경 시 `codex-missing-risk` 자동 발화.
+- `--strict` : verdict 가 clean PASS 가 아니면 non-zero exit (BLOCK/INSUFFICIENT_EVIDENCE=4, NEEDS_HUMAN_REVIEW/PASS_WITH_WARNINGS=3) — CI 게이팅용. 기본 모드(strict 미지정)는 exit 0 유지.
 - 거부 : 입력 artifact 부재 → 10. schema 위반 → 2 + 강제 INSUFFICIENT_EVIDENCE.
 - 출력 예 :
   ```text
@@ -247,6 +248,7 @@ harness apply --approved [--dry-run]
 ```
 
 - ARCHITECTURE §10 차단 알고리즘.
+- decision.json content hash 를 audit 결박값과 대조 → gate 이후 변조 시 거부. NEEDS_HUMAN_REVIEW 의 `.harness/approval.txt` 토큰은 현재 decision hash 에 바인딩(재사용·드리프트 차단).
 - `--approved` 필수. 별칭 없음.
 - `--dry-run` : 차단 알고리즘만 실행, 적용 없음.
 - 거부 예 :
