@@ -27,8 +27,10 @@
 
 - CLI: `harness auto "<goal>" [--task <id>] [--adapter claude|codex] [--max-cost <USD>] [--dry-run]`
 - **foreground 단발 실행.** 백그라운드 · 데몬 · 루프 없음.
-- 자동 진행(전체 구조 단계): `ask → context → spec(--answers 자동) → plan → design(--pattern 기본) → policy → team → contract(--template) → work(AI) → self-review → review → gate → 정지`.
-  - **구조 단계는 기존 비대화형 옵션**(`--non-interactive` / `--answers` / `--pattern` / `init --preset`)을 엮어 자동 진행한다. AI는 **`work` 단계에만** 쓴다.
+- 자동 진행(전체 구조 단계): `ask → context → spec(--answers 자동) → plan → design(--pattern 기본) → policy → team → contract(--template) → work(claude) → self-review → review(codex 독립검수) → gate → 정지`.
+  - **구조 단계는 기존 비대화형 옵션**(`--non-interactive` / `--answers` / `--pattern` / `init --preset`)을 엮어 자동 진행한다.
+  - **AI는 두 곳에 쓴다: `work`(claude가 코드 작성) + `review`(codex가 독립 검수).** 작성자(claude) ≠ 검수자(codex) — 이게 "못 속이는" 독립 검증의 핵심. `auto`는 `review --adapter codex`(또는 `all`)를 **자동 실행**한다.
+  - codex 부재 시 가짜 통과 없음 — `codex-missing-risk` 룰이 고위험 미검수 코드를 잡아 verdict를 강등(INSUFFICIENT_EVIDENCE / NEEDS_HUMAN_REVIEW)한다.
   - ※ gate는 12종 `REQUIRED_EVIDENCE`가 없으면 `INSUFFICIENT_EVIDENCE`로 단락된다 → `auto`가 단계를 "건너뛰지" 못하는 이유. 구조 단계 전부를 기본값으로 생성해 **증거 체인을 채워야** 실제 verdict가 나온다.
 - `work` 단계에서 **실제 WorkerAdapter(claude/codex)가 코드 diff 생성** (기존 stub 대체).
 - gate 후 verdict + REPORT 출력하고 **Human Gate에서 정지** — apply는 사용자가 별도(`harness apply --approved`).
@@ -104,7 +106,7 @@ goal
 - **AC2**: `work` 단계에서 (fake) 어댑터가 코드 diff를 생성하고 그 diff가 gate로 흐른다.
 - **AC3**: gate 후 Human Gate에서 정지 — 어떤 경로로도 자동 apply 하지 않는다.
 - **AC4**: `--max-cost` 초과 예상 시 AI 호출 전 중단 + 지출 보고.
-- **AC5**: 실제 claude 어댑터 수동 smoke 1회로 "AI가 진짜 코드 생성 → gate까지" 확인.
+- **AC5**: 수동 smoke 1회 — 실제 claude(`work` 코드 생성) + 실제 codex(`review` 독립 검수)가 **Windows에서 spawn 동작**하고 gate까지 흐르는지 확인. (codex Windows .cmd 이슈는 SH-006에서 해결됨 — 실측 필요.)
 - **AC6**: 전체 테스트 green(기존 323 + 신규), typecheck/lint/depcheck clean.
 
 ## 10. 후속 슬라이스 (이 스펙 밖)
