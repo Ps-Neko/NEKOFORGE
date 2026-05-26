@@ -54,6 +54,28 @@ test("runAuto: --max-cost 0 이면 AI 호출 전 CostExceededError", async () =>
   );
 });
 
+test("runAuto: 사용자 goal 이 work 어댑터 프롬프트에 전달된다", async () => {
+  let receivedPrompt = "";
+  const spyWorker: WorkerAdapter & { estimateCostUsd?: number } = {
+    id: "spy",
+    estimateCostUsd: 0.1,
+    async available() { return true; },
+    async dispatch(input) {
+      receivedPrompt = input.prompt;
+      return { status: "completed" as const, resultMd: "ok" };
+    }
+  };
+  await runAuto({
+    goal: "사용자_고유_목표_XYZ",
+    taskId: "TASK-001",
+    maxCostUsd: 5,
+    workerAdapter: spyWorker,
+    reviewAdapter: fakeReview,
+    captureDiff: () => "diff --git a/src/x.ts b/src/x.ts\n+const x = 1;"
+  });
+  assert.match(receivedPrompt, /사용자_고유_목표_XYZ/, "work 프롬프트에 사용자 goal 이 전달돼야 한다");
+});
+
 test("runAuto: work 어댑터가 failed 면 exitCode 6 으로 throw", async () => {
   const failWorker = {
     id: "fail", estimateCostUsd: 0.1,

@@ -141,7 +141,7 @@ export async function runDispatchAll(
   };
 }
 
-export interface PromptContext { spec?: string; plan?: string; autonomous?: boolean; }
+export interface PromptContext { goal?: string; spec?: string; plan?: string; autonomous?: boolean; }
 
 export function renderPrompt(
   taskId: string,
@@ -150,6 +150,11 @@ export function renderPrompt(
   context: PromptContext = {}
 ): string {
   const profile = workers.profile;
+  // 사용자 목표(goal)는 SPEC/PLAN 맥락보다 위에 둔다 — auto 경로의 기본 SPEC 은
+  // self-host 자가검증용이라, goal 이 없으면 워커가 진짜 목표를 못 본다(헛코드 방지).
+  const goalBlock = context.goal
+    ? [`## 사용자 목표 (goal)`, "", context.goal.trim(), ""].join("\n")
+    : "";
   const contextBlock = (context.spec || context.plan)
     ? [
         `## 작업 맥락 (SPEC/PLAN 발췌)`,
@@ -176,6 +181,7 @@ export function renderPrompt(
       `- role: ${role}`,
       `- mode: 실제 파일 편집 (산출물 = 워킹트리 diff, result.md 아님)`,
       "",
+      goalBlock,
       contextBlock,
       `## 임무`,
       "",
@@ -200,6 +206,7 @@ export function renderPrompt(
     `- role: ${role}`,
     `- forbidden actions: no-commit, no-push, no-deploy, no-apply, no-decision-write`,
     "",
+    goalBlock,
     contextBlock,
     `## 임무`,
     "",
