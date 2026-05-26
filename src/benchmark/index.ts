@@ -24,6 +24,22 @@ import {
   type RuleFinding
 } from "../rules/index.js";
 import { parseUnifiedDiff } from "../utils/diff.js";
+import type { DeterministicRule } from "../rules/types.js";
+
+/**
+ * benchmark 기본 룰셋 — 카탈로그 전체. promotion gate 의 baseline 기준점.
+ * (기존 runScenario 하드코딩 순서를 그대로 단일 소스로 추출 → 회귀 0.)
+ */
+export const DEFAULT_BENCHMARK_RULES: readonly DeterministicRule[] = [
+  ...ALL_RULES,
+  ...ALL_ARCHITECTURE_RULES,
+  ...ALL_DESIGN_RULES,
+  ...ALL_API_RULES,
+  ...ALL_DEPENDENCY_RULES,
+  ...ALL_DOCS_RULES,
+  ...ALL_RELEASE_EVIDENCE_RULES,
+  ...ALL_FRONTEND_RULES
+];
 
 export interface BenchmarkScenarioResult {
   group: string;
@@ -61,7 +77,8 @@ function inferVerdict(findings: RuleFinding[]): string {
 async function runScenario(
   group: string,
   scenario: string,
-  scenarioDir: string
+  scenarioDir: string,
+  rules: readonly DeterministicRule[]
 ): Promise<BenchmarkScenarioResult | null> {
   let diffText: string;
   let expected: Expected;
@@ -75,16 +92,7 @@ async function runScenario(
   }
   const diff = parseUnifiedDiff(diffText);
   const findings: RuleFinding[] = [];
-  for (const r of [
-    ...ALL_RULES,
-    ...ALL_ARCHITECTURE_RULES,
-    ...ALL_DESIGN_RULES,
-    ...ALL_API_RULES,
-    ...ALL_DEPENDENCY_RULES,
-    ...ALL_DOCS_RULES,
-    ...ALL_RELEASE_EVIDENCE_RULES,
-    ...ALL_FRONTEND_RULES
-  ]) {
+  for (const r of rules) {
     findings.push(
       ...(await r.run({ diff, highRiskFlags: {} }))
     );
@@ -114,8 +122,9 @@ async function runScenario(
   };
 }
 
-export async function runBenchmark(
+export async function runBenchmarkWithRules(
   fixturesRoot: string,
+  rules: readonly DeterministicRule[],
   filterGroup?: string
 ): Promise<BenchmarkReport> {
   const results: BenchmarkScenarioResult[] = [];
@@ -136,11 +145,18 @@ export async function runBenchmark(
     }
     const scenarios = await readdir(groupDir);
     for (const scenario of scenarios) {
-      const r = await runScenario(group, scenario, join(groupDir, scenario));
+      const r = await runScenario(group, scenario, join(groupDir, scenario), rules);
       if (r) results.push(r);
     }
   }
   return summarize(results);
+}
+
+export async function runBenchmark(
+  fixturesRoot: string,
+  filterGroup?: string
+): Promise<BenchmarkReport> {
+  return runBenchmarkWithRules(fixturesRoot, DEFAULT_BENCHMARK_RULES, filterGroup);
 }
 
 function summarize(results: BenchmarkScenarioResult[]): BenchmarkReport {
