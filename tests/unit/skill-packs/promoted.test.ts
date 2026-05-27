@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FsArtifact } from "../../../src/artifact/fs-artifact.js";
 import {
-  readPromotedSkillPacks, writePromotedSkillPacks, loadPromotedSkillPackIds
+  readPromotedSkillPacks, writePromotedSkillPacks, loadPromotedSkillPackIds, loadPromotedSkillPackDefs
 } from "../../../src/skill-packs/promoted.js";
 
 async function fresh() {
@@ -28,4 +28,14 @@ test("write→read roundtrip + loadPromotedSkillPackIds", async () => {
   assert.equal(m.packs.length, 1);
   const ids = await loadPromotedSkillPackIds(a);
   assert.ok(ids.has("p1"));
+});
+
+test("loadPromotedSkillPackDefs: 매니페스트 → SkillPackDef[]", async () => {
+  const a = await fresh();
+  await writePromotedSkillPacks(a, {
+    packs: [{ id: "p1", appliesTo: "X", guidance: ["g"], promotedAt: "t", approvalHash: "h" }]
+  });
+  const defs = await loadPromotedSkillPackDefs(a);
+  assert.equal(defs.length, 1);
+  assert.deepEqual(defs[0], { id: "p1", appliesTo: "X", guidance: ["g"] });
 });
