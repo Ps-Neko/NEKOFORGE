@@ -11,7 +11,7 @@ rule pack 은 위험 탐지 (gate 가 무엇을 막는가)
 skill pack 누락은 직접 BLOCK 아님 — warning 또는 NEEDS_HUMAN_REVIEW
 ```
 
-## 2. Skill Pack 7종
+## 2. Skill Pack 13종
 
 | Skill Pack | 적용 대상 | 내용 |
 |---|---|---|
@@ -22,6 +22,12 @@ skill pack 누락은 직접 BLOCK 아님 — warning 또는 NEEDS_HUMAN_REVIEW
 | `library-quality` | library | public API stability, semver, docs, tests |
 | `release-readiness` | release | changelog, benchmark, migration note, rollback |
 | `evidence-writing` | all | worker result, findings, evidence summary 작성 규칙 |
+| `testing-quality` | all | happy/edge/failure test discipline, fixture hygiene |
+| `security-review-writing` | security-reviewer worker | security finding format and false-positive notes |
+| `architecture-review-writing` | architect worker | blast radius, boundary, large-file, test-boundary review |
+| `release-note-writing` | release | summary, breaking changes, benchmark/local fixture notes |
+| `migration-writing` | breaking change | before/after, manual/automatic migration, rollback |
+| `external-review-prep` | release | review summary, invariants, risks, self-host evidence |
 
 ## 3. CLI
 
