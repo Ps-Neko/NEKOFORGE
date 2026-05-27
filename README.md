@@ -5,60 +5,52 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
 [![Version](https://img.shields.io/badge/version-0.5.0--alpha.0-blue.svg)](RELEASE-NOTES.md)
 
-> **Quality Contract 기반 Local-first AI Development Factory**.
-> AI 가 만든 산출물을 품질 계약 기준으로 검사하고, 점수화하고, 위험하면 막고, 사람 승인 전에는 apply 하지 못하게 한다.
+> NEKOFORGE는 기존 코드베이스를 재사용 가능한 개발 맥락으로 바꾸어, AI 보조 개발의 생산성과 안정성을 높이는 로컬 개발 하네스입니다.
+>
+> 프로젝트 구조를 읽고, 작업 맥락을 정리하고, AI 도구에 넘길 실행 단위를 만들며, 최종 변경은 검증 후 적용하도록 합니다.
 
-> NEKOFORGE 는 OMC 처럼 일을 시키는 도구가 아니고, ECC 처럼 스킬을 많이 쌓는 도구도 아니다. 그 도구들이 만든 산출물을 **품질 계약 기준으로 검증하고 출고를 통제하는 공장** 이다.
+![NEKOFORGE 소스 기반 AI 개발 하네스](docs/assets/nekoforge-overview-ko.png)
 
-**현재 상태**: `v0.5.0-alpha` · 14단계 + 27 CLI (init/doctor/demo 포함) · Worker Factory (8 worker role + 3 profile) · Rule Pack 13종 + Skill Pack 13종 · benchmark = 30 local fixtures (sample recall 1.000, FP 0.000) · self-host 11회 통과 · external Codex review 3회 + self-review 1회 통합.
-
-![NEKOFORGE factory flow](docs/assets/nekoforge-flow.svg)
-
-**Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ **외부 사용자 1명 이상이 본인 PR 에 NEKOFORGE 를 실행해 REPORT.md + decision.json + quality-score.json 을 제출**.
-
-**빠른 시작**: [GETTING-STARTED.md](GETTING-STARTED.md) · [examples/00-first-verdict](examples/00-first-verdict/) — 10분 안에 첫 verdict.
-**기여 가이드**: [CONTRIBUTING.md](CONTRIBUTING.md) · [docs/ALPHA-RECRUITMENT.md](docs/ALPHA-RECRUITMENT.md) · [docs/EXTERNAL-VALIDATION-TEMPLATE.md](docs/EXTERNAL-VALIDATION-TEMPLATE.md) — 외부 사용자 PR 환영.
-
-**한 문장 요약**
+## 한눈에 보기
 
 ```text
-NEKOFORGE 는 AI 작업자와 Rule/Skill Pack 을 통제하고,
-Quality Contract 와 Worker Evidence 를 기준으로 산출물을 점수화하며,
-deterministic gate 와 Human Gate 없이는 출고하지 않는
-local-first AI Development Factory 다.
+기존 소스 -> 맥락 정리 -> 작업 패킷 -> AI 작업 -> 검증 후 적용
 ```
 
-흐름:
+NEKOFORGE의 주인공은 검수가 아니라 **소스 활용 기반 생산성**입니다. 검증/Gate는 그 흐름의 마지막 안전장치입니다.
+
+## 무엇을 해주나요?
+
+- 현재 프로젝트의 소스, 문서, 테스트, 규칙, 작업 흐름을 읽어 AI가 이해하기 쉬운 맥락으로 정리합니다.
+- Claude, Codex, Cursor 같은 AI 도구에 넘길 작업 단위와 프롬프트를 만듭니다.
+- 작업 과정을 `SPEC`, `PLAN`, `TASKS`, `worklog`, `REPORT` 같은 증거로 남깁니다.
+- 마지막에는 테스트 상태, 규칙, 리뷰 결과를 묶어 변경을 적용해도 되는지 판단합니다.
+- 위험하거나 증거가 부족하면 실제 적용 전에 멈춥니다.
+
+## 왜 필요한가요?
+
+AI는 빠르지만, 기존 코드베이스의 구조와 규칙을 항상 잘 기억하지는 못합니다. NEKOFORGE는 프로젝트 맥락을 먼저 정리해 AI 작업 품질을 끌어올리고, 마지막에 안전장치를 붙여 위험한 변경이 그대로 들어가지 않게 합니다.
+
+## NEKOWORK와의 차이
 
 ```text
-AI 작업자 배치 → Rule/Skill Pack 적용 → Quality Contract →
-Worker Evidence → Quality Score + deterministic verdict →
-Human Gate → explicit apply.
+NEKOWORK  = AI가 만든 diff를 검증하는 안전 게이트
+NEKOFORGE = 기존 소스와 프로젝트 맥락을 활용해 AI 개발 생산성을 높이고,
+            마지막에 NEKOWORK식 검증까지 붙이는 로컬 하네스
 ```
 
-> **Worker Factory is controlled evidence orchestration, not unattended execution.**
-> 자동 LLM 실행기가 아니라, 작업자 지시서 생성 + 결과 증거 회수 + gate 입력 계층.
+## 현재 상태
 
-**누구를 위한 도구인가**
+- `v0.5.0-alpha`
+- 27개 CLI 명령
+- 35개 deterministic rule
+- Rule Pack 13종, Skill Pack 13종
+- `harness demo` 로 격리된 체험 가능
+- 현재는 npm 공개 배포 전 알파 상태입니다.
 
-- AI(Claude Code · Codex · Cursor 등)로 코드를 만드는 **혼자 작업하는 시니어** 또는 **소규모 팀 리드**.
-- "AI 가 만든 코드 / 테스트 통과했길래 머지 → 사고" 경험이 있는 사람.
-- 외부 SaaS 없이 **로컬에서만** 동작하는 검증 공정이 필요한 사람.
+## 가장 빠른 체험
 
-**핵심 가치 (6)**
-
-- ❶ **Quality Contract before Work** — `quality-contract.json` 없으면 `work` 진입 거부.
-- ❷ **Quality Score before PASS** — 8 영역 점수 미달이면 `PASS` 불가, 상한 자동 강등.
-- ❸ verdict `BLOCK` / `INSUFFICIENT_EVIDENCE` 는 **어떤 플래그로도** apply 안 됨.
-- ❹ secret 하드코딩 · auth 우회 · 테스트 삭제 · input validation 누락 등 **35 deterministic rule (9 security + 4 architecture + 3 design + 4 api-safety + 4 dependency + 3 docs + 4 release-evidence + 4 frontend)** 을 즉시 차단 (다수는 info 등급 알림).
-- ❺ 모든 의사결정은 `.md` + `.json` 으로 동시에 남고, audit chain hash + anchor 로 위변조 감지.
-- ❻ Codex/Claude/Cursor 어댑터는 검증자이지 **최종 승인자가 아니다**. 사람 토큰 매칭 필수.
-
----
-
-## A. 10-minute first verdict (외부 사용자 빠른 시작)
-
-본 도구가 처음이면 먼저 격리된 demo 로 BLOCK verdict 를 확인:
+먼저 격리된 demo로 전체 흐름을 확인합니다.
 
 ```bash
 $ npm install
@@ -66,13 +58,13 @@ $ npm run build
 $ node dist/src/cli/index.js demo --clean
 ```
 
-그다음 preset + self-host 한 줄:
+## 실제 프로젝트에서 시작
 
 ```bash
 $ npm install
 $ npm run build
-$ node dist/src/cli/index.js doctor                                # 환경 진단
-$ node dist/src/cli/index.js init --preset cli-tool                # 본인 프로젝트 타입 시드
+$ node dist/src/cli/index.js doctor
+$ node dist/src/cli/index.js init --preset cli-tool
 $ node dist/src/cli/index.js self-host --goal "first verdict smoke"
 ```
 
@@ -84,9 +76,9 @@ $ nekoforge init --preset cli-tool
 $ nekoforge self-host --goal "first verdict smoke"
 ```
 
-본 흐름이 막히면 [examples/00-first-verdict/](examples/00-first-verdict/) 의 단계별 가이드 참조.
+자세한 시작 가이드는 [GETTING-STARTED.md](GETTING-STARTED.md), 예시는 [examples/00-first-verdict](examples/00-first-verdict/) 를 참고하세요.
 
-## B. Full factory path (실제 14단계 + Worker Factory)
+## 개발자용 전체 흐름 (14단계 + Worker Factory)
 
 ```bash
 $ nekoforge init --preset backend-api
