@@ -5,9 +5,9 @@
 ## 1. 본 도구의 정체성 (먼저 읽을 것)
 
 ```text
-NEKOFORGE 는 AI 작업자를 배치하고 / 룰·스킬팩을 적용하고 /
-Quality Contract 기준으로 점수화한 뒤 / Human Gate 전에는
-출고하지 못하게 막는 local-first AI Development Factory.
+NEKOFORGE 는 기존 코드베이스를 재사용 가능한 작업 맥락과 작업 패킷으로
+바꿔 AI 개발 생산성을 높이고 / 마지막에 Human Gate 전 "못 속이는 verdict"
+로 변경을 검증·차단하는 source-aware local-first AI Development Harness.
 ```
 
 **무엇이 아닌가:**

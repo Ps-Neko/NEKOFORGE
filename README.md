@@ -113,7 +113,7 @@ local checkout (npm link 없이) 에서는 `nekoforge` 대신 `node dist/src/cli
 ```bash
 $ harness init                            # .harness/ 워크스페이스 만들기
 $ harness ask "사용자 로그인 잠금 기능 추가"   # 목표 저장 + clarify 질문
-$ harness context                         # 도메인·구조·제약 정리 (사용자가 채움)
+$ harness context                         # 소스 자동 스캔(파일·언어·스크립트·테스트·위험파일) + 도메인/제약 보완
 $ harness spec                            # 7문항 강제 답변 → SPEC.md
 $ harness plan                            # 작은 task + 테스트 계획
 $ harness design --pattern Producer-Reviewer   # 팀 패턴 선택

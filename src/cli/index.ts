@@ -49,8 +49,9 @@ function buildProgram(): Command {
   program
     .name("harness")
     .description(
-      "NEKOFORGE — local-first AI Development Factory. Command alias: nekoforge (preferred) / harness (compatible). " +
-        "Quality Contract → Worker Factory → Rule/Skill Pack → deterministic gate → Human Gate → explicit apply."
+      "NEKOFORGE — source-aware local-first AI development harness (alias: nekoforge / harness). " +
+        "Turns your codebase into reusable context and task packets, then gates every change behind " +
+        "an un-foolable, content-hash-bound verdict before apply."
     )
     .version(VERSION, "--version", "print version");
 
