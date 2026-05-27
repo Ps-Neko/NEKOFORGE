@@ -59,7 +59,7 @@ Promotion Gate 는 "카탈로그(rule/skill-pack)에 무엇을 들일지" 를
 | 대상 | 무엇을 채용하나 | 시험 채점 방식 | 난이도 | Phase |
 |---|---|---|---|---|
 | **① deterministic rule** | `src/rules/*.ts` 신규/수정 rule | benchmark 의 criticalRecall · falsePositiveRate (before/after) | 쉬움(토대 있음) | **P1** |
-| **② 경험 → rule** | memory 의 미탐/오탐 사례에서 유도한 rule 후보 | 경험 사례를 fixture 로 변환 → ① 의 채점 재사용 | 중간 | **P2** |
+| **② 경험 → rule** | memory 의 미탐/오탐 사례에서 유도한 rule 후보 | 경험 사례를 fixture 로 변환 → ① 의 채점 재사용 | 중간 | **P2 ✅구현**(fixture=promote 제출, eval-case=`--experience` provenance) |
 | **③ skill-pack** | `docs/SKILL-PACKS.md` 의 worker 행동 지침 | 직접 점수화 곤란 → 간접 신호 + 사람 검토 | 어려움 | **P3(후속)** |
 
 세 대상은 **동일한 승격 관문**(제출 → 시험 → before/after 비교 → 합격 판정 → 사람 승인 → 채용/탈락)을 공유한다. 대상마다 다른 것은 "채점표(adapter)" 뿐이다. 따라서 공통 엔진 1개 + 대상별 adapter N개 구조로 짓는다.
