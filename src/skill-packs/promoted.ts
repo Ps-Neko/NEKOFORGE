@@ -28,3 +28,8 @@ export async function loadPromotedSkillPackIds(artifact: FsArtifact): Promise<Se
   const m = await readPromotedSkillPacks(artifact);
   return new Set(m.packs.map((p) => p.id));
 }
+
+export async function loadPromotedSkillPackDefs(artifact: FsArtifact): Promise<SkillPackDef[]> {
+  const m = await readPromotedSkillPacks(artifact);
+  return m.packs.map((p) => ({ id: p.id, appliesTo: p.appliesTo, guidance: p.guidance }));
+}
