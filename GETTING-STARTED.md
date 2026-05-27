@@ -1,6 +1,6 @@
 # Getting Started — NEKOFORGE in 10 minutes
 
-> 본 가이드는 NEKOFORGE 를 처음 보는 사용자가 10분 안에 **첫 verdict** 를 받아보는 흐름이다.
+> 본 가이드는 NEKOFORGE 를 처음 보는 사용자가 10분 안에 **소스 기반 작업 패킷과 첫 verdict** 를 받아보는 흐름이다.
 
 ## 0. 사전 조건
 
@@ -16,6 +16,16 @@ $ cd NEKOFORGE
 $ npm install
 $ npm run build
 ```
+
+## 1-A. 먼저 demo로 보기 (1분)
+
+```bash
+$ node dist/src/cli/index.js demo productivity --clean
+$ node dist/src/cli/index.js demo safety --clean
+```
+
+- `productivity`: 기존 소스를 AI 작업 맥락과 작업 패킷으로 바꾸는 장면.
+- `safety`: 위험한 AI diff를 적용 전에 막는 장면.
 
 전역 설치를 원하면:
 

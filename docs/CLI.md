@@ -51,7 +51,7 @@ harness skill-pack <list|enable|disable|status|audit>
 
 ```text
 harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
-harness demo [--task <id>] [--clean]
+harness demo [safety|productivity] [--task <id>] [--clean]
 ```
 
 총 27개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
@@ -364,11 +364,11 @@ harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
 ### 3.20 `harness demo` (v0.5, Phase DX)
 
 ```text
-harness demo [--task <id>] [--clean]
+harness demo [safety|productivity] [--task <id>] [--clean]
 ```
 
-- tmpdir 격리 워크스페이스에서 init -> spec -> plan -> contract -> review -> gate 까지 실행한다.
-- AI 가 fallback secret 을 추가한 위험 diff fixture 를 만들고 `secret-fallback` rule 이 BLOCK 하는 장면을 보여준다.
+- `productivity`: 기존 소스 fixture 를 읽고 context, task packet, worker prompt 를 생성한다.
+- `safety`: AI 가 fallback secret 을 추가한 위험 diff fixture 를 만들고 `secret-fallback` rule 이 BLOCK 하는 장면을 보여준다.
 - 실제 caller repo 에 apply/commit/push/deploy 를 하지 않는다.
 - `--clean`: 결과 경로를 출력한 뒤 임시 워크스페이스를 삭제한다.
 
