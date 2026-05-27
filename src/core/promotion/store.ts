@@ -63,7 +63,8 @@ export async function approveCandidate(
   const manifest = await readPromotedManifest(artifact);
   const entry: PromotedRuleEntry = {
     id: cand.id, modulePath: cand.modulePath, exportName: cand.exportName,
-    promotedAt: opts.clockNow, approvalHash
+    promotedAt: opts.clockNow, approvalHash,
+    ...(cand.experiences && cand.experiences.length > 0 ? { experiences: cand.experiences } : {})
   };
   if (!manifest.rules.some((r) => r.id === entry.id)) manifest.rules.push(entry);
   await artifact.writeJson(MANIFEST, manifest);

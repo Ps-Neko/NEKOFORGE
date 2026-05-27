@@ -65,3 +65,22 @@ test("appendLedger: ledger 변조(라인 삭제) 시 다음 작업 차단 §8-4"
   await artifact.writeMarkdown("promotions/ledger.jsonl", "");
   await assert.rejects(() => submitCandidate(artifact, { ...cand, id: "c2" }));
 });
+
+test("approveCandidate: candidate.experiences 를 promoted.json 에 봉인", async () => {
+  const { artifact } = await freshArtifact();
+  const withExp: CandidateDef = { ...cand, experiences: ["ec-1", "ec-2"] };
+  await submitCandidate(artifact, withExp);
+  await artifact.writeJson("promotions/c1/trial.json", readyTrial);
+  await approveCandidate(artifact, "c1", { approvedBy: "me", clockNow: "t2" });
+  const man = await readPromotedManifest(artifact);
+  assert.deepEqual(man.rules[0]!.experiences, ["ec-1", "ec-2"]);
+});
+
+test("approveCandidate: experiences 없으면 entry 에 experiences 키 없음", async () => {
+  const { artifact } = await freshArtifact();
+  await submitCandidate(artifact, cand);
+  await artifact.writeJson("promotions/c1/trial.json", readyTrial);
+  await approveCandidate(artifact, "c1", { approvedBy: "me", clockNow: "t2" });
+  const man = await readPromotedManifest(artifact);
+  assert.equal("experiences" in man.rules[0]!, false);
+});
