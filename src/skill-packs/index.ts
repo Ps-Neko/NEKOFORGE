@@ -3,7 +3,8 @@
  */
 import type { StageDeps } from "../core/stage-runner.js";
 import { SKILL_PACK_CATALOG, findSkillPack } from "./catalog.js";
-import { loadPromotedSkillPackIds } from "./promoted.js";
+import { loadPromotedSkillPackIds, loadPromotedSkillPackDefs } from "./promoted.js";
+import { renderSkillGuidance } from "./render.js";
 
 export interface SkillPacksJson {
   schemaVersion: "0.5";
@@ -154,4 +155,13 @@ export function resolveSkillPacks(
     : [];
   const missing = recommended.filter((p) => !enabled.includes(p));
   return { recommended, enabled, missingRecommended: missing };
+}
+
+/** 활성(enabled) skill-pack(내장 카탈로그 + 채용분)의 worker guidance 텍스트. enabled 비면 "". */
+export async function resolveSkillGuidance(deps: StageDeps): Promise<string> {
+  const sp = await readSkillPacks(deps);
+  const enabled = sp?.enabledPacks ?? [];
+  if (enabled.length === 0) return "";
+  const promotedDefs = await loadPromotedSkillPackDefs(deps.artifact);
+  return renderSkillGuidance(enabled, promotedDefs);
 }
