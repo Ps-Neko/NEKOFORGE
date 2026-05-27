@@ -12,7 +12,7 @@ const LEDGER = "promotions/ledger.jsonl";
 const LEDGER_ANCHOR = "promotions/ledger-anchor.json";
 const MANIFEST = "promotions/promoted.json";
 
-async function appendLedger(artifact: FsArtifact, input: NewLedgerInput): Promise<void> {
+export async function appendLedger(artifact: FsArtifact, input: NewLedgerInput): Promise<void> {
   const existing = (await artifact.readMarkdown(LEDGER)) ?? "";
   // §8-4: append 전 직전 anchor 로 ledger 위변조(라인 삭제/전체 재작성) 검증.
   const prevAnchor = await artifact.readJson<LedgerAnchor>(LEDGER_ANCHOR);
