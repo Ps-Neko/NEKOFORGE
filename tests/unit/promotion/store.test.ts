@@ -49,3 +49,19 @@ test("approveCandidate: trial verdict 이 PROMOTE_READY 아니면 거부(throw)"
   await artifact.writeJson("promotions/c1/trial.json", { ...readyTrial, verdict: "REJECTED" });
   await assert.rejects(() => approveCandidate(artifact, "c1", { approvedBy: "me", clockNow: "t2" }));
 });
+
+test("submitCandidate: ledger-anchor.json 기록(lineCount>=1) §8-4", async () => {
+  const { artifact } = await freshArtifact();
+  await submitCandidate(artifact, cand);
+  const anchor = await artifact.readJson<{ lineCount: number; lastHash: string | null }>("promotions/ledger-anchor.json");
+  assert.ok(anchor, "anchor 파일이 있어야 함");
+  assert.ok(anchor!.lineCount >= 1);
+});
+
+test("appendLedger: ledger 변조(라인 삭제) 시 다음 작업 차단 §8-4", async () => {
+  const { artifact } = await freshArtifact();
+  await submitCandidate(artifact, cand);
+  // ledger 를 비워 lineCount 를 떨어뜨림(삭제 공격) — anchor 가 이를 탐지해야 함
+  await artifact.writeMarkdown("promotions/ledger.jsonl", "");
+  await assert.rejects(() => submitCandidate(artifact, { ...cand, id: "c2" }));
+});

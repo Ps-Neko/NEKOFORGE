@@ -1,19 +1,32 @@
 import type { FsArtifact } from "../../artifact/fs-artifact.js";
 import { canonicalHash } from "../../utils/integrity.js";
-import { appendLedgerLine } from "./ledger.js";
+import {
+  appendLedgerLine, computeLedgerAnchor, verifyLedgerAnchor, type LedgerAnchor
+} from "./ledger.js";
 import type {
   CandidateDef, TrialRecord, PromotionDecisionRecord,
   PromotedManifest, PromotedRuleEntry, NewLedgerInput
 } from "./store-types.js";
 
 const LEDGER = "promotions/ledger.jsonl";
+const LEDGER_ANCHOR = "promotions/ledger-anchor.json";
 const MANIFEST = "promotions/promoted.json";
 
 async function appendLedger(artifact: FsArtifact, input: NewLedgerInput): Promise<void> {
   const existing = (await artifact.readMarkdown(LEDGER)) ?? "";
+  // §8-4: append 전 직전 anchor 로 ledger 위변조(라인 삭제/전체 재작성) 검증.
+  const prevAnchor = await artifact.readJson<LedgerAnchor>(LEDGER_ANCHOR);
+  const check = verifyLedgerAnchor(prevAnchor, existing);
+  if (!check.ok) {
+    const e = new Error(`LEDGER_TAMPERED: ${check.reason}`);
+    (e as Error & { exitCode?: number }).exitCode = 5;
+    throw e;
+  }
   const { line } = appendLedgerLine(existing, input);
+  const next = existing + line;
   // appendJsonLines 는 객체를 직렬화하므로, 이미 만든 line(개행 포함)은 writeMarkdown 으로 누적.
-  await artifact.writeMarkdown(LEDGER, existing + line);
+  await artifact.writeMarkdown(LEDGER, next);
+  await artifact.writeJson(LEDGER_ANCHOR, computeLedgerAnchor(next, input.at));
 }
 
 export async function submitCandidate(artifact: FsArtifact, cand: CandidateDef): Promise<void> {
