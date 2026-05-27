@@ -1,4 +1,4 @@
-# PROMOTION-GATE — 룰/스킬/경험 승격 게이트 (v0.1 설계)
+# PROMOTION-GATE — 룰/스킬/경험 승격 게이트 (v0.1 — rule 승격 P1a/P1b 구현 완료 · experience/skill-pack 은 설계)
 
 > 버전 0.1 · 2026-05-26 · 본 문서는 "검사 규칙·작업 지침·현장 경험을 NEKOFORGE 카탈로그에 **들이기 전에**, 과거 사례로 시험해 **성능이 개선됐을 때만 채용**하는" 승격 게이트(promotion gate)의 1차 설계 명세다. SkillOpt(검증 점수가 오를 때만 수락) · From Raw Experience(자동 생성물의 "좋아 보임"은 못 믿는다) · SkillEvolBench(경험 ≠ 재사용 가능한 절차) 의 통찰을 NEKOFORGE 정체성으로 흡수한다.
 >
@@ -130,18 +130,22 @@ Promotion Gate 는 "카탈로그(rule/skill-pack)에 무엇을 들일지" 를
 
 NEKOFORGE 관례(`.harness/` 하위, 사람용 `.md` + 기계용 `.json`)를 따른다.
 
+P1b 구현 기준(rule 대상):
+
 ```text
 .harness/promotions/
   <id>/
-    candidate.json     — 후보 정의 (대상 종류 + rule 본문/경험 출처/skill-pack diff)
-    fixtures/          — 후보가 제출한 검증용 문제집 (last-diff.patch + expected.json)
-    trial.json         — { baseline: 점수A, candidate: 점수B, delta, fixturesHash }
-    REPORT.md          — 사람용 채용 보고서 (점수차 표 + 판정 + 권고)
-    decision.json      — { promoteVerdict, approvedBy?, approvalHash? }
-  rejected/
-    <id>.json          — 탈락 사유 + 점수차 + 시점
-  ledger.jsonl         — 채용/거절 이력 (append-only, 위변조 시 anchor 로 탐지)
+    candidate.json     — 후보 정의 { id, kind:"rule", modulePath, exportName, submittedAt }
+    fixtures-hash.json — { fixturesHash } — 제출 시 --fixtures 묶음(후보+expected/patch)의 canonicalHash 봉인(§8-1)
+    trial.json         — { baseline, candidate, verdict, reasons, fixturesHash, ranAt }
+    REPORT.md          — 사람용 채용 보고서 (점수차 + 판정 + 사유)
+    decision.json      — { verdict: "approved"|"rejected", approvedBy?, approvalHash?, reason?, decidedAt }
+  promoted.json        — 채용된 rule 매니페스트 { rules: [{ id, modulePath, exportName, promotedAt, approvalHash }] }
+                         loadActiveRules/gate/benchmark 가 동적 로딩(B안: approve 시 자동 갱신)
+  ledger.jsonl         — submit/trial/approve/reject 이력 (append-only chain; verifyLedgerChain 으로 위변조 탐지)
 ```
+
+> 거절도 `<id>/decision.json`(verdict:"rejected") + ledger 로 기록한다(별도 `rejected/` 디렉토리 미사용). 후보 fixtures 자체는 `--fixtures` 디렉토리에서 읽어 해시만 봉인하며, 아티팩트로 복사하지 않는다.
 
 ## 8. 못 속이게 하는 4가지 잠금
 
@@ -163,17 +167,20 @@ NEKOFORGE 해자(content-hash 결박 · audit chain/anchor)를 본 게이트에 
 | 같은 후보 재제출 | candidate.json 해시로 중복 감지. 기존 rejected 사유 표면화 |
 | fixture 자체가 cross-rule 오염 | 작성 후 즉시 trial 로 회수(BENCHMARKS.md 회피 패턴 준용) |
 
-## 10. CLI (제안)
+## 10. CLI (P1b 구현됨)
 
-`nekoforge promote`(= `harness promote`) 단일 명령군(서브커맨드)으로 추가. 최상위 명령은 1개만 늘어나므로 PRODUCT §11 의 "CLI 30개" 한도 내에서 여유를 유지한다. 등록은 기존 `registerXxx(program)` 패턴(`src/cli/commands/*.ts`)을 따른다.
+`nekoforge promote`(= `harness promote`) 단일 명령군(서브커맨드)으로 추가됨. 최상위 명령은 1개만 늘어난다. 등록은 기존 `registerXxx(program)` 패턴(`src/cli/commands/promote.ts`)을 따른다. P1b 는 `kind:"rule"` 만 지원한다.
 
 ```bash
-nekoforge promote submit <kind> <path>    # 후보 제출 (kind: rule|experience|skill-pack)
-nekoforge promote trial <id>              # baseline/candidate 시험 + trial.json 생성
+nekoforge promote submit <id> --module <path> --export <name> --fixtures <dir>
+                                          # 후보 제출(candidate.json + fixturesHash 봉인). fixtures 최소기준 미달 시 INSUFFICIENT_EVIDENCE(exit 4)
+nekoforge promote trial <id> --fixtures <dir>
+                                          # baseline(현 채용분 포함) vs candidate 시험 → trial.json
 nekoforge promote report <id>             # REPORT.md 출력 (사람 검토용)
-nekoforge promote approve <id> --approved # 사람 승인 → 카탈로그 편입 + ledger 기록
-nekoforge promote reject <id> [--reason]  # 명시 거절 → rejected 보관
-nekoforge promote list [--rejected]       # 진행/이력 조회
+nekoforge promote approve <id> --approved [--by <who>]
+                                          # 사람 승인 → promoted.json 채용 + ledger. PROMOTE_READY 만 허용(아니면 exit 3)
+nekoforge promote reject <id> [--reason <text>]  # 명시 거절 → decision.json(rejected) + ledger
+nekoforge promote list                    # 채용된 rule 목록(promoted.json)
 ```
 
 본 명령군은 14단계 공정과 독립적으로 동작한다(공정은 코드 변경을 검증하고, 본 게이트는 카탈로그 변경을 검증).
