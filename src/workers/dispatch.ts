@@ -6,6 +6,7 @@
 import type { StageDeps } from "../core/stage-runner.js";
 import type { WorkerRole, WorkersJson } from "./index.js";
 import { profileRequiredRoles, readWorkers, WorkersError } from "./index.js";
+import { resolveSkillGuidance } from "../skill-packs/index.js";
 
 export interface DispatchInput {
   taskId: string;
@@ -66,7 +67,8 @@ export async function runDispatch(
   }
   const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
   const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
-  const body = renderPrompt(input.taskId, input.worker, workers, { spec, plan });
+  const skillGuidance = await resolveSkillGuidance(deps);
+  const body = renderPrompt(input.taskId, input.worker, workers, { spec, plan, skillGuidance });
   const path = `worker-runs/${input.taskId}/${input.worker}.prompt.md`;
   await deps.artifact.writeMarkdown(path, body);
   return {
@@ -92,9 +94,10 @@ export async function runDispatchAll(
   const roles = required.filter((r) => definedRoles.has(r));
   const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
   const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
+  const skillGuidance = await resolveSkillGuidance(deps);
   const prompts: Array<{ role: WorkerRole; path: string }> = [];
   for (const role of roles) {
-    const body = renderPrompt(input.taskId, role, workers, { spec, plan });
+    const body = renderPrompt(input.taskId, role, workers, { spec, plan, skillGuidance });
     const rel = `worker-runs/${input.taskId}/${role}.prompt.md`;
     await deps.artifact.writeMarkdown(rel, body);
     prompts.push({ role, path: `.harness/${rel}` });
@@ -141,7 +144,7 @@ export async function runDispatchAll(
   };
 }
 
-export interface PromptContext { goal?: string; spec?: string; plan?: string; autonomous?: boolean; }
+export interface PromptContext { goal?: string; spec?: string; plan?: string; autonomous?: boolean; skillGuidance?: string; }
 
 export function renderPrompt(
   taskId: string,
@@ -164,6 +167,9 @@ export function renderPrompt(
         ""
       ].filter(Boolean).join("\n")
     : "";
+  const guidanceBlock = context.skillGuidance
+    ? [`## 스킬팩 지침 (skill-pack guidance)`, "", context.skillGuidance.trim(), ""].join("\n")
+    : "";
 
   // autonomous(auto-factory): 워커가 result.md 에 '제안서'를 쓰는 게 아니라
   // cwd 의 소스 파일을 *직접 편집*한다. 산출물 = 워킹트리 diff. harness 메타
@@ -183,6 +189,7 @@ export function renderPrompt(
       "",
       goalBlock,
       contextBlock,
+      guidanceBlock,
       `## 임무`,
       "",
       mission,
@@ -208,6 +215,7 @@ export function renderPrompt(
     "",
     goalBlock,
     contextBlock,
+    guidanceBlock,
     `## 임무`,
     "",
     ROLE_PROMPT[role],
