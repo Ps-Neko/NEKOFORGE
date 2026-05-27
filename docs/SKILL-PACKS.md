@@ -11,6 +11,8 @@ rule pack 은 위험 탐지 (gate 가 무엇을 막는가)
 skill pack 누락은 직접 BLOCK 아님 — warning 또는 NEEDS_HUMAN_REVIEW
 ```
 
+> (2026-05) enabled skill pack(내장 카탈로그 + 채용분)의 guidance 는 `renderSkillGuidance` 를 통해 dispatch/auto 워커 프롬프트에 `## 스킬팩 지침` 블록으로 주입된다.
+
 ## 2. Skill Pack 13종
 
 | Skill Pack | 적용 대상 | 내용 |
