@@ -169,7 +169,7 @@ OMC                = "그 팀을 어떻게 운용할 것인가" (실행)
 1. **단계 강제** — 사용자가 `harness work` 호출 시 SPEC·PLAN·TASKS·harness-design·quality-policy·team 중 하나라도 누락이면 작업이 거부된다.
 2. **차단 강제** — `decision.json.verdict ∈ {BLOCK, INSUFFICIENT_EVIDENCE}` 상태에서 `harness apply --approved` 가 변경을 적용하면 안 된다. 테스트로 증명.
 3. **증거 강제** — `harness gate` 실행 후 `REPORT.md` 와 `.harness/decision.json` 이 동시에 존재하고 schema 검증 통과.
-4. **deterministic rule 동작** — 9개 룰(secret-fallback, auth-bypass, test-deletion, no-test-risk, dangerous-file-write, hook-injection-risk, agent-permission-risk, auto-apply-block, codex-missing-risk)이 모두 실제 변경 케이스에 대해 탐지 가능.
+4. **deterministic rule 동작** — MVP 코어 9개 룰(secret-fallback, auth-bypass, test-deletion, no-test-risk, dangerous-file-write, hook-injection-risk, agent-permission-risk, auto-apply-block, codex-missing-risk)이 모두 실제 변경 케이스에 대해 탐지 가능. (v0.5 현재는 확장 rule pack 26종이 더해져 총 35종 — README "무엇이 차단되는가" 참조.)
 5. **30초 path** — 신규 사용자가 README 만 보고 30초 안에 `harness init` → `harness ask` → 첫 산출물 확인까지 도달.
 6. **도구 독립** — Codex 없이도 deterministic gate 가 동작. `.harness/` 표준이 단독으로 의미를 가짐.
 7. **export adapter** — `harness export claude` 가 `.harness/team.json` 으로부터 `.claude/agents/*.md` 를 결정적으로 생성. 역방향(`.claude/` → `.harness/`)은 MVP 비범위.
@@ -195,7 +195,7 @@ OMC                = "그 팀을 어떻게 운용할 것인가" (실행)
 | verdict | gate 단계가 계산하는 최종 판정 (`PASS` / `PASS_WITH_WARNINGS` / `NEEDS_HUMAN_REVIEW` / `BLOCK` / `INSUFFICIENT_EVIDENCE`) |
 | team pattern | revfactory/harness 식 6종 (Pipeline, Fan-out/Fan-in, Expert Pool, Producer-Reviewer, Supervisor, Hierarchical Delegation) |
 | quality policy | rules + hooks + context-policy + security checklist 의 묶음 |
-| deterministic rule | 코드 변경에 대해 LLM 없이도 결정 가능한 차단/경고 규칙 (9종) |
+| deterministic rule | 코드 변경에 대해 LLM 없이도 결정 가능한 차단/경고 규칙 (MVP 코어 9종 + 확장 26종 = v0.5 현재 35종) |
 | Human Gate | verdict 가 자동 PASS 가 아닐 때, 사람 명시 승인 없이는 apply 가 금지되는 메커니즘 |
 | apply | 검토된 변경을 실제 워킹 트리/대상 파일에 반영하는 행위 (commit · push · deploy 와는 별개) |
 | adapter / export | `.harness/` 표준을 외부 도구 형식(Claude Code 의 `.claude/`, Cursor 의 `.cursor/` 등)으로 변환하는 단방향 모듈 |
