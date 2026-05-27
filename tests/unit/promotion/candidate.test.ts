@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   loadCandidateRule,
   computeFixturesHash,
-  validateMinFixtures
+  validateMinFixtures,
+  verifyFixturesHash
 } from "../../../src/core/promotion/candidate.js";
 import type { CandidateDef } from "../../../src/core/promotion/store-types.js";
 import type { DeterministicRule } from "../../../src/rules/types.js";
@@ -45,4 +46,19 @@ test("validateMinFixtures: 부족하면 ok=false + 사유", () => {
   const r = validateMinFixtures(["BLOCK", "PASS"]);
   assert.equal(r.ok, false);
   assert.match(r.reason ?? "", /positive|negative/);
+});
+
+test("verifyFixturesHash: 봉인 시점과 동일 fixtures → ok", () => {
+  const files = { "g/s/expected.json": "{}", "g/s/last-diff.patch": "diff" };
+  const expected = computeFixturesHash(cand, files);
+  const r = verifyFixturesHash(expected, cand, files);
+  assert.equal(r.ok, true);
+  assert.equal(r.actual, expected);
+});
+
+test("verifyFixturesHash: fixtures 가 바뀌면 ok=false + 사유(§8-2)", () => {
+  const expected = computeFixturesHash(cand, { "g/s/expected.json": "{}" });
+  const r = verifyFixturesHash(expected, cand, { "g/s/expected.json": '{"x":1}' });
+  assert.equal(r.ok, false);
+  assert.match(r.reason ?? "", /fixtures|8-2|changed|바뀜/);
 });

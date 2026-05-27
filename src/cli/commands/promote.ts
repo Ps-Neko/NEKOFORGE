@@ -5,7 +5,7 @@ import { buildDeps } from "../../core/stage-runner.js";
 import { runStage } from "./_run.js";
 import { isoNow } from "../../utils/time.js";
 import {
-  loadCandidateRule, computeFixturesHash, validateMinFixtures
+  loadCandidateRule, computeFixturesHash, validateMinFixtures, verifyFixturesHash
 } from "../../core/promotion/candidate.js";
 import { runTrial } from "../../core/promotion/trial.js";
 import { loadActiveRules } from "../../core/promotion/promoted.js";
@@ -51,6 +51,11 @@ export function registerPromote(program: Command): void {
         const deps = buildDeps();
         const cand = await deps.artifact.readJson<CandidateDef>(`promotions/${id}/candidate.json`);
         if (!cand) { const e = new Error(`${id} 미제출`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
+        // §8-2 동일조건 강제: trial 시점 fixtures 를 재해싱해 submit 봉인값과 대조(불일치=무효).
+        const stored = (await deps.artifact.readJson<{ fixturesHash: string }>(`promotions/${id}/fixtures-hash.json`))?.fixturesHash ?? "";
+        const { files } = await readFixtures(resolve(o.fixtures));
+        const fxCheck = verifyFixturesHash(stored, cand, files);
+        if (!fxCheck.ok) { const e = new Error(`INVALID_TRIAL: ${fxCheck.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
         const rule = await loadCandidateRule(cand);
         const readManifest = async () => readPromotedManifest(deps.artifact);
         const active = await loadActiveRules(readManifest);
@@ -58,7 +63,7 @@ export function registerPromote(program: Command): void {
         const rec: TrialRecord = {
           baseline: pick(t.baseline), candidate: pick(t.candidate),
           verdict: t.decision.verdict, reasons: t.decision.reasons,
-          fixturesHash: (await deps.artifact.readJson<{ fixturesHash: string }>(`promotions/${id}/fixtures-hash.json`))?.fixturesHash ?? "",
+          fixturesHash: fxCheck.actual,
           ranAt: isoNow()
         };
         await deps.artifact.writeJson(`promotions/${id}/trial.json`, rec);
