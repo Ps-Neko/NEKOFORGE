@@ -28,6 +28,7 @@ import { runWorkersInit, readWorkers } from "../../workers/index.js";
 import { ensureRulePacks } from "../../rule-packs/index.js";
 import { ensureSkillPacks } from "../../skill-packs/index.js";
 import { renderPrompt } from "../../workers/dispatch.js";
+import { resolveSkillGuidance } from "../../skill-packs/index.js";
 import { diffHash } from "../../utils/git.js";
 import { isoNow, systemClock } from "../../utils/time.js";
 import { createCostGuard } from "./cost-guard.js";
@@ -108,8 +109,9 @@ export async function runAuto(input: AutoInput): Promise<AutoResult> {
     const workers = await readWorkers(deps);
     const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
     const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
+    const skillGuidance = await resolveSkillGuidance(deps);
     const prompt = workers
-      ? renderPrompt(taskId, "implementation-worker", workers, { goal: input.goal, spec, plan, autonomous: true })
+      ? renderPrompt(taskId, "implementation-worker", workers, { goal: input.goal, spec, plan, autonomous: true, skillGuidance })
       : `# Worker Prompt\ntask: ${taskId}\nrole: implementation-worker\ngoal: ${input.goal}\n`;
 
     const est = input.workerAdapter.estimateCostUsd ?? 0.5;
