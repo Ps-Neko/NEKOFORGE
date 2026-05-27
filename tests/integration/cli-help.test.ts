@@ -45,7 +45,9 @@ const COMMANDS = [
   "rule-pack",
   "skill-pack",
   // Phase UX 9점화 신규
-  "doctor"
+  "doctor",
+  // Promotion Gate P1b
+  "promote"
 ] as const;
 
 interface RunResult {
@@ -79,7 +81,7 @@ test("harness --version exits 0 and prints version", () => {
   assert.match(r.stdout, /0\.5\.0/);
 });
 
-test("harness lists all 27 commands in --help", () => {
+test("harness lists all 28 commands in --help", () => {
   const r = runCli(["--help"]);
   assert.equal(r.status, 0);
   for (const cmd of COMMANDS) {
