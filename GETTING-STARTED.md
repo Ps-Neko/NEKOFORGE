@@ -151,7 +151,7 @@ $ harness apply --approved
 verdict 가 `NEEDS_HUMAN_REVIEW` 면 `.harness/approval.txt` 에 토큰 한 줄 필요:
 
 ```text
-approve TASK-001 verdict=NEEDS_HUMAN_REVIEW
+approve TASK-001 verdict=NEEDS_HUMAN_REVIEW decision=<current-decision-hash12> by=<name> at=<iso-time>
 ```
 
 verdict 가 `BLOCK` 또는 `INSUFFICIENT_EVIDENCE` 면 **어떤 플래그로도** apply 불가. 원인을 해결하고 다시 gate.
@@ -187,6 +187,6 @@ $ harness self-host --with-worker-stubs
 - [README.md](README.md) — 6 핵심 가치
 - [docs/PRODUCT.md](docs/PRODUCT.md) — 무엇을 위한 도구인가
 - [docs/WORKFLOW.md](docs/WORKFLOW.md) — 14단계 상세 흐름
-- [docs/CLI.md](docs/CLI.md) — 25 명령 도움말
+- [docs/CLI.md](docs/CLI.md) — 27 명령 도움말
 - [docs/SECURITY.md](docs/SECURITY.md) — 위협 모델
 - [examples/](examples/) — 10개 시나리오 + self-host 8회 기록

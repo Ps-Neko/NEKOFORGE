@@ -282,13 +282,13 @@ v3:  spec → plan → harness-design → quality-policy → team
 
 > rule pack / skill pack 은 policy 단계의 확장. gate 가 verdict 산출 시 활용.
 
-### 3.C.1 rule-pack — 8 큐레이션 pack
+### 3.C.1 rule-pack — 13 큐레이션 pack
 
 - **명령** : `harness rule-pack <list|enable|disable|status|audit>`
-- **책임** : 16 deterministic rule + 메타 finding 을 8 pack 으로 묶고, template 별 required pack 매핑.
+- **책임** : 35 deterministic rule + 메타 finding 을 13 pack 으로 묶고, template 별 required pack 매핑.
 - **연결** : gate 가 enabled pack 과 template required 비교 → 누락 시 verdict 강등 (INSUFFICIENT_EVIDENCE 또는 NEEDS_HUMAN_REVIEW).
 
-### 3.C.2 skill-pack — 7 큐레이션 pack
+### 3.C.2 skill-pack — 13 큐레이션 pack
 
 - **명령** : `harness skill-pack <list|enable|disable|status|audit>`
 - **책임** : worker prompt 에 흡수되는 행동 지침 (typescript-quality / web-ui-quality / evidence-writing 등).

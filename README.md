@@ -10,7 +10,9 @@
 
 > NEKOFORGE 는 OMC 처럼 일을 시키는 도구가 아니고, ECC 처럼 스킬을 많이 쌓는 도구도 아니다. 그 도구들이 만든 산출물을 **품질 계약 기준으로 검증하고 출고를 통제하는 공장** 이다.
 
-**현재 상태**: `v0.5.0-alpha` · 14단계 + 26 CLI (init/doctor 포함) · Worker Factory (8 worker role + 3 profile) · Rule Pack 13종 + Skill Pack 13종 · benchmark = 30 local fixtures (sample recall 1.000, FP 0.000) · self-host 11회 통과 · external Codex review 3회 + self-review 1회 통합.
+**현재 상태**: `v0.5.0-alpha` · 14단계 + 27 CLI (init/doctor/demo 포함) · Worker Factory (8 worker role + 3 profile) · Rule Pack 13종 + Skill Pack 13종 · benchmark = 30 local fixtures (sample recall 1.000, FP 0.000) · self-host 11회 통과 · external Codex review 3회 + self-review 1회 통합.
+
+![NEKOFORGE factory flow](docs/assets/nekoforge-flow.svg)
 
 **Beta 진입 조건** ([ROADMAP §10](docs/ROADMAP.md#10-외부-검증-기준-beta--10-진입-조건)): ✅ FP fixture 5개 · ✅ 모든 rule eval-case 적재 · ⏳ **외부 사용자 1명 이상이 본인 PR 에 NEKOFORGE 를 실행해 REPORT.md + decision.json + quality-score.json 을 제출**.
 
@@ -56,7 +58,15 @@ Human Gate → explicit apply.
 
 ## A. 10-minute first verdict (외부 사용자 빠른 시작)
 
-본 도구가 처음이면 preset + self-host 한 줄:
+본 도구가 처음이면 먼저 격리된 demo 로 BLOCK verdict 를 확인:
+
+```bash
+$ npm install
+$ npm run build
+$ node dist/src/cli/index.js demo --clean
+```
+
+그다음 preset + self-host 한 줄:
 
 ```bash
 $ npm install
@@ -224,7 +234,7 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 | [docs/PRODUCT.md](docs/PRODUCT.md) | 무엇을 위한 도구인가, 무엇이 아닌가 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 어떻게 구성되어 있는가 |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | 단계별로 무엇이 어떤 순서로 일어나는가 |
-| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 (25 명령) |
+| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 (27 명령) |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 와 마일스톤 |
 | [TASKS.md](TASKS.md) | 구현 task 분해 |
 
@@ -242,8 +252,8 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 | [docs/INTEGRATIONS-OMC-ECC-HERMES.md](docs/INTEGRATIONS-OMC-ECC-HERMES.md) | 대체 아니라 병행 (Phase QF) |
 | [docs/WORKER-FACTORY.md](docs/WORKER-FACTORY.md) | 8 worker role + 3 profile + role separation (Phase WF) |
 | [docs/WORKER-SAFETY.md](docs/WORKER-SAFETY.md) | worker 가 할 수 없는 것 + forbidden action (Phase WF) |
-| [docs/RULE-PACKS.md](docs/RULE-PACKS.md) | 8 rule pack + template 자동 추천 (Phase RP) |
-| [docs/SKILL-PACKS.md](docs/SKILL-PACKS.md) | 7 skill pack + worker prompt 흡수 (Phase RP) |
+| [docs/RULE-PACKS.md](docs/RULE-PACKS.md) | 13 rule pack + template 자동 추천 (Phase RP) |
+| [docs/SKILL-PACKS.md](docs/SKILL-PACKS.md) | 13 skill pack + worker prompt 흡수 (Phase RP) |
 | [examples/](examples/) | 10 시나리오 + 10 phase 흔적 ([index](examples/README.md)) |
 
 ---
@@ -263,8 +273,8 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 
 - 8 worker role + 3 profile (`harness workers init/list/status/validate`).
 - `harness dispatch <task> --worker <role>` — prompt 생성 + worker-result import.
-- 8 rule pack (`harness rule-pack <list/enable/disable/status/audit>`).
-- 7 skill pack (`harness skill-pack <…>`).
+- 13 rule pack (`harness rule-pack <list/enable/disable/status/audit>`).
+- 13 skill pack (`harness skill-pack <…>`).
 - `decision.json` v0.4 → v0.5 (`workerFactory` / `rulePacks` / `skillPacks` 3 필드 신규).
 - `docs/WORKER-FACTORY.md`, `WORKER-SAFETY.md`, `RULE-PACKS.md`, `SKILL-PACKS.md` 신규.
 - T-WF 5건 + T-RP 4건 e2e + 단위 18건 추가.

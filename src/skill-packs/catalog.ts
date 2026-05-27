@@ -1,5 +1,5 @@
 /**
- * Skill pack catalog (Phase RP) — 7 큐레이션 pack.
+ * Skill pack catalog (Phase RP) — 13 큐레이션 pack.
  *
  * skill pack 은 verdict 를 직접 만들지 않는다.
  * worker prompt + quality-policy + checklist 에 들어가는 실행 지침.

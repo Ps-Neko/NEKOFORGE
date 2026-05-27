@@ -12,6 +12,25 @@ interface GateOpts {
   strict?: boolean;
 }
 
+const GATE_TEST_STATUSES = [
+  "passed",
+  "failed",
+  "not_run",
+  "insufficient"
+] as const;
+
+type GateTestStatus = (typeof GATE_TEST_STATUSES)[number];
+
+export function parseGateTestStatus(raw: string | undefined): GateTestStatus | undefined {
+  if (raw === undefined) return undefined;
+  if ((GATE_TEST_STATUSES as readonly string[]).includes(raw)) {
+    return raw as GateTestStatus;
+  }
+  throw new Error(
+    `invalid --test-status: ${raw}. Expected one of: ${GATE_TEST_STATUSES.join(", ")}`
+  );
+}
+
 export function registerGate(program: Command): void {
   program
     .command("gate")
@@ -23,8 +42,7 @@ export function registerGate(program: Command): void {
     .option("--task <id>", "task id to write into decision.json", "TASK-001")
     .option(
       "--test-status <s>",
-      "test status to record (passed | failed | not_run | insufficient)",
-      "not_run"
+      "test status to record (passed | failed | not_run | insufficient)"
     )
     .option(
       "--mode <name>",
@@ -35,17 +53,18 @@ export function registerGate(program: Command): void {
       "exit non-zero when verdict is not a clean PASS (BLOCK/INSUFFICIENT=4, NEEDS_HUMAN/PASS_WITH_WARNINGS=3) — for CI gating"
     )
     .action(async (opts: GateOpts) => {
+      const testStatus = parseGateTestStatus(opts.testStatus);
       await runStage(
         () =>
           runGate(
             {
               noReviewAdapter: opts.reviewAdapter === false,
               taskId: opts.task ?? "TASK-001",
-              testStatus: (opts.testStatus ?? "not_run") as
-                | "passed"
-                | "failed"
-                | "not_run"
-                | "insufficient",
+              ...(testStatus !== undefined
+                ? {
+                    testStatus
+                  }
+                : {}),
               ...(opts.mode !== undefined
                 ? { mode: opts.mode as "fast" | "safe" | "release" }
                 : {})

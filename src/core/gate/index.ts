@@ -339,7 +339,7 @@ export async function runGate(
       findings: passTwo,
       architectureFindings: archFindings,
       designFindings,
-      testStatus: input.testStatus ?? "not_run",
+      testStatus: effectiveTestStatus,
       reviewStatus,
       evidenceComplete: !evidenceMissing,
       qualityBars: contract.qualityBars,
@@ -509,7 +509,7 @@ export async function runGate(
 
   const verdictBase = computeVerdict({
     findings: passTwo,
-    testStatus: input.testStatus ?? "not_run",
+    testStatus: effectiveTestStatus,
     reviewStatus,
     evidenceMissing,
     schemaFailed: false
@@ -770,7 +770,7 @@ export async function runGate(
     reasons: verdict.reasons,
     triggered,
     reviewStatus,
-    testStatus: input.testStatus ?? "not_run",
+    testStatus: effectiveTestStatus,
     missingEvidence: missing,
     findings: passTwo
   });

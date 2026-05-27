@@ -1,6 +1,6 @@
 # RULE PACKS — Phase RP
 
-> 16개 deterministic rule 을 ECC 식 풍부함이 아닌 **NEKOFORGE 식 큐레이션** 으로 8개 pack 으로 묶는다.
+> 35개 deterministic rule 을 ECC 식 풍부함이 아닌 **NEKOFORGE 식 큐레이션** 으로 13개 pack 으로 묶는다.
 
 ## 1. 정체성
 
@@ -10,7 +10,7 @@ rule pack 은 verdict 영향 가능
 rule pack 은 silent 하게 quality bar 약화 불가 (gate 가 missingRequired 검사)
 ```
 
-## 2. Rule Pack 8종
+## 2. Rule Pack 13종
 
 | Pack | 포함 rule | 목적 |
 |---|---|---|
@@ -22,6 +22,11 @@ rule pack 은 silent 하게 quality bar 약화 불가 (gate 가 missingRequired 
 | `ai-generated-code-risk` | no-test-risk, untyped-api-risk, secret-fallback, auth-bypass | AI 산출물 위험 대응 |
 | `worker-safety-core` | worker-safety-risk + agent-permission-risk | worker 통제 |
 | `quality-contract-core` | (gate finding) quality-contract-invalid, quality-score-required, failed-required-bars | 계약/점수 강제 |
+| `docs-quality` | stale-count-risk, missing-release-note-risk, missing-cli-doc-risk, broken-doc-link-risk | 문서 정합 |
+| `release-evidence` | release-benchmark-required, missing-self-host-risk, missing-migration-note-risk, missing-external-review-risk | release evidence |
+| `api-safety` | missing-input-validation-risk, missing-rate-limit-risk, unsafe-error-exposure-risk, missing-auth-boundary-risk | API 안전성 |
+| `frontend-accessibility` | accessibility-risk, missing-focus-state-risk, interactive-div-risk, missing-loading-state-risk, contrast-token-risk | frontend 접근성 |
+| `dependency-risk` | unbounded-version-risk, new-runtime-dependency-risk, postinstall-script-risk, lockfile-mismatch-risk | dependency 위험 |
 
 ## 3. CLI
 

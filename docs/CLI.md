@@ -47,13 +47,14 @@ harness rule-pack <list|enable|disable|status|audit>
 harness skill-pack <list|enable|disable|status|audit>
 ```
 
-### 1.5 자가 검증 (v0.4 후속)
+### 1.5 자가 검증 / demo (v0.4 후속 + v0.5 DX)
 
 ```text
 harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
+harness demo [--task <id>] [--clean]
 ```
 
-총 25개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 25개를 넘는다" 상한 내.
+총 27개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
 
 ## 2. 공통 동작
 
@@ -216,7 +217,8 @@ harness review [--adapter <id|all|none>] [--skip-self]
 ```
 
 - self-review + 외부 ReviewAdapter.
-- `--adapter all` (기본) / `<id>` / `none`.
+- `--adapter none` (기본: self-review만) / `all` / `<id>`.
+- 외부 검증은 `--adapter codex`, `--adapter claude`, 또는 `--adapter all` 을 명시해야 실행된다.
 - 파일 : `.harness/self-review.md`, `codex-review.md`, `codex-findings.json`.
 - 거부 : `worklog.md` 없음 → 10.
 
@@ -359,7 +361,27 @@ harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
 - `--with-worker-stubs`: 3 worker (impl/test/sec) 의 result.{md,json} 자동 stub.
 - 실 repo `.harness/audit.jsonl` 무영향.
 
-### 3.20 `harness workers <subcommand>` (v0.5 신규, Phase WF)
+### 3.20 `harness demo` (v0.5, Phase DX)
+
+```text
+harness demo [--task <id>] [--clean]
+```
+
+- tmpdir 격리 워크스페이스에서 init -> spec -> plan -> contract -> review -> gate 까지 실행한다.
+- AI 가 fallback secret 을 추가한 위험 diff fixture 를 만들고 `secret-fallback` rule 이 BLOCK 하는 장면을 보여준다.
+- 실제 caller repo 에 apply/commit/push/deploy 를 하지 않는다.
+- `--clean`: 결과 경로를 출력한 뒤 임시 워크스페이스를 삭제한다.
+
+### 3.21 `harness auto <goal>` (v0.5, Phase WF-3)
+
+```text
+harness auto <goal> [--task <id>] [--adapter <codex|codex-stub>] [--max-cost <USD>] [--strict]
+```
+
+- 14단계 공정을 자동 진행하고 gate/Human Gate에서 정지한다.
+- AI 작업 + 독립 review adapter + deterministic gate를 오케스트레이션하지만 apply는 자동 실행하지 않는다.
+
+### 3.22 `harness workers <subcommand>` (v0.5 신규, Phase WF)
 
 ```text
 harness workers init --profile <minimal|standard|strict> [--force]
@@ -371,7 +393,7 @@ harness workers validate
 - `workers.json` (profile + 8 worker role + roleSeparation) 관리.
 - `validate`: role separation 위반 시 exit 10.
 
-### 3.21 `harness dispatch` (v0.5 + Phase WF-2)
+### 3.23 `harness dispatch` (v0.5 + Phase WF-2)
 
 ```text
 harness dispatch <task-id> --worker <role>
@@ -382,7 +404,7 @@ harness dispatch <task-id> --all [--profile <minimal|standard|strict>]
 - `--all`: workers.json 의 profile required 전체 worker 에 대해 prompt + `worker-run-manifest.json` + `worker-handoff.md` 생성.
 - worker 가 직접 result.md/json 작성 후 `harness worker-result import` 로 회수.
 
-### 3.22 `harness worker-result <subcommand>` (v0.5 + Phase WF-2)
+### 3.24 `harness worker-result <subcommand>` (v0.5 + Phase WF-2)
 
 ```text
 harness worker-result import <task-id> --worker <role> --file <result.md> [--json <result.json>]
@@ -394,7 +416,7 @@ harness worker-result validate <task-id> [--profile <name>]
 - `import` 시 body 의 forbidden action 패턴 자동 검사 → critical finding 자동 추가.
 - `validate`: required worker / schema / role / finding / evidence 경로 검증 → `.harness/worker-result-validation.{md,json}`. fail 시 exit 10.
 
-### 3.23 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
+### 3.25 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
 
 ```text
 harness rule-pack list
@@ -404,10 +426,10 @@ harness rule-pack status
 harness rule-pack audit
 ```
 
-- 8 pack 큐레이션 (security-core, test-discipline, architecture-core, design-web, release-strict, ai-generated-code-risk, worker-safety-core, quality-contract-core).
+- 13 pack 큐레이션 (security-core, test-discipline, architecture-core, design-web, release-strict, ai-generated-code-risk, worker-safety-core, quality-contract-core + Phase RP-2 5종).
 - gate 가 enabledPacks 와 template requiredPacks 비교 → INSUFFICIENT_EVIDENCE 강등.
 
-### 3.24 `harness skill-pack <subcommand>` (v0.5 신규)
+### 3.26 `harness skill-pack <subcommand>` (v0.5 신규)
 
 ```text
 harness skill-pack list
@@ -420,7 +442,7 @@ harness skill-pack audit
 - 13 pack 큐레이션 (typescript-quality / backend-api-quality / web-ui-quality / cli-tool-quality / library-quality / release-readiness / evidence-writing + Phase RP-2 신규 6: testing-quality / security-review-writing / architecture-review-writing / release-note-writing / migration-writing / external-review-prep).
 - skill pack 누락은 직접 BLOCK 아님 — PASS_WITH_WARNINGS 압력.
 
-### 3.25 `harness doctor` (v0.5 + Phase UX)
+### 3.27 `harness doctor` (v0.5 + Phase UX)
 
 ```text
 harness doctor [--json]
@@ -483,6 +505,20 @@ Commands:
   apply       Apply changes only if verdict + human approval ok
   report      Print current stage and verdict in human form
   export      Export .harness/ to external tool format (claude|cursor|codex|generic)
+  memory      Add learning/evaluation memory
+  contract    Create a quality contract
+  benchmark   Run fixture benchmark
+  run         Print recommended mode sequence
+  self-host   Run a self-check in an isolated workspace
+  demo        Run a 3-minute isolated blocking demo
+  auto        Run the factory workflow and stop before apply
+  workers     Manage Worker Factory config
+  dispatch    Create worker prompts
+  worker-result
+              Import/list/show/validate worker evidence
+  rule-pack   Manage deterministic rule packs
+  skill-pack  Manage worker guidance skill packs
+  doctor      Diagnose the local harness workspace
 
 Global options:
   --workspace <path>   override .harness/ location

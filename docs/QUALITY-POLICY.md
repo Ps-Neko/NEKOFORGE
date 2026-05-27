@@ -241,8 +241,8 @@ quality-policy 가 한 번 정해진 뒤 변경되어야 한다면 :
 | 도구 | 책임 |
 |---|---|
 | `harness policy` | rules.json 의 owner/sub-rule 묶음 구성 |
-| `harness rule-pack` (v0.5) | 8 큐레이션 pack (security-core / test-discipline / architecture-core / design-web / release-strict / ai-generated-code-risk / worker-safety-core / quality-contract-core) 의 활성 상태 |
-| `harness skill-pack` (v0.5) | 7 행동 지침 pack (typescript-quality / web-ui-quality / evidence-writing 등) — worker prompt 에 흡수 |
+| `harness rule-pack` (v0.5) | 13 큐레이션 pack (security-core / test-discipline / architecture-core / design-web / release-strict / ai-generated-code-risk / worker-safety-core / quality-contract-core + Phase RP-2 5종) 의 활성 상태 |
+| `harness skill-pack` (v0.5) | 13 행동 지침 pack (typescript-quality / web-ui-quality / evidence-writing + Phase RP-2 6종 등) — worker prompt 에 흡수 |
 
 연결 방식:
 
@@ -253,8 +253,8 @@ quality-policy 가 한 번 정해진 뒤 변경되어야 한다면 :
 
 자세한 내용:
 
-- 8 rule pack 목록 → `docs/RULE-PACKS.md`
-- 7 skill pack 목록 → `docs/SKILL-PACKS.md`
+- 13 rule pack 목록 → `docs/RULE-PACKS.md`
+- 13 skill pack 목록 → `docs/SKILL-PACKS.md`
 
 ## 12. 본 문서가 답하지 않는 것
 

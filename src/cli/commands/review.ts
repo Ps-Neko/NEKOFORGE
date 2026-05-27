@@ -51,6 +51,11 @@ export function registerReview(program: Command): void {
           console.error(
             `[ok] review done: status=${r.adapterStatus}, adapters=${r.adapterCount}`
           );
+          if (r.adapterCount === 0) {
+            console.error(
+              `[warn] external adapters=0; independent review not run. Use --adapter codex, --adapter claude, or --adapter all for external review.`
+            );
+          }
           console.error(`[next] harness gate`);
         }
       );

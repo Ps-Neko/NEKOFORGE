@@ -1,5 +1,5 @@
 /**
- * Rule pack catalog (Phase RP) — 8 큐레이션 pack.
+ * Rule pack catalog (Phase RP) — 13 큐레이션 pack.
  *
  * 각 pack 은 rule id 목록 + 짧은 정체성 설명.
  * gate 가 enabledPacks 를 보고 rule id 집합을 결정.
