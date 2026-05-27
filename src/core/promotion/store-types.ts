@@ -12,6 +12,8 @@ export interface CandidateDef {
   /** 그 모듈에서 DeterministicRule 을 export 하는 이름. */
   exportName: string;
   submittedAt: string;
+  /** P2: 이 후보의 동기가 된 eval-case id 목록(provenance). 선택적. */
+  experiences?: string[];
 }
 
 /** trial.json — baseline vs candidate 점수 + 판정 + 봉인. */
@@ -42,6 +44,8 @@ export interface PromotedRuleEntry {
   exportName: string;
   promotedAt: string;
   approvalHash: string;
+  /** P2: 채용 시 봉인되는 출처 경험(candidate 에서 복사). */
+  experiences?: string[];
 }
 
 export interface PromotedManifest {
