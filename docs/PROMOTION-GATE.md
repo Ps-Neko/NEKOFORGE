@@ -152,9 +152,9 @@ P1b 구현 기준(rule 대상):
 NEKOFORGE 해자(content-hash 결박 · audit chain/anchor)를 본 게이트에 그대로 적용한다. 해시는 `src/utils/integrity.ts` 의 **`canonicalHash(value)`**(키 정렬 sha256, decision 무결성에 이미 쓰는 함수)를 재사용한다.
 
 1. **시험 입력 봉인.** `trial.json.fixturesHash = canonicalHash(후보 정의 + fixture 묶음)`. → "다른 fixture 로 몰래 시험하고 통과한 척" 차단.
-2. **동일 조건 강제.** 점수 A 와 B 는 동일 fixture 세트로만 계산. fixturesHash 불일치 시 trial 무효.
+2. **동일 조건 강제.** 점수 A 와 B 는 동일 fixture 세트로만 계산. fixturesHash 불일치 시 trial 무효. **(구현)** `promote trial` 이 trial 시점 fixtures 를 재해싱(`verifyFixturesHash`)해 submit 봉인값과 대조, 불일치 시 `INVALID_TRIAL`(exit 4) 거부.
 3. **승인 봉인.** `decision.json.approvalHash = canonicalHash(승인 시점의 trial.json)`. → "다른 결과를 보고 승인한 척" 차단(audit-integrity 사상).
-4. **이력 append-only.** `ledger.jsonl` 은 덧붙이기 전용. 직전 라인 해시를 다음 라인이 참조(chain) + 주기적 anchor. → 채용 이력 사후 위조 탐지(`extractLastDecisionHash` 류 chain 인프라 준용).
+4. **이력 append-only.** `ledger.jsonl` 은 덧붙이기 전용. 직전 라인 해시를 다음 라인이 참조(chain) + anchor(`ledger-anchor.json`). **(구현)** 매 append 전 `verifyLedgerChain`(chain) + `verifyLedgerAnchor`(라인 삭제·firstHash 변경·전체 재작성 탐지) 검증, 위반 시 `LEDGER_TAMPERED`(exit 5) 차단. → 채용 이력 사후 위조 탐지(`extractLastDecisionHash` 류 chain 인프라 준용).
 
 ## 9. 엣지 케이스
 
