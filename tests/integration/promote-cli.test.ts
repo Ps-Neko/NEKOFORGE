@@ -57,3 +57,36 @@ test("submit --experience: 없는 eval-case 면 exit != 0", async () => {
   assert.notEqual(r.status, 0);
   assert.match(r.stdout + r.stderr, /INVALID_EXPERIENCE|없음/);
 });
+
+test("submit-pack: 유효 JSON → skill-pack.json 기록", async () => {
+  const ws = await mkdtemp(join(tmpdir(), "p3-"));
+  await mkdir(join(ws, ".harness"), { recursive: true });
+  const packFile = join(ws, "pack.json");
+  await writeFile(packFile, JSON.stringify({ id: "ui-extra", appliesTo: "UI", guidance: ["use aria-label"] }));
+  const r = run(["--workspace", ws, "promote", "submit-pack", "ui-extra", "--pack-file", packFile]);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const cand = JSON.parse(await readFile(join(ws, ".harness", "promotions", "ui-extra", "skill-pack.json"), "utf8")) as { id: string };
+  assert.equal(cand.id, "ui-extra");
+});
+
+test("submit-pack: 잘못된 JSON(guidance 누락) → exit != 0", async () => {
+  const ws = await mkdtemp(join(tmpdir(), "p3-"));
+  await mkdir(join(ws, ".harness"), { recursive: true });
+  const packFile = join(ws, "bad.json");
+  await writeFile(packFile, JSON.stringify({ id: "bad", appliesTo: "UI" }));
+  const r = run(["--workspace", ws, "promote", "submit-pack", "bad", "--pack-file", packFile]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stdout + r.stderr, /INVALID_SKILL_PACK|guidance/);
+});
+
+test("approve-pack → list-packs 에 표시", async () => {
+  const ws = await mkdtemp(join(tmpdir(), "p3-"));
+  await mkdir(join(ws, ".harness"), { recursive: true });
+  const packFile = join(ws, "pack.json");
+  await writeFile(packFile, JSON.stringify({ id: "ui-extra", appliesTo: "UI", guidance: ["g"] }));
+  run(["--workspace", ws, "promote", "submit-pack", "ui-extra", "--pack-file", packFile]);
+  const a = run(["--workspace", ws, "promote", "approve-pack", "ui-extra", "--approved"]);
+  assert.equal(a.status, 0, a.stdout + a.stderr);
+  const l = run(["--workspace", ws, "promote", "list-packs"]);
+  assert.match(l.stdout + l.stderr, /ui-extra/);
+});

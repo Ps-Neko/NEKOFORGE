@@ -14,6 +14,12 @@ import {
   submitCandidate, approveCandidate, rejectCandidate, readPromotedManifest
 } from "../../core/promotion/store.js";
 import type { CandidateDef, TrialRecord } from "../../core/promotion/store-types.js";
+import { SKILL_PACK_CATALOG, type SkillPackDef } from "../../skill-packs/catalog.js";
+import {
+  validateSkillPackCandidate, submitSkillPack, approveSkillPack, rejectSkillPack,
+  type SkillPackCandidate
+} from "../../core/promotion/skill-pack.js";
+import { readPromotedSkillPacks } from "../../skill-packs/promoted.js";
 
 export function registerPromote(program: Command): void {
   const cmd = program
@@ -136,6 +142,67 @@ export function registerPromote(program: Command): void {
       }, (rules) => {
         if (rules.length === 0) console.error("(채용 없음)");
         for (const r of rules) console.error(`- ${r.id} (${r.modulePath}#${r.exportName}) @${r.promotedAt}${r.experiences?.length ? ` exp=[${r.experiences.join(",")}]` : ""}`);
+      });
+    });
+
+  cmd.command("submit-pack")
+    .description("skill-pack 후보 제출 (JSON 파일 + 사람 검토 승격)")
+    .argument("<id>", "promotion id")
+    .requiredOption("--pack-file <path>", "SkillPackDef JSON ({id, appliesTo, guidance[]})")
+    .option("--experience <id>", "동기가 된 eval-case id (반복 가능)", (v: string, prev: string[]) => prev.concat([v]), [] as string[])
+    .action(async (id: string, o: { packFile: string; experience: string[] }) => {
+      await runStage(async () => {
+        const deps = buildDeps();
+        const raw = JSON.parse(await readFile(resolve(o.packFile), "utf8")) as Partial<SkillPackDef>;
+        const builtinIds = new Set(SKILL_PACK_CATALOG.map((p) => p.id));
+        const v = validateSkillPackCandidate(raw, builtinIds);
+        if (!v.ok) { const e = new Error(`INVALID_SKILL_PACK: ${v.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
+        const experiences = [...new Set(o.experience)];
+        const expCheck = await validateExperiences(experiences, (eid) => deps.artifact.readJson<{ kind: string }>(`eval-cases/${eid}.json`));
+        if (!expCheck.ok) { const e = new Error(`INVALID_EXPERIENCE: ${expCheck.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
+        const cand: SkillPackCandidate = {
+          id, appliesTo: raw.appliesTo!, guidance: raw.guidance!, submittedAt: isoNow(),
+          ...(experiences.length > 0 ? { experiences } : {})
+        };
+        await submitSkillPack(deps.artifact, cand);
+        return id;
+      }, (id) => console.error(`[ok] skill-pack submitted: ${id}`));
+    });
+
+  cmd.command("approve-pack")
+    .description("사람 승인 → skill-pack 카탈로그 채용(promoted-skill-packs.json) + ledger")
+    .argument("<id>", "promotion id")
+    .requiredOption("--approved", "명시 승인 도장")
+    .option("--by <who>", "승인자", "local")
+    .action(async (id: string, o: { by: string }) => {
+      await runStage(async () => {
+        const deps = buildDeps();
+        const { entry } = await approveSkillPack(deps.artifact, id, { approvedBy: o.by, clockNow: isoNow() });
+        return entry.id;
+      }, (pid) => console.error(`[ok] approved skill-pack: ${pid} (promoted-skill-packs.json + ledger)`));
+    });
+
+  cmd.command("reject-pack")
+    .description("명시 거절 → rejected 기록")
+    .argument("<id>", "promotion id")
+    .option("--reason <text>", "사유", "rejected by human")
+    .action(async (id: string, o: { reason: string }) => {
+      await runStage(async () => {
+        const deps = buildDeps();
+        await rejectSkillPack(deps.artifact, id, o.reason, isoNow());
+        return id;
+      }, (id) => console.error(`[ok] rejected skill-pack: ${id}`));
+    });
+
+  cmd.command("list-packs")
+    .description("채용된 skill-pack 목록(promoted-skill-packs.json)")
+    .action(async () => {
+      await runStage(async () => {
+        const deps = buildDeps();
+        return (await readPromotedSkillPacks(deps.artifact)).packs;
+      }, (packs) => {
+        if (packs.length === 0) console.error("(채용 skill-pack 없음)");
+        for (const p of packs) console.error(`- ${p.id} (${p.appliesTo}) @${p.promotedAt}${p.experiences?.length ? ` exp=[${p.experiences.join(",")}]` : ""}`);
       });
     });
 }
