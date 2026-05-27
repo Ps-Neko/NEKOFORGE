@@ -3,6 +3,7 @@
  */
 import type { StageDeps } from "../core/stage-runner.js";
 import { SKILL_PACK_CATALOG, findSkillPack } from "./catalog.js";
+import { loadPromotedSkillPackIds } from "./promoted.js";
 
 export interface SkillPacksJson {
   schemaVersion: "0.5";
@@ -65,7 +66,7 @@ export async function enableSkillPack(
   packId: string,
   deps: StageDeps
 ): Promise<SkillPacksJson> {
-  if (!findSkillPack(packId)) {
+  if (!findSkillPack(packId) && !(await loadPromotedSkillPackIds(deps.artifact)).has(packId)) {
     throw new SkillPackError(`unknown skill pack: ${packId}`);
   }
   const cur = await ensureSkillPacks(deps);
@@ -121,7 +122,8 @@ export async function getSkillPackStatus(
       unknownEnabled: []
     };
   }
-  const unknown = r.enabledPacks.filter((p) => !findSkillPack(p));
+  const promotedIds = await loadPromotedSkillPackIds(deps.artifact);
+  const unknown = r.enabledPacks.filter((p) => !findSkillPack(p) && !promotedIds.has(p));
   return {
     configured: true,
     enabledPacks: [...r.enabledPacks],
