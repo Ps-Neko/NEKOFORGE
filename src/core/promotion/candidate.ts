@@ -43,6 +43,37 @@ export function computeFixturesHash(
   return canonicalHash({ candidate, fixtures: fixtureFiles });
 }
 
+export interface FixturesHashCheck {
+  ok: boolean;
+  expected: string;
+  actual: string;
+  reason?: string;
+}
+
+/**
+ * §8-2 동일조건 강제: trial 시점 fixtures 를 재해싱(computeFixturesHash)해
+ * submit 시 봉인값(expected)과 대조한다. 불일치 = 다른 fixture 로 시험한 것 → trial 무효.
+ */
+export function verifyFixturesHash(
+  expected: string,
+  candidate: CandidateDef,
+  fixtureFiles: Record<string, string>
+): FixturesHashCheck {
+  const actual = computeFixturesHash(candidate, fixtureFiles);
+  if (!expected) {
+    return { ok: false, expected, actual, reason: "봉인된 fixturesHash 없음 — submit 먼저(§8-2)" };
+  }
+  if (actual !== expected) {
+    return {
+      ok: false,
+      expected,
+      actual,
+      reason: `fixtures 가 submit 이후 바뀜(§8-2): expected ${expected.slice(0, 12)}, got ${actual.slice(0, 12)}`
+    };
+  }
+  return { ok: true, expected, actual };
+}
+
 export interface MinFixtureCheck {
   ok: boolean;
   positives: number;
