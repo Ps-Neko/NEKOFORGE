@@ -1,10 +1,14 @@
+import { isAbsolute } from "node:path";
+import { pathToFileURL } from "node:url";
 import { canonicalHash } from "../../utils/integrity.js";
 import type { DeterministicRule } from "../../rules/types.js";
 import type { CandidateDef } from "./store-types.js";
 
 export type ModuleImporter = (modulePath: string) => Promise<Record<string, unknown>>;
 
-const defaultImporter: ModuleImporter = (p) => import(p) as Promise<Record<string, unknown>>;
+// 절대 경로는 Windows 에서 dynamic import 시 file:// URL 이 필요하다(ERR_UNSUPPORTED_ESM_URL_SCHEME 방지).
+const defaultImporter: ModuleImporter = (p) =>
+  import(isAbsolute(p) ? pathToFileURL(p).href : p) as Promise<Record<string, unknown>>;
 
 function isDeterministicRule(v: unknown): v is DeterministicRule {
   return (

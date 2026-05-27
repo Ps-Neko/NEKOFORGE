@@ -2,7 +2,7 @@
  * gate 단계: deterministic rule + review + tests 종합 → verdict.
  * 출력: REPORT.md + .harness/decision.json (schema 검증 통과 필수).
  */
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
 import {
@@ -31,6 +31,9 @@ import {
 import { makeFinding } from "../../rules/types.js";
 import { canonicalHash } from "../../utils/integrity.js";
 import { ENGINE_VERSION } from "../../version.js";
+import { harnessRoot } from "../../utils/paths.js";
+import { loadPromotedRules } from "../promotion/promoted.js";
+import type { PromotedManifest } from "../promotion/store-types.js";
 
 /**
  * 3번 — review adapter 무시(--no-review-adapter) 시 reviewStatus 를 not_run 으로
@@ -223,10 +226,10 @@ export async function runGate(
     testStatus: effectiveTestStatus
   };
 
-  const passOne = await runAllRulesExceptCodex(baseCtx);
+  const passOne = await runAllRulesExceptCodex(baseCtx, deps.cwd);
   const highRiskFlags = deriveHighRiskFlags(passOne);
   const ctxWithFlags: RuleContext = { ...baseCtx, highRiskFlags };
-  const passTwo = await runAllRules(ctxWithFlags);
+  const passTwo = await runAllRules(ctxWithFlags, deps.cwd);
 
   // audit.jsonl chain 무결성 검증 (SECURITY.md §9).
   const auditChain = await readAuditChain(deps.cwd);
@@ -797,24 +800,47 @@ export async function runGate(
   };
 }
 
-async function runAllRules(ctx: RuleContext): Promise<RuleFinding[]> {
+async function runAllRules(ctx: RuleContext, cwd: string): Promise<RuleFinding[]> {
   const out: RuleFinding[] = [];
-  for (const r of ALL_RULES) {
+  const rules = [...ALL_RULES, ...(await loadPromotedForCwd(cwd))];
+  for (const r of rules) {
     const fs = await r.run(ctx);
     out.push(...fs);
   }
   return out;
 }
 
-async function runAllRulesExceptCodex(ctx: RuleContext): Promise<RuleFinding[]> {
+async function runAllRulesExceptCodex(ctx: RuleContext, cwd: string): Promise<RuleFinding[]> {
   const out: RuleFinding[] = [];
-  for (const r of ALL_RULES) {
+  const rules = [...ALL_RULES, ...(await loadPromotedForCwd(cwd))];
+  for (const r of rules) {
     if (r.id === "codex-missing-risk") continue;
     if (r.id === "auto-apply-block") continue;
     const fs = await r.run(ctx);
     out.push(...fs);
   }
   return out;
+}
+
+/** cwd 기준 promoted.json 을 읽어 매니페스트로(없으면 null). */
+async function readPromotedManifestAt(cwd: string): Promise<PromotedManifest | null> {
+  try {
+    const text = await readFile(join(harnessRoot(cwd), "promotions", "promoted.json"), "utf8");
+    return JSON.parse(text) as PromotedManifest;
+  } catch {
+    return null;
+  }
+}
+
+/** 현 cwd 기준 채용분 rule(런타임 동적 로딩). gate 의 rule 순회에 합류. */
+export async function loadPromotedForCwd(cwd: string) {
+  return loadPromotedRules(() => readPromotedManifestAt(cwd));
+}
+
+/** 테스트/관측용: 활성 rule id 목록(ALL_RULES + promoted). */
+export async function collectActiveRuleIds(cwd: string): Promise<string[]> {
+  const promoted = await loadPromotedForCwd(cwd);
+  return [...ALL_RULES.map((r) => r.id), ...promoted.map((r) => r.id)];
 }
 
 function deriveHighRiskFlags(findings: readonly RuleFinding[]): NonNullable<RuleContext["highRiskFlags"]> {
