@@ -9,6 +9,7 @@ import {
 } from "../../core/promotion/candidate.js";
 import { runTrial } from "../../core/promotion/trial.js";
 import { loadActiveRules } from "../../core/promotion/promoted.js";
+import { validateExperiences } from "../../core/promotion/experience.js";
 import {
   submitCandidate, approveCandidate, rejectCandidate, readPromotedManifest
 } from "../../core/promotion/store.js";
@@ -25,11 +26,19 @@ export function registerPromote(program: Command): void {
     .requiredOption("--module <path>", "후보 rule 모듈 경로")
     .requiredOption("--export <name>", "DeterministicRule export 이름")
     .requiredOption("--fixtures <dir>", "검증용 fixtures 디렉토리(<group>/<scenario>/expected.json)")
-    .action(async (id: string, o: { module: string; export: string; fixtures: string }) => {
+    .option("--experience <id>", "동기가 된 eval-case id (반복 가능)", (v: string, prev: string[]) => prev.concat([v]), [] as string[])
+    .action(async (id: string, o: { module: string; export: string; fixtures: string; experience: string[] }) => {
       await runStage(async () => {
         const deps = buildDeps();
+        const experiences = [...new Set(o.experience)];
+        const expCheck = await validateExperiences(
+          experiences,
+          (eid) => deps.artifact.readJson<{ kind: string }>(`eval-cases/${eid}.json`)
+        );
+        if (!expCheck.ok) { const e = new Error(`INVALID_EXPERIENCE: ${expCheck.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
         const cand: CandidateDef = {
-          id, kind: "rule", modulePath: resolve(o.module), exportName: o.export, submittedAt: isoNow()
+          id, kind: "rule", modulePath: resolve(o.module), exportName: o.export, submittedAt: isoNow(),
+          ...(experiences.length > 0 ? { experiences } : {})
         };
         const { files, verdicts } = await readFixtures(resolve(o.fixtures));
         const min = validateMinFixtures(verdicts);
@@ -126,7 +135,7 @@ export function registerPromote(program: Command): void {
         return m.rules;
       }, (rules) => {
         if (rules.length === 0) console.error("(채용 없음)");
-        for (const r of rules) console.error(`- ${r.id} (${r.modulePath}#${r.exportName}) @${r.promotedAt}`);
+        for (const r of rules) console.error(`- ${r.id} (${r.modulePath}#${r.exportName}) @${r.promotedAt}${r.experiences?.length ? ` exp=[${r.experiences.join(",")}]` : ""}`);
       });
     });
 }
