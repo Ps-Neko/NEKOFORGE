@@ -1,5 +1,27 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.5 — Source Map Enrichment (2026-05-28)
+
+평가서가 지적한 "context 스캔이 얕다"는 한계를 보완. source-map.json 에
+**프로젝트 프로파일 메타데이터** 5종을 1급 필드로 추가해, AI 작업 패킷이
+프로젝트의 골격(framework, runner, entrypoint, build/test/typecheck/lint
+명령) 까지 한 번에 파악할 수 있게 했다.
+
+| 영역 | 변경 |
+|---|---|
+| Schema | `entrypoints`, `framework`, `packageManager`, `testRunner`, `buildCommands` 5개 optional 필드 추가 (schemaVersion 0.5 유지, 하위 호환) |
+| Detection | `package.json` (main/bin/dependencies/devDependencies/scripts) 와 lock file (`bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`) 로부터 자동 추출 |
+| Framework | 14종 우선순위 (`next > nuxt > remix > gatsby > nest > express > fastify > koa > hapi > electron > react > vue > svelte > solid`) |
+| Test runner | 7종 우선순위 (`playwright > cypress > vitest > jest > mocha > ava > tap`) + `node:test` 휴리스틱 |
+| Package manager | bun / pnpm / yarn / npm / unknown |
+| Build commands | `scripts.build/test/typecheck/lint` 을 구조화해 노출 |
+| Markdown | source-map.md 에 "Project Profile" 섹션 추가 |
+| Tests | enrichment 5건 신규 (총 460, 회귀 0) |
+
+이제 packet/prepare/dispatch 가 동일한 풍부한 프로파일을 공유하므로, AI 작업
+지시서가 \"이 프로젝트는 Next.js + pnpm + vitest 구성\" 수준의 컨텍스트를
+가지고 시작할 수 있다.
+
 ## v0.5.0-alpha.4 — `prepare` 1-shot 생산성 명령 (2026-05-28)
 
 평가서 권장사항 #2 **완전 충족**. `nekoforge prepare "<goal>"` 한 줄로

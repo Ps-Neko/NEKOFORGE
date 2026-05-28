@@ -12,6 +12,15 @@ import type { StageDeps } from "../stage-runner.js";
 import { isoNow } from "../../utils/time.js";
 import { ENGINE_VERSION } from "../../version.js";
 
+export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "unknown";
+
+export interface BuildCommands {
+  build?: string;
+  test?: string;
+  typecheck?: string;
+  lint?: string;
+}
+
 export interface SourceMap {
   schemaVersion: "0.5";
   engineVersion: string;
@@ -29,7 +38,47 @@ export interface SourceMap {
     scanned: number;
     truncated: boolean;
   };
+  entrypoints?: string[];
+  framework?: string;
+  packageManager?: PackageManager;
+  testRunner?: string;
+  buildCommands?: BuildCommands;
 }
+
+interface PackageJson {
+  scripts?: Record<string, string>;
+  main?: string;
+  bin?: string | Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+const FRAMEWORK_PRIORITY: Array<{ name: string; deps: string[] }> = [
+  { name: "next", deps: ["next"] },
+  { name: "nuxt", deps: ["nuxt"] },
+  { name: "remix", deps: ["@remix-run/react"] },
+  { name: "gatsby", deps: ["gatsby"] },
+  { name: "nest", deps: ["@nestjs/core"] },
+  { name: "express", deps: ["express"] },
+  { name: "fastify", deps: ["fastify"] },
+  { name: "koa", deps: ["koa"] },
+  { name: "hapi", deps: ["@hapi/hapi"] },
+  { name: "electron", deps: ["electron"] },
+  { name: "react", deps: ["react"] },
+  { name: "vue", deps: ["vue"] },
+  { name: "svelte", deps: ["svelte"] },
+  { name: "solid", deps: ["solid-js"] }
+];
+
+const TEST_RUNNER_PRIORITY: Array<{ name: string; deps: string[] }> = [
+  { name: "playwright", deps: ["@playwright/test", "playwright"] },
+  { name: "cypress", deps: ["cypress"] },
+  { name: "vitest", deps: ["vitest"] },
+  { name: "jest", deps: ["jest"] },
+  { name: "mocha", deps: ["mocha"] },
+  { name: "ava", deps: ["ava"] },
+  { name: "tap", deps: ["tap"] }
+];
 
 export interface SourceMapInput {
   hints?: string;
@@ -152,14 +201,85 @@ async function walk(root: string, dir: string, acc: string[]): Promise<void> {
   }
 }
 
-async function readPackageScripts(cwd: string): Promise<string[]> {
+async function readPackageJson(cwd: string): Promise<PackageJson | null> {
   try {
     const text = await readFile(join(cwd, "package.json"), "utf8");
-    const pkg = JSON.parse(text) as { scripts?: Record<string, string> };
-    return Object.entries(pkg.scripts ?? {}).map(([name, cmd]) => `${name}: ${cmd}`);
+    return JSON.parse(text) as PackageJson;
   } catch {
-    return [];
+    return null;
   }
+}
+
+function readPackageScripts(pkg: PackageJson | null): string[] {
+  if (!pkg) return [];
+  return Object.entries(pkg.scripts ?? {}).map(([name, cmd]) => `${name}: ${cmd}`);
+}
+
+function detectEntrypoints(pkg: PackageJson | null): string[] | undefined {
+  if (!pkg) return undefined;
+  const entries: string[] = [];
+  if (typeof pkg.main === "string" && pkg.main.length > 0) entries.push(pkg.main);
+  if (typeof pkg.bin === "string" && pkg.bin.length > 0) entries.push(pkg.bin);
+  if (pkg.bin && typeof pkg.bin === "object") {
+    for (const value of Object.values(pkg.bin)) {
+      if (typeof value === "string" && value.length > 0) entries.push(value);
+    }
+  }
+  if (entries.length === 0) return undefined;
+  return [...new Set(entries)];
+}
+
+function detectFramework(pkg: PackageJson | null): string | undefined {
+  if (!pkg) return undefined;
+  const all = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+  for (const { name, deps } of FRAMEWORK_PRIORITY) {
+    if (deps.some((d) => d in all)) return name;
+  }
+  return undefined;
+}
+
+function detectTestRunner(pkg: PackageJson | null): string | undefined {
+  if (!pkg) return undefined;
+  const all = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+  for (const { name, deps } of TEST_RUNNER_PRIORITY) {
+    if (deps.some((d) => d in all)) return name;
+  }
+  const testScript = pkg.scripts?.test;
+  if (testScript && /node\s+--test/.test(testScript)) return "node:test";
+  return undefined;
+}
+
+async function detectPackageManager(cwd: string): Promise<PackageManager | undefined> {
+  const candidates: Array<[string, PackageManager]> = [
+    ["bun.lockb", "bun"],
+    ["pnpm-lock.yaml", "pnpm"],
+    ["yarn.lock", "yarn"],
+    ["package-lock.json", "npm"]
+  ];
+  for (const [file, manager] of candidates) {
+    try {
+      await stat(join(cwd, file));
+      return manager;
+    } catch {
+      continue;
+    }
+  }
+  try {
+    await stat(join(cwd, "package.json"));
+    return "unknown";
+  } catch {
+    return undefined;
+  }
+}
+
+function detectBuildCommands(pkg: PackageJson | null): BuildCommands | undefined {
+  if (!pkg?.scripts) return undefined;
+  const result: BuildCommands = {};
+  if (pkg.scripts.build) result.build = pkg.scripts.build;
+  if (pkg.scripts.test) result.test = pkg.scripts.test;
+  if (pkg.scripts.typecheck) result.typecheck = pkg.scripts.typecheck;
+  if (pkg.scripts.lint) result.lint = pkg.scripts.lint;
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 function tokenize(text: string): string[] {
@@ -206,9 +326,18 @@ async function scanFiles(cwd: string): Promise<string[]> {
   return acc;
 }
 
+interface ProjectEnrichment {
+  entrypoints: string[] | undefined;
+  framework: string | undefined;
+  packageManager: PackageManager | undefined;
+  testRunner: string | undefined;
+  buildCommands: BuildCommands | undefined;
+}
+
 function buildSourceMap(
   files: string[],
   packageScripts: string[],
+  enrichment: ProjectEnrichment,
   hints: string,
   userContext: string | undefined,
   generatedAt: string
@@ -237,6 +366,11 @@ function buildSourceMap(
     }
   };
   if (userContext !== undefined) result.userContext = userContext;
+  if (enrichment.entrypoints) result.entrypoints = enrichment.entrypoints;
+  if (enrichment.framework) result.framework = enrichment.framework;
+  if (enrichment.packageManager) result.packageManager = enrichment.packageManager;
+  if (enrichment.testRunner) result.testRunner = enrichment.testRunner;
+  if (enrichment.buildCommands) result.buildCommands = enrichment.buildCommands;
   return result;
 }
 
@@ -244,10 +378,29 @@ function renderList(items: string[], empty: string): string {
   return items.length > 0 ? items.map((x) => `- ${x}`).join("\n") : `- ${empty}`;
 }
 
+function renderProjectProfile(sm: SourceMap): string[] {
+  const lines: string[] = [];
+  if (sm.framework) lines.push(`- framework: ${sm.framework}`);
+  if (sm.packageManager) lines.push(`- package manager: ${sm.packageManager}`);
+  if (sm.testRunner) lines.push(`- test runner: ${sm.testRunner}`);
+  if (sm.entrypoints && sm.entrypoints.length > 0) {
+    lines.push(`- entrypoints: ${sm.entrypoints.join(", ")}`);
+  }
+  if (sm.buildCommands) {
+    const bc = sm.buildCommands;
+    if (bc.build) lines.push(`- build: \`${bc.build}\``);
+    if (bc.test) lines.push(`- test: \`${bc.test}\``);
+    if (bc.typecheck) lines.push(`- typecheck: \`${bc.typecheck}\``);
+    if (bc.lint) lines.push(`- lint: \`${bc.lint}\``);
+  }
+  return lines;
+}
+
 function renderMarkdown(sm: SourceMap): string {
   const languages = Object.entries(sm.languages)
     .sort((a, b) => b[1] - a[1])
     .map(([name, count]) => `${name} (${count})`);
+  const profile = renderProjectProfile(sm);
 
   return [
     "# Source Map",
@@ -258,6 +411,9 @@ function renderMarkdown(sm: SourceMap): string {
     `Engine: ${sm.engineVersion}`,
     `Scanned: ${sm.limits.scanned}/${sm.limits.maxFiles}${sm.limits.truncated ? " (truncated)" : ""}`,
     "",
+    ...(profile.length > 0
+      ? ["## Project Profile", profile.join("\n"), ""]
+      : []),
     "## Source Files",
     renderList(sm.files.slice(0, 30), "no source files detected"),
     "",
@@ -287,10 +443,18 @@ export async function runSourceMap(
   input: SourceMapInput = {}
 ): Promise<SourceMapResult> {
   const files = await scanFiles(deps.cwd);
-  const packageScripts = await readPackageScripts(deps.cwd);
+  const pkg = await readPackageJson(deps.cwd);
+  const enrichment: ProjectEnrichment = {
+    entrypoints: detectEntrypoints(pkg),
+    framework: detectFramework(pkg),
+    packageManager: await detectPackageManager(deps.cwd),
+    testRunner: detectTestRunner(pkg),
+    buildCommands: detectBuildCommands(pkg)
+  };
   const sourceMap = buildSourceMap(
     files,
-    packageScripts,
+    readPackageScripts(pkg),
+    enrichment,
     input.hints ?? "",
     input.userContext,
     isoNow(deps.clock)
