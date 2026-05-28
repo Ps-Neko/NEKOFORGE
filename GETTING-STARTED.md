@@ -32,7 +32,7 @@ $ node dist/src/cli/index.js demo safety --clean
 ```bash
 $ npm link
 $ nekoforge --version          # (또는 harness — 같은 명령)
-0.5.0-alpha.0
+0.5.0-alpha.1
 ```
 
 ## 2. 환경 점검 (선택, 30초)
@@ -110,7 +110,7 @@ $ harness team
 ```bash
 $ harness contract --template web-ui --task TASK-001
 $ harness workers init --profile standard
-$ harness packet TASK-001 --dispatch  # AI 작업 패킷 + worker prompt 생성
+$ harness packet TASK-001 --dispatch --tool all  # AI 도구별 작업 패킷 + worker prompt 생성
 $ harness rule-pack audit       # 기본 enabled pack 5개 자동 생성
 $ harness skill-pack audit
 ```

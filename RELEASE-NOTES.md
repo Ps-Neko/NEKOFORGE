@@ -1,5 +1,19 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.1 — Source Packet Productivity Pass (2026-05-28)
+
+NEKOFORGE의 중심을 "검증 도구"가 아니라 **기존 소스를 AI 작업 맥락으로 바꾸는 생산성 하네스**로 재정렬.
+
+| 영역 | 변경 |
+|---|---|
+| Source packet | `harness packet <task-id>` 추가. context / intake / SPEC / PLAN / TASKS 를 묶어 AI 작업 패킷 생성 |
+| Tool-specific packet | `--tool generic|codex|claude|cursor|all` 추가. Codex/Claude/Cursor에 바로 붙여넣기 쉬운 패킷 생성 |
+| Context | `context --from <file>` 실제 반영 + task goal 기반 관련 파일 후보 제안 |
+| Demo | `demo productivity`가 하드코딩 context 대신 실제 `runContext` + `runPacket` 흐름 사용 |
+| Docs | README, `release/사용법.md`, CLI 문서를 소스 기반 생산성 흐름 중심으로 재정리 |
+
+검증/Gate는 제거하지 않고, 생산성 흐름 뒤의 마지막 안전장치로 위치를 조정했다.
+
 ## v0.5.0-alpha — Worker Factory + Rule/Skill Pack Upgrade (2026-05-20)
 
 ### 검증 불변식 강화 — verified advisory → autopilot (2026-05-24)

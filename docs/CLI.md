@@ -36,7 +36,7 @@ harness run --mode <fast|safe|release>
 
 ```text
 harness workers <init|list|status|validate>
-harness packet <task-id> [--dispatch]
+harness packet <task-id> [--tool <generic|codex|claude|cursor|all>] [--dispatch]
 harness dispatch <task-id> --worker <role>
 harness worker-result <import|list|show>
 ```
@@ -379,10 +379,12 @@ harness demo [safety|productivity] [--task <id>] [--clean]
 ### 3.21 `harness packet <task-id>` (v0.5, source packet)
 
 ```text
-harness packet <task-id> [--dispatch] [--profile <minimal|standard|strict>]
+harness packet <task-id> [--tool <generic|codex|claude|cursor|all>] [--dispatch] [--profile <minimal|standard|strict>]
 ```
 
 - 기존 source context, intake goal, SPEC, PLAN, TASKS 를 묶어 `.harness/task-packets/<task-id>.md` 를 생성한다.
+- `--tool codex|claude|cursor`: 해당 AI 도구에 바로 붙여넣기 쉬운 패킷을 `.codex.md`, `.claude.md`, `.cursor.md` 로 생성한다.
+- `--tool all`: generic + Codex + Claude + Cursor 패킷을 모두 생성한다.
 - `--dispatch`: workers.json 기준으로 worker prompt 도 함께 생성하고 packet 에 prompt 경로를 포함한다.
 - 검증 도구가 아니라 AI 작업 전 맥락 전달을 빠르게 만드는 생산성 진입점이다.
 
