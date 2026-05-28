@@ -1,7 +1,11 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import type { Dirent } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
+
+export interface ContextInput {
+  fromFile?: string;
+}
 
 export interface ContextResult {
   path: string;
@@ -12,6 +16,14 @@ export class ContextPrecondError extends Error {
   constructor(missing: string) {
     super(`context stage requires ${missing}`);
     this.name = "ContextPrecondError";
+  }
+}
+
+export class ContextInputError extends Error {
+  readonly exitCode = 1;
+  constructor(message: string) {
+    super(message);
+    this.name = "ContextInputError";
   }
 }
 
@@ -27,6 +39,32 @@ const SKIP_DIRS = new Set([
 ]);
 
 const MAX_FILES = 120;
+const MAX_USER_CONTEXT_CHARS = 6000;
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "this",
+  "that",
+  "into",
+  "after",
+  "before",
+  "without",
+  "existing",
+  "current",
+  "project",
+  "task",
+  "feature",
+  "change",
+  "changes",
+  "add",
+  "fix",
+  "make",
+  "use",
+  "using"
+]);
 
 interface ProjectSignals {
   files: string[];
@@ -35,6 +73,8 @@ interface ProjectSignals {
   docs: string[];
   tests: string[];
   riskFiles: string[];
+  relevantFiles: string[];
+  userContext?: string;
 }
 
 function normalizePath(path: string): string {
@@ -118,15 +158,89 @@ async function readPackageScripts(cwd: string): Promise<string[]> {
   }
 }
 
-async function collectProjectSignals(cwd: string): Promise<ProjectSignals> {
+function tokenize(text: string): string[] {
+  const tokens = text
+    .toLowerCase()
+    .match(/[a-z0-9][a-z0-9_-]{2,}/g);
+  if (!tokens) return [];
+  return [...new Set(tokens.filter((t) => !STOP_WORDS.has(t)))];
+}
+
+function scoreRelevantFile(file: string, tokens: string[]): number {
+  const haystack = file.toLowerCase().replace(/[._/-]+/g, " ");
+  let score = 0;
+  for (const token of tokens) {
+    const normalized = token.replace(/[-_]+/g, " ");
+    if (haystack.includes(normalized)) score += 3;
+    else if (haystack.includes(token)) score += 2;
+  }
+  if (score > 0 && isTestFile(file)) score += 1;
+  if (score > 0 && isRiskFile(file)) score += 1;
+  return score;
+}
+
+function rankRelevantFiles(files: string[], hints: string): string[] {
+  const tokens = tokenize(hints);
+  if (tokens.length === 0) return [];
+  return files
+    .map((file) => ({ file, score: scoreRelevantFile(file, tokens) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.file.localeCompare(b.file))
+    .map((x) => x.file)
+    .slice(0, 12);
+}
+
+async function readUserContext(cwd: string, fromFile?: string): Promise<string | undefined> {
+  if (!fromFile) return undefined;
+  try {
+    const text = await readFile(resolve(cwd, fromFile), "utf8");
+    return text.trim().slice(0, MAX_USER_CONTEXT_CHARS);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      throw new ContextInputError(`context input file not found: ${fromFile}`);
+    }
+    throw err;
+  }
+}
+
+async function readTaskHints(deps: StageDeps, userContext?: string): Promise<string> {
+  const intake = (await deps.artifact.readMarkdown("intake.md")) ?? "";
+  const clarify = (await deps.artifact.readMarkdown("clarify.md")) ?? "";
+  return [intake, clarify, userContext ?? ""].join("\n");
+}
+
+async function collectProjectSignals(
+  cwd: string,
+  hints: string,
+  userContext?: string
+): Promise<ProjectSignals> {
   const files: string[] = [];
   try {
     const rootStat = await stat(cwd);
     if (!rootStat.isDirectory()) {
-      return { files, languages: {}, packageScripts: [], docs: [], tests: [], riskFiles: [] };
+      return {
+        files,
+        languages: {},
+        packageScripts: [],
+        docs: [],
+        tests: [],
+        riskFiles: [],
+        relevantFiles: [],
+        userContext
+      };
     }
   } catch {
-    return { files, languages: {}, packageScripts: [], docs: [], tests: [], riskFiles: [] };
+    return {
+      files,
+      languages: {},
+      packageScripts: [],
+      docs: [],
+      tests: [],
+      riskFiles: [],
+      relevantFiles: [],
+      userContext
+    };
   }
 
   await walk(cwd, cwd, files);
@@ -142,7 +256,9 @@ async function collectProjectSignals(cwd: string): Promise<ProjectSignals> {
     packageScripts: await readPackageScripts(cwd),
     docs: files.filter(isDocFile).slice(0, 12),
     tests: files.filter(isTestFile).slice(0, 12),
-    riskFiles: files.filter(isRiskFile).slice(0, 12)
+    riskFiles: files.filter(isRiskFile).slice(0, 12),
+    relevantFiles: rankRelevantFiles(files, hints),
+    userContext
   };
 }
 
@@ -166,6 +282,9 @@ function renderContext(signals: ProjectSignals): string {
     "### Source Map",
     renderList(signals.files.slice(0, 30), "- no source files detected"),
     "",
+    "### Suggested Relevant Files",
+    renderList(signals.relevantFiles, "- no task-specific file names detected yet"),
+    "",
     "### Languages / File Types",
     renderList(languages, "- no known languages detected"),
     "",
@@ -181,6 +300,14 @@ function renderContext(signals: ProjectSignals): string {
     "### Risk-sensitive Files",
     renderList(signals.riskFiles),
     "",
+    ...(signals.userContext
+      ? [
+          "## User-provided Context",
+          "",
+          signals.userContext,
+          ""
+        ]
+      : []),
     "## 1. Domain Terms",
     "-",
     "",
@@ -188,7 +315,7 @@ function renderContext(signals: ProjectSignals): string {
     "-",
     "",
     "## 3. Relevant Files for This Task",
-    "-",
+    renderList(signals.relevantFiles, "-"),
     "",
     "## 4. External Dependencies",
     "-",
@@ -202,11 +329,16 @@ function renderContext(signals: ProjectSignals): string {
   ].join("\n");
 }
 
-export async function runContext(deps: StageDeps): Promise<ContextResult> {
+export async function runContext(
+  deps: StageDeps,
+  input: ContextInput = {}
+): Promise<ContextResult> {
   if (!(await deps.artifact.exists("clarify.md"))) {
     throw new ContextPrecondError("clarify.md (run `harness ask`)");
   }
-  const signals = await collectProjectSignals(deps.cwd);
+  const userContext = await readUserContext(deps.cwd, input.fromFile);
+  const hints = await readTaskHints(deps, userContext);
+  const signals = await collectProjectSignals(deps.cwd, hints, userContext);
   await deps.artifact.writeMarkdown("context.md", renderContext(signals));
   return { path: ".harness/context.md" };
 }

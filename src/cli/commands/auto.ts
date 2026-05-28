@@ -26,7 +26,7 @@ interface AutoOpts { task?: string; adapter?: string; maxCost?: string; strict?:
 export function registerAuto(program: Command): void {
   program
     .command("auto <goal>")
-    .description("14단계를 자동 진행하고 Human Gate 에서 정지 (AI 코드생성 + Codex 독립검수). 자동 apply 없음.")
+    .description("14단계를 자동 진행하고 Human Gate 에서 정지 (AI 코드생성 + Codex 독립 리뷰). 자동 apply 없음.")
     .option("--task <id>", "task id", "TASK-001")
     .option("--adapter <id>", "review adapter (codex | codex-stub)", "codex")
     .option("--max-cost <usd>", "AI 호출 비용 상한(USD)", "5")

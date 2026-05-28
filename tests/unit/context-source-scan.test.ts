@@ -34,3 +34,36 @@ test("context stage includes auto-detected source, tests, scripts, and risk file
   assert.match(context, /test: node --test/);
   assert.match(context, /Risk-sensitive Files/);
 });
+
+test("context stage appends --from input and suggests task-relevant files", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-context-from-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await mkdir(join(cwd, "src", "auth"), { recursive: true });
+  await mkdir(join(cwd, "src", "billing"), { recursive: true });
+  await mkdir(join(cwd, "tests", "auth"), { recursive: true });
+  await writeFile(join(cwd, "src", "auth", "login.ts"), "export const ok = true;\n", "utf8");
+  await writeFile(join(cwd, "src", "billing", "invoice.ts"), "export const paid = true;\n", "utf8");
+  await writeFile(join(cwd, "tests", "auth", "login.test.ts"), "import 'node:test';\n", "utf8");
+  await writeFile(
+    join(cwd, "manual-context.md"),
+    "The task is about login lockout behavior.\n",
+    "utf8"
+  );
+
+  await runInit({ cwd });
+  const deps = buildDeps(cwd);
+  await deps.artifact.writeMarkdown("clarify.md", "# Clarify\n");
+  await deps.artifact.writeMarkdown(
+    "intake.md",
+    ["# Intake", "", "- goal: |", "  Add login lockout after failed attempts", ""].join("\n")
+  );
+  await runContext(deps, { fromFile: "manual-context.md" });
+
+  const context = await readFile(join(cwd, ".harness", "context.md"), "utf8");
+  assert.match(context, /User-provided Context/);
+  assert.match(context, /login lockout behavior/);
+  assert.match(context, /Suggested Relevant Files/);
+  assert.match(context, /src\/auth\/login\.ts/);
+  assert.match(context, /tests\/auth\/login\.test\.ts/);
+});

@@ -36,6 +36,7 @@ harness run --mode <fast|safe|release>
 
 ```text
 harness workers <init|list|status|validate>
+harness packet <task-id> [--dispatch]
 harness dispatch <task-id> --worker <role>
 harness worker-result <import|list|show>
 ```
@@ -52,9 +53,11 @@ harness skill-pack <list|enable|disable|status|audit>
 ```text
 harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
 harness demo [safety|productivity] [--task <id>] [--clean]
+harness auto <goal> [--task <id>]
+harness promote <subcommand>
 ```
 
-총 27개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
+총 29개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
 
 ## 2. 공통 동작
 
@@ -125,9 +128,10 @@ harness ask "<goal>" [--no-clarify]
 harness context [--from <file>]
 ```
 
-- 도메인·구조·제약 정리. context.md 6섹션 lint.
+- 소스·문서·테스트·스크립트·위험파일 자동 스캔 + 작업 goal 기반 관련 파일 후보를 정리한다.
+- `--from <file>`: 사용자가 작성한 추가 맥락을 `User-provided Context` 섹션으로 반영한다.
 - 파일 : `.harness/context.md`.
-- 거부 : `clarify.md` 없음 → 10.
+- 거부 : `clarify.md` 없음 → 10, `--from` 파일 없음 → 1.
 - v3 신규 단독 명령 (v1·v2 에서는 spec 의 선행 자동 단계).
 
 ### 3.4 `harness spec`
@@ -372,7 +376,17 @@ harness demo [safety|productivity] [--task <id>] [--clean]
 - 실제 caller repo 에 apply/commit/push/deploy 를 하지 않는다.
 - `--clean`: 결과 경로를 출력한 뒤 임시 워크스페이스를 삭제한다.
 
-### 3.21 `harness auto <goal>` (v0.5, Phase WF-3)
+### 3.21 `harness packet <task-id>` (v0.5, source packet)
+
+```text
+harness packet <task-id> [--dispatch] [--profile <minimal|standard|strict>]
+```
+
+- 기존 source context, intake goal, SPEC, PLAN, TASKS 를 묶어 `.harness/task-packets/<task-id>.md` 를 생성한다.
+- `--dispatch`: workers.json 기준으로 worker prompt 도 함께 생성하고 packet 에 prompt 경로를 포함한다.
+- 검증 도구가 아니라 AI 작업 전 맥락 전달을 빠르게 만드는 생산성 진입점이다.
+
+### 3.22 `harness auto <goal>` (v0.5, Phase WF-3)
 
 ```text
 harness auto <goal> [--task <id>] [--adapter <codex|codex-stub>] [--max-cost <USD>] [--strict]
@@ -381,7 +395,7 @@ harness auto <goal> [--task <id>] [--adapter <codex|codex-stub>] [--max-cost <US
 - 14단계 공정을 자동 진행하고 gate/Human Gate에서 정지한다.
 - AI 작업 + 독립 review adapter + deterministic gate를 오케스트레이션하지만 apply는 자동 실행하지 않는다.
 
-### 3.22 `harness workers <subcommand>` (v0.5 신규, Phase WF)
+### 3.23 `harness workers <subcommand>` (v0.5 신규, Phase WF)
 
 ```text
 harness workers init --profile <minimal|standard|strict> [--force]
@@ -393,7 +407,7 @@ harness workers validate
 - `workers.json` (profile + 8 worker role + roleSeparation) 관리.
 - `validate`: role separation 위반 시 exit 10.
 
-### 3.23 `harness dispatch` (v0.5 + Phase WF-2)
+### 3.24 `harness dispatch` (v0.5 + Phase WF-2)
 
 ```text
 harness dispatch <task-id> --worker <role>
@@ -404,7 +418,7 @@ harness dispatch <task-id> --all [--profile <minimal|standard|strict>]
 - `--all`: workers.json 의 profile required 전체 worker 에 대해 prompt + `worker-run-manifest.json` + `worker-handoff.md` 생성.
 - worker 가 직접 result.md/json 작성 후 `harness worker-result import` 로 회수.
 
-### 3.24 `harness worker-result <subcommand>` (v0.5 + Phase WF-2)
+### 3.25 `harness worker-result <subcommand>` (v0.5 + Phase WF-2)
 
 ```text
 harness worker-result import <task-id> --worker <role> --file <result.md> [--json <result.json>]
@@ -416,7 +430,7 @@ harness worker-result validate <task-id> [--profile <name>]
 - `import` 시 body 의 forbidden action 패턴 자동 검사 → critical finding 자동 추가.
 - `validate`: required worker / schema / role / finding / evidence 경로 검증 → `.harness/worker-result-validation.{md,json}`. fail 시 exit 10.
 
-### 3.25 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
+### 3.26 `harness rule-pack <subcommand>` (v0.5 신규, Phase RP)
 
 ```text
 harness rule-pack list
@@ -429,7 +443,7 @@ harness rule-pack audit
 - 13 pack 큐레이션 (security-core, test-discipline, architecture-core, design-web, release-strict, ai-generated-code-risk, worker-safety-core, quality-contract-core + Phase RP-2 5종).
 - gate 가 enabledPacks 와 template requiredPacks 비교 → INSUFFICIENT_EVIDENCE 강등.
 
-### 3.26 `harness skill-pack <subcommand>` (v0.5 신규)
+### 3.27 `harness skill-pack <subcommand>` (v0.5 신규)
 
 ```text
 harness skill-pack list
@@ -442,7 +456,7 @@ harness skill-pack audit
 - 13 pack 큐레이션 (typescript-quality / backend-api-quality / web-ui-quality / cli-tool-quality / library-quality / release-readiness / evidence-writing + Phase RP-2 신규 6: testing-quality / security-review-writing / architecture-review-writing / release-note-writing / migration-writing / external-review-prep).
 - skill pack 누락은 직접 BLOCK 아님 — PASS_WITH_WARNINGS 압력.
 
-### 3.27 `harness doctor` (v0.5 + Phase UX)
+### 3.28 `harness doctor` (v0.5 + Phase UX)
 
 ```text
 harness doctor [--json]
@@ -452,6 +466,20 @@ harness doctor [--json]
 - 산출: `.harness/doctor-report.{md,json}` (`.harness/` 존재 시).
 - `--json`: stdout 으로 JSON 한 줄. 자동화 친화적.
 - 비-목표: 자동 fix 시도 없음. fix hint 만 제공.
+
+### 3.29 `harness promote <subcommand>` (Promotion Gate)
+
+```text
+harness promote submit <id> --module <path> --export <name>
+harness promote trial <id>
+harness promote approve <id> --approved
+harness promote list
+harness promote submit-pack <id> --file <skill-pack.json>
+harness promote approve-pack <id> --approved
+```
+
+- 후보 deterministic rule 또는 skill pack 을 시험하고 사람 승인 후 promoted catalog 에 채용한다.
+- 채용 과정은 ledger 와 promoted manifest 로 남긴다.
 
 ## 4. 종료 코드 우선순위
 
@@ -473,6 +501,7 @@ harness doctor [--json]
 | design | - | - | O | O | O | O | - | - | - | - | - | - |
 | policy | - | - | - | - | - | - | O | - | - | - | - | - |
 | team | - | - | - | - | - | - | O | O | - | - | - | - |
+| packet | - | - | O | - | - | - | - | - | - | - | - | - |
 | work | - | - | - | - | O | O | - | - | O | - | - | - |
 | review | - | - | - | - | - | - | - | - | - | O | - | - |
 | gate | - | - | - | O | O | O | O | O | O | O | O | - |
@@ -499,6 +528,7 @@ Commands:
   design      Choose team architecture pattern (revfactory-style)
   policy      Select rules/hooks/context-policy (ECC-style)
   team        Build execution routing (OMC-style)
+  packet      Build an AI work packet
   work        Log implementation of a single task
   review      Run self-review + codex-review adapters
   gate        Compute verdict, write REPORT.md and decision.json
@@ -510,7 +540,7 @@ Commands:
   benchmark   Run fixture benchmark
   run         Print recommended mode sequence
   self-host   Run a self-check in an isolated workspace
-  demo        Run a 3-minute isolated blocking demo
+  demo        Run an isolated safety/productivity demo
   auto        Run the factory workflow and stop before apply
   workers     Manage Worker Factory config
   dispatch    Create worker prompts
@@ -519,6 +549,7 @@ Commands:
   rule-pack   Manage deterministic rule packs
   skill-pack  Manage worker guidance skill packs
   doctor      Diagnose the local harness workspace
+  promote     Promote candidate rules and skill packs
 
 Global options:
   --workspace <path>   override .harness/ location

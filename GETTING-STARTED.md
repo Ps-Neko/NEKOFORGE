@@ -105,11 +105,12 @@ $ harness policy
 $ harness team
 ```
 
-### 3-4. quality-contract + workers + rule-packs (1분)
+### 3-4. packet + quality-contract + workers + rule-packs (1분)
 
 ```bash
 $ harness contract --template web-ui --task TASK-001
 $ harness workers init --profile standard
+$ harness packet TASK-001 --dispatch  # AI 작업 패킷 + worker prompt 생성
 $ harness rule-pack audit       # 기본 enabled pack 5개 자동 생성
 $ harness skill-pack audit
 ```
@@ -197,6 +198,6 @@ $ harness self-host --with-worker-stubs
 - [README.md](README.md) — 6 핵심 가치
 - [docs/PRODUCT.md](docs/PRODUCT.md) — 무엇을 위한 도구인가
 - [docs/WORKFLOW.md](docs/WORKFLOW.md) — 14단계 상세 흐름
-- [docs/CLI.md](docs/CLI.md) — 27 명령 도움말
+- [docs/CLI.md](docs/CLI.md) — 29 명령 도움말
 - [docs/SECURITY.md](docs/SECURITY.md) — 위협 모델
 - [examples/](examples/) — 10개 시나리오 + self-host 8회 기록
