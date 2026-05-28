@@ -116,3 +116,106 @@ test("runSourceMap preserves user-provided context", async (t) => {
   const result = await runSourceMap(deps, { userContext: "manual note" });
   assert.equal(result.sourceMap.userContext, "manual note");
 });
+
+test("runSourceMap detects entrypoints from package.json main/bin", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-entrypoint-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await writeFile(
+    join(cwd, "package.json"),
+    JSON.stringify({
+      main: "dist/index.js",
+      bin: { "my-cli": "dist/cli.js" }
+    }),
+    "utf8"
+  );
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps);
+
+  assert.ok(sourceMap.entrypoints, "should include entrypoints field");
+  assert.ok(sourceMap.entrypoints.includes("dist/index.js"));
+  assert.ok(sourceMap.entrypoints.includes("dist/cli.js"));
+});
+
+test("runSourceMap detects framework from dependencies", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-framework-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await writeFile(
+    join(cwd, "package.json"),
+    JSON.stringify({
+      dependencies: { next: "^14.0.0", react: "^18.0.0" }
+    }),
+    "utf8"
+  );
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps);
+
+  assert.equal(sourceMap.framework, "next");
+});
+
+test("runSourceMap detects package manager from lock file", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-pm-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await writeFile(join(cwd, "package.json"), "{}", "utf8");
+  await writeFile(join(cwd, "pnpm-lock.yaml"), "lockfileVersion: 5.4\n", "utf8");
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps);
+
+  assert.equal(sourceMap.packageManager, "pnpm");
+});
+
+test("runSourceMap detects test runner from devDependencies", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-runner-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await writeFile(
+    join(cwd, "package.json"),
+    JSON.stringify({
+      devDependencies: { vitest: "^1.0.0" }
+    }),
+    "utf8"
+  );
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps);
+
+  assert.equal(sourceMap.testRunner, "vitest");
+});
+
+test("runSourceMap groups package scripts into buildCommands.{build,test,typecheck,lint}", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-cmds-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await writeFile(
+    join(cwd, "package.json"),
+    JSON.stringify({
+      scripts: {
+        build: "tsc -p .",
+        test: "node --test",
+        typecheck: "tsc --noEmit",
+        lint: "eslint .",
+        start: "node dist/index.js"
+      }
+    }),
+    "utf8"
+  );
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps);
+
+  assert.ok(sourceMap.buildCommands, "should include buildCommands");
+  assert.equal(sourceMap.buildCommands.build, "tsc -p .");
+  assert.equal(sourceMap.buildCommands.test, "node --test");
+  assert.equal(sourceMap.buildCommands.typecheck, "tsc --noEmit");
+  assert.equal(sourceMap.buildCommands.lint, "eslint .");
+});
