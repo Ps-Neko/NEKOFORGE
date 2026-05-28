@@ -22,8 +22,33 @@ $ npm run build
 ```bash
 $ npm link
 $ nekoforge --version
-0.5.0-alpha.0
+0.5.0-alpha.5
 ```
+
+## 1-B. 가장 빠른 1줄 시작 (1 분, v0.5.0-alpha.4+)
+
+본인 프로젝트에서 한 줄로 작업 패킷 생성:
+
+```bash
+$ cd ~/your-project
+$ nekoforge prepare "<목표 한 줄>" --tool all
+```
+
+자동 산출:
+
+```
+.harness/intake.md
+.harness/clarify.md
+.harness/context.md
+.harness/source-map.json          # machine-readable 프로젝트 스냅샷
+.harness/source-map.md
+.harness/task-packets/TASK-001.md         # generic
+.harness/task-packets/TASK-001.codex.md
+.harness/task-packets/TASK-001.claude.md
+.harness/task-packets/TASK-001.cursor.md
+```
+
+패킷을 AI 도구(Claude / Codex / Cursor)에 붙여 작업한 뒤 §4 `work → review → gate` 로 검증.
 
 ## 2. 본인 repo 에서 시작 (1 분)
 
@@ -140,5 +165,5 @@ $ cat REPORT.md
 
 - [GETTING-STARTED.md](../../GETTING-STARTED.md) — 14단계 전체 흐름
 - [docs/PRODUCT.md](../../docs/PRODUCT.md) — 본 도구의 정체성 + 비-목표
-- [docs/CLI.md](../../docs/CLI.md) — 26 명령 도움말
+- [docs/CLI.md](../../docs/CLI.md) — 30 명령 도움말
 - [examples/](..) — 10 시나리오 + Phase 흔적 12

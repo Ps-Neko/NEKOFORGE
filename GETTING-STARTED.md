@@ -32,8 +32,29 @@ $ node dist/src/cli/index.js demo safety --clean
 ```bash
 $ npm link
 $ nekoforge --version          # (또는 harness — 같은 명령)
-0.5.0-alpha.1
+0.5.0-alpha.5
 ```
+
+## 1-B. 1-shot 시작 — 가장 빠른 entry (1 분, v0.5.0-alpha.4+)
+
+본인 프로젝트에서 한 줄로 시작:
+
+```bash
+$ cd ~/your-project
+$ nekoforge prepare "<작업 목표 한 줄>" --tool all
+[ok] intake:    .harness/intake.md
+[ok] context:   .harness/context.md
+[ok] source-map: .harness/source-map.json
+[ok] packet:    .harness/task-packets/TASK-001.md
+[ok] packet:    .harness/task-packets/TASK-001.codex.md
+[ok] packet:    .harness/task-packets/TASK-001.claude.md
+[ok] packet:    .harness/task-packets/TASK-001.cursor.md
+[next] hand the packet to your AI tool, then run harness review && harness gate
+```
+
+`.harness/` 가 없으면 자동 초기화. `task-packets/TASK-001.<tool>.md` 를 Claude / Codex / Cursor 에 그대로 붙여 작업 후 `review → gate → apply` 로 검증.
+
+더 깊은 14단계 흐름(`spec/plan/policy/team/contract/work` 등)이 필요하면 아래 §2~§5 단계별 명령을 호출.
 
 ## 2. 환경 점검 (선택, 30초)
 
@@ -198,6 +219,6 @@ $ harness self-host --with-worker-stubs
 - [README.md](README.md) — 6 핵심 가치
 - [docs/PRODUCT.md](docs/PRODUCT.md) — 무엇을 위한 도구인가
 - [docs/WORKFLOW.md](docs/WORKFLOW.md) — 14단계 상세 흐름
-- [docs/CLI.md](docs/CLI.md) — 29 명령 도움말
+- [docs/CLI.md](docs/CLI.md) — 30 명령 도움말
 - [docs/SECURITY.md](docs/SECURITY.md) — 위협 모델
 - [examples/](examples/) — 10개 시나리오 + self-host 8회 기록
