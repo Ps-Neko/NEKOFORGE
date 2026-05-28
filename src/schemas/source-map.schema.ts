@@ -61,6 +61,25 @@ export const sourceMapSchema = {
         scanned: { type: "integer", minimum: 0 },
         truncated: { type: "boolean" }
       }
+    },
+    entrypoints: {
+      type: "array",
+      items: { type: "string", minLength: 1 }
+    },
+    framework: { type: "string", minLength: 1 },
+    packageManager: {
+      type: "string",
+      enum: ["npm", "yarn", "pnpm", "bun", "unknown"]
+    },
+    testRunner: { type: "string", minLength: 1 },
+    buildCommands: {
+      type: "object",
+      properties: {
+        build: { type: "string", minLength: 1 },
+        test: { type: "string", minLength: 1 },
+        typecheck: { type: "string", minLength: 1 },
+        lint: { type: "string", minLength: 1 }
+      }
     }
   }
 } as const;
