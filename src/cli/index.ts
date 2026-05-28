@@ -52,7 +52,7 @@ function buildProgram(): Command {
     .description(
       "NEKOFORGE — source-aware local-first AI development harness (alias: nekoforge / harness). " +
         "Turns your codebase into reusable context and task packets, then gates every change behind " +
-        "an un-foolable, content-hash-bound verdict before apply."
+        "a tamper-evident, content-hash-bound verdict before apply."
     )
     .version(VERSION, "--version", "print version");
 
