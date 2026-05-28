@@ -1,5 +1,20 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.3 — Packet × Source Map Integration (2026-05-28)
+
+평가서 권장사항 #2 부분 대응. `packet` stage 가 source-map.json artifact 를 1급
+입력으로 채택. context.md 텍스트 파싱은 fallback 으로만 유지(하위 호환).
+
+| 영역 | 변경 |
+|---|---|
+| Packet | source-map.json 존재 시 relevant/tests/scripts/riskFiles 를 구조화 데이터에서 직접 로드 |
+| Fallback | source-map.json 부재 시 기존 `extractSectionList(context.md)` 동작 유지 |
+| Tests | source-map 우선·fallback 회귀 2건 신규 (총 450, 회귀 0) |
+| Version housekeeping | `package.json` 의 0.5.0-alpha.2 버전 동기화 누락(이전 PR) 도 함께 정정 |
+
+context 가 만든 source-map.json 이 packet 으로 1:1 흘러들면서, 두 stage 가 동일한
+프로젝트 스냅샷을 공유하게 된다(텍스트 재파싱 제거).
+
 ## v0.5.0-alpha.2 — Source Map Artifact (2026-05-28)
 
 평가서 권장사항 #1 대응. 프로젝트 스냅샷을 **1급 machine-readable artifact** 로 분리.
