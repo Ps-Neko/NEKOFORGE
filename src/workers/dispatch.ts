@@ -7,6 +7,7 @@ import type { StageDeps } from "../core/stage-runner.js";
 import type { WorkerRole, WorkersJson } from "./index.js";
 import { profileRequiredRoles, readWorkers, WorkersError } from "./index.js";
 import { resolveSkillGuidance } from "../skill-packs/index.js";
+import type { SourceMap } from "../core/source-map/index.js";
 
 export interface DispatchInput {
   taskId: string;
@@ -49,6 +50,11 @@ const ROLE_PROMPT: Record<WorkerRole, string> = {
     "release readiness 검토 — CHANGELOG, migration note, rollback path, benchmark smoke. decision.json 작성은 절대 금지 (gate 단독 책임)."
 };
 
+async function loadSourceMap(deps: StageDeps): Promise<SourceMap | undefined> {
+  const sm = await deps.artifact.readJson<SourceMap>("source-map.json", "source-map");
+  return sm ?? undefined;
+}
+
 export async function runDispatch(
   input: DispatchInput,
   deps: StageDeps
@@ -68,7 +74,13 @@ export async function runDispatch(
   const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
   const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
   const skillGuidance = await resolveSkillGuidance(deps);
-  const body = renderPrompt(input.taskId, input.worker, workers, { spec, plan, skillGuidance });
+  const sourceMap = await loadSourceMap(deps);
+  const body = renderPrompt(input.taskId, input.worker, workers, {
+    spec,
+    plan,
+    skillGuidance,
+    ...(sourceMap ? { sourceMap } : {})
+  });
   const path = `worker-runs/${input.taskId}/${input.worker}.prompt.md`;
   await deps.artifact.writeMarkdown(path, body);
   return {
@@ -95,9 +107,15 @@ export async function runDispatchAll(
   const spec = (await deps.artifact.readMarkdown("SPEC.md")) ?? undefined;
   const plan = (await deps.artifact.readMarkdown("PLAN.md")) ?? undefined;
   const skillGuidance = await resolveSkillGuidance(deps);
+  const sourceMap = await loadSourceMap(deps);
   const prompts: Array<{ role: WorkerRole; path: string }> = [];
   for (const role of roles) {
-    const body = renderPrompt(input.taskId, role, workers, { spec, plan, skillGuidance });
+    const body = renderPrompt(input.taskId, role, workers, {
+      spec,
+      plan,
+      skillGuidance,
+      ...(sourceMap ? { sourceMap } : {})
+    });
     const rel = `worker-runs/${input.taskId}/${role}.prompt.md`;
     await deps.artifact.writeMarkdown(rel, body);
     prompts.push({ role, path: `.harness/${rel}` });
@@ -144,7 +162,40 @@ export async function runDispatchAll(
   };
 }
 
-export interface PromptContext { goal?: string; spec?: string; plan?: string; autonomous?: boolean; skillGuidance?: string; }
+export interface PromptContext {
+  goal?: string;
+  spec?: string;
+  plan?: string;
+  autonomous?: boolean;
+  skillGuidance?: string;
+  sourceMap?: SourceMap;
+}
+
+function renderProjectProfile(sm: SourceMap): string {
+  const lines: string[] = [];
+  if (sm.framework) lines.push(`- framework: ${sm.framework}`);
+  if (sm.packageManager) lines.push(`- package manager: ${sm.packageManager}`);
+  if (sm.testRunner) lines.push(`- test runner: ${sm.testRunner}`);
+  if (sm.entrypoints && sm.entrypoints.length > 0) {
+    lines.push(`- entrypoints: ${sm.entrypoints.join(", ")}`);
+  }
+  if (sm.buildCommands) {
+    const bc = sm.buildCommands;
+    if (bc.build) lines.push(`- build: \`${bc.build}\``);
+    if (bc.test) lines.push(`- test: \`${bc.test}\``);
+    if (bc.typecheck) lines.push(`- typecheck: \`${bc.typecheck}\``);
+    if (bc.lint) lines.push(`- lint: \`${bc.lint}\``);
+  }
+  if (sm.relevantFiles.length > 0) {
+    lines.push("", "관련 파일 후보:");
+    for (const f of sm.relevantFiles.slice(0, 8)) lines.push(`  - ${f}`);
+  }
+  if (sm.riskFiles.length > 0) {
+    lines.push("", "위험 파일:");
+    for (const f of sm.riskFiles.slice(0, 6)) lines.push(`  - ${f}`);
+  }
+  return lines.length > 0 ? `## Project Profile (source-map)\n\n${lines.join("\n")}\n` : "";
+}
 
 export function renderPrompt(
   taskId: string,
@@ -170,6 +221,7 @@ export function renderPrompt(
   const guidanceBlock = context.skillGuidance
     ? [`## 스킬팩 지침 (skill-pack guidance)`, "", context.skillGuidance.trim(), ""].join("\n")
     : "";
+  const profileBlock = context.sourceMap ? renderProjectProfile(context.sourceMap) : "";
 
   // autonomous(auto-factory): 워커가 result.md 에 '제안서'를 쓰는 게 아니라
   // cwd 의 소스 파일을 *직접 편집*한다. 산출물 = 워킹트리 diff. harness 메타
@@ -189,6 +241,7 @@ export function renderPrompt(
       "",
       goalBlock,
       contextBlock,
+      profileBlock,
       guidanceBlock,
       `## 임무`,
       "",
@@ -215,6 +268,7 @@ export function renderPrompt(
     "",
     goalBlock,
     contextBlock,
+    profileBlock,
     guidanceBlock,
     `## 임무`,
     "",
