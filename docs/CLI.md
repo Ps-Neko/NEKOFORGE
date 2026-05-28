@@ -384,6 +384,7 @@ harness packet <task-id> [--tool <generic|codex|claude|cursor|all>] [--dispatch]
 ```
 
 - 기존 source context, intake goal, SPEC, PLAN, TASKS 를 묶어 `.harness/task-packets/<task-id>.md` 를 생성한다.
+- 입력 우선순위 : `.harness/source-map.json` (machine-readable, context 가 생성) > `.harness/context.md` 텍스트 파싱(fallback). source-map.json 존재 시 relevant/tests/scripts/riskFiles 를 구조화 데이터에서 직접 로드해 일관성을 확보한다.
 - `--tool codex|claude|cursor`: 해당 AI 도구에 바로 붙여넣기 쉬운 패킷을 `.codex.md`, `.claude.md`, `.cursor.md` 로 생성한다.
 - `--tool all`: generic + Codex + Claude + Cursor 패킷을 모두 생성한다.
 - `--dispatch`: workers.json 기준으로 worker prompt 도 함께 생성하고 packet 에 prompt 경로를 포함한다.
