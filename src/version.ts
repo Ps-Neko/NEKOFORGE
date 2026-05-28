@@ -5,4 +5,4 @@
  * gate_verdict audit 이벤트에 박아 "어느 엔진 버전이 이 verdict 를 냈는지"
  * 추적성을 남긴다(2 — engineVersion 증거 결박).
  */
-export const ENGINE_VERSION = "0.5.0-alpha.5";
+export const ENGINE_VERSION = "0.5.0-alpha.6";

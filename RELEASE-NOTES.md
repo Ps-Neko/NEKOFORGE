@@ -1,5 +1,23 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.6 — Dispatch × Source Map Integration (2026-05-28)
+
+source-map artifact 가 마지막 stage(`dispatch`)까지 흘러들어가는 체이닝
+완성. worker prompt 가 이제 **"이 프로젝트는 Next.js + pnpm + vitest 구성"**
+수준의 프로파일 + 관련/위험 파일 후보를 시작 시점부터 받는다.
+
+| 영역 | 변경 |
+|---|---|
+| Dispatch | `runDispatch` / `runDispatchAll` 이 `.harness/source-map.json` 자동 로드 |
+| PromptContext | `sourceMap?: SourceMap` 필드 추가 |
+| renderPrompt | source-map 있으면 "Project Profile (source-map)" 섹션 주입 (framework / packageManager / testRunner / entrypoints / buildCommands / relevant / risk) |
+| 호환성 | source-map 없으면 기존과 동일(섹션 미생성) |
+| Tests | dispatch-source-map 4건 신규 (총 464, 회귀 0) |
+
+이제 `context` 가 만든 source-map 이 `packet`(PR #10) 과 `dispatch`(본 PR) 양쪽으로
+흘러 동일한 프로젝트 스냅샷에서 작업한다. AI worker 는 작업 시작 직후부터
+"build/test 명령은 뭔지, 어떤 파일이 위험한지" 를 알 수 있다.
+
 ## v0.5.0-alpha.5 — Source Map Enrichment (2026-05-28)
 
 평가서가 지적한 "context 스캔이 얕다"는 한계를 보완. source-map.json 에
