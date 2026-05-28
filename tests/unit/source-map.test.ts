@@ -1,0 +1,118 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { buildDeps } from "../../src/core/stage-runner.js";
+import { runInit } from "../../src/core/init.js";
+import { runSourceMap, type SourceMap } from "../../src/core/source-map/index.js";
+
+const FROZEN_CLOCK = () => new Date("2026-05-28T12:00:00.000Z");
+
+async function setupProject(prefix: string): Promise<string> {
+  const cwd = await mkdtemp(join(tmpdir(), prefix));
+  await mkdir(join(cwd, "src", "auth"), { recursive: true });
+  await mkdir(join(cwd, "tests", "auth"), { recursive: true });
+  await writeFile(
+    join(cwd, "package.json"),
+    JSON.stringify({ scripts: { test: "node --test", typecheck: "tsc --noEmit" } }),
+    "utf8"
+  );
+  await writeFile(join(cwd, "README.md"), "# Demo\n", "utf8");
+  await writeFile(join(cwd, "src", "auth", "login.ts"), "export const ok = true;\n", "utf8");
+  await writeFile(
+    join(cwd, "tests", "auth", "login.test.ts"),
+    "import 'node:test';\n",
+    "utf8"
+  );
+  await runInit({ cwd });
+  return cwd;
+}
+
+test("runSourceMap writes machine-readable JSON artifact", async (t) => {
+  const cwd = await setupProject("nekoforge-source-map-json-");
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const result = await runSourceMap(deps);
+
+  assert.equal(result.jsonPath, ".harness/source-map.json");
+  assert.equal(result.markdownPath, ".harness/source-map.md");
+
+  const raw = await readFile(join(cwd, ".harness", "source-map.json"), "utf8");
+  const parsed = JSON.parse(raw) as SourceMap;
+  assert.equal(parsed.schemaVersion, "0.5");
+  assert.equal(parsed.generatedAt, "2026-05-28T12:00:00.000Z");
+  assert.ok(parsed.engineVersion.length > 0);
+  assert.ok(parsed.files.includes("src/auth/login.ts"));
+  assert.ok(parsed.tests.includes("tests/auth/login.test.ts"));
+  assert.ok(parsed.docs.includes("README.md"));
+  assert.deepEqual(
+    parsed.packageScripts.sort(),
+    ["test: node --test", "typecheck: tsc --noEmit"].sort()
+  );
+  assert.equal(parsed.languages.TypeScript, 2);
+  assert.equal(parsed.limits.maxFiles, 120);
+  assert.ok(parsed.limits.scanned >= 4);
+  assert.equal(parsed.limits.truncated, false);
+});
+
+test("runSourceMap writes a human-readable markdown sibling", async (t) => {
+  const cwd = await setupProject("nekoforge-source-map-md-");
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  await runSourceMap(deps);
+
+  const md = await readFile(join(cwd, ".harness", "source-map.md"), "utf8");
+  assert.match(md, /# Source Map/);
+  assert.match(md, /Generated: 2026-05-28T12:00:00\.000Z/);
+  assert.match(md, /## Source Files/);
+  assert.match(md, /src\/auth\/login\.ts/);
+  assert.match(md, /## Package Scripts/);
+  assert.match(md, /test: node --test/);
+});
+
+test("runSourceMap ranks relevant files when task hints are provided", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-source-map-relevant-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await mkdir(join(cwd, "src", "auth"), { recursive: true });
+  await mkdir(join(cwd, "src", "billing"), { recursive: true });
+  await writeFile(join(cwd, "src", "auth", "login.ts"), "export const ok = true;\n", "utf8");
+  await writeFile(
+    join(cwd, "src", "billing", "invoice.ts"),
+    "export const paid = true;\n",
+    "utf8"
+  );
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const result = await runSourceMap(deps, {
+    hints: "Add login lockout after failed attempts"
+  });
+
+  assert.ok(result.sourceMap.relevantFiles.includes("src/auth/login.ts"));
+  assert.ok(!result.sourceMap.relevantFiles.includes("src/billing/invoice.ts"));
+});
+
+test("runSourceMap validates the JSON against the schema", async (t) => {
+  const cwd = await setupProject("nekoforge-source-map-schema-");
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  await runSourceMap(deps);
+
+  const parsed = await deps.artifact.readJson<SourceMap>("source-map.json", "source-map");
+  assert.ok(parsed);
+  assert.equal(parsed.schemaVersion, "0.5");
+});
+
+test("runSourceMap preserves user-provided context", async (t) => {
+  const cwd = await setupProject("nekoforge-source-map-user-");
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const result = await runSourceMap(deps, { userContext: "manual note" });
+  assert.equal(result.sourceMap.userContext, "manual note");
+});

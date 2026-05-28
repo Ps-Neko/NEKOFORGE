@@ -1,5 +1,5 @@
 /**
- * 단일 Ajv 인스턴스에 7개 schema 를 등록한다.
+ * 단일 Ajv 인스턴스에 14개 schema 를 등록한다.
  * 다른 모듈은 본 loader 만 사용. Ajv 를 직접 import 하지 않는다.
  */
 import Ajv, { type ValidateFunction } from "ajv";
@@ -18,6 +18,7 @@ import { workersSchema } from "./workers.schema.js";
 import { workerResultSchema } from "./worker-result.schema.js";
 import { rulePacksSchema } from "./rule-packs.schema.js";
 import { skillPacksSchema } from "./skill-packs.schema.js";
+import { sourceMapSchema } from "./source-map.schema.js";
 
 export interface ValidationResult {
   valid: boolean;
@@ -42,7 +43,8 @@ const SCHEMAS = [
   workersSchema,
   workerResultSchema,
   rulePacksSchema,
-  skillPacksSchema
+  skillPacksSchema,
+  sourceMapSchema
 ];
 
 export function createValidator(): SchemaValidator {
