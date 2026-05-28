@@ -48,13 +48,16 @@ harness rule-pack <list|enable|disable|status|audit>
 harness skill-pack <list|enable|disable|status|audit>
 ```
 
-### 1.5 자가 검증 / demo (v0.4 후속 + v0.5 DX)
+### 1.5 단축 / 자가 검증 / demo (v0.4 후속 + v0.5 DX)
 
 ```text
+harness prepare "<goal>" [--tool <generic|codex|claude|cursor|all>] [--task-id <id>]  # 1-shot 생산성 entry point
 harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
 harness demo [safety|productivity] [--task <id>] [--clean]
 harness auto <goal> [--task <id>]
 ```
+
+`prepare` 는 평가서 권장 #2 의 1-shot entry. `.harness/` 가 없으면 자동 초기화한 뒤 intake → clarify → context(+source-map) → packet 을 한 번에 묶는다. 더 깊은 흐름(spec/plan/policy/team) 이 필요하면 단계별 명령을 그대로 호출한다.
 
 ### 1.6 Advanced / Maintainer 전용
 
@@ -62,9 +65,9 @@ harness auto <goal> [--task <id>]
 harness promote <subcommand>          # rule/skill-pack 사람검토 채용 (운영자용)
 ```
 
-> 일반 사용자 진입 경로(`context → spec → plan → packet → review → gate → apply`) 에서는 promote 가 필요하지 않다. 카탈로그 채용은 메인테이너가 별도로 운영한다.
+> 일반 사용자 진입 경로(`prepare → review → gate → apply`) 에서는 promote 가 필요하지 않다. 카탈로그 채용은 메인테이너가 별도로 운영한다.
 
-총 29개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
+총 30개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 도달 — 이 이후 신규 명령은 기존 subcommand 로 흡수해 상한을 지킨다.
 
 ## 2. 공통 동작
 
@@ -493,6 +496,29 @@ harness promote approve-pack <id> --approved
 
 - 후보 deterministic rule 또는 skill pack 을 시험하고 사람 승인 후 promoted catalog 에 채용한다.
 - 채용 과정은 ledger 와 promoted manifest 로 남긴다.
+
+### 3.30 `harness prepare "<goal>"` (v0.5, 1-shot 생산성 entry point)
+
+```text
+harness prepare "<goal>" [--tool <generic|codex|claude|cursor|all>] [--task-id <id>]
+```
+
+- 평가서 권장 #2 1-shot entry. goal 한 줄로 다음을 순차 실행한다 :
+  1. `runInit` (`.harness/` 부재 시만 자동 호출, 기존 워크스페이스 보존)
+  2. `runIntake` — `intake.md` 에 goal 저장 (source: `prepare`)
+  3. `runClarify` — `clarify.md` 템플릿 작성
+  4. `runContext` — `context.md` + `source-map.json` + `source-map.md` 생성
+  5. `runPacket` — `task-packets/<task-id>.md` (+ `--tool` 별 변형) 생성
+- 산출 :
+  - `.harness/intake.md`, `.harness/clarify.md`, `.harness/context.md`
+  - `.harness/source-map.json`, `.harness/source-map.md`
+  - `.harness/task-packets/<task-id>.md` (+ `.codex.md`/`.claude.md`/`.cursor.md` if `--tool` ≠ generic)
+- 옵션 :
+  - `--tool <name>` : `generic | codex | claude | cursor | all` (기본 `generic`)
+  - `--task-id <id>` : 명시 task id (기본 `TASK-001`)
+- 다음 단계 : 만들어진 패킷을 AI 도구에 그대로 넘기고, 작업 후 `harness review` → `harness gate` → `harness apply --approved`.
+- 거부 : `--tool` 알 수 없는 값 → 1. 그 외 거부 사유는 호출된 stage(`init`, `context`, `packet`) 의 거부 코드를 그대로 전파한다.
+- 검증/Gate 흐름은 그대로 유지(이번 명령은 생산성 진입점일 뿐 검증을 우회하지 않는다).
 
 ## 4. 종료 코드 우선순위
 

@@ -1,5 +1,36 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.4 — `prepare` 1-shot 생산성 명령 (2026-05-28)
+
+평가서 권장사항 #2 **완전 충족**. `nekoforge prepare "<goal>"` 한 줄로
+intake → clarify → context(+source-map) → packet 을 묶어 AI 도구에 바로
+넘길 작업 패킷을 만든다.
+
+| 영역 | 변경 |
+|---|---|
+| 신규 명령 | `harness prepare "<goal>" [--tool <generic\|codex\|claude\|cursor\|all>] [--task-id <id>]` |
+| 신규 모듈 | `src/core/prepare/index.ts` — 다른 stage 를 조합하는 orchestrator (depcruise `auto` 와 동일한 예외) |
+| 신규 CLI | `src/cli/commands/prepare.ts` |
+| 자동 초기화 | `.harness/` 부재 시 `runInit` 자동 호출 → 한 줄 entry point 보장 |
+| Tests | `runPrepare` 5건 신규 (총 455, 회귀 0) |
+
+### 사용 예
+
+```bash
+$ nekoforge prepare "로그인 실패 5회 후 잠금 추가" --tool all
+[ok] intake:    .harness/intake.md
+[ok] context:   .harness/context.md
+[ok] source-map: .harness/source-map.json
+[ok] packet:    .harness/task-packets/TASK-001.md
+[ok] packet:    .harness/task-packets/TASK-001.codex.md
+[ok] packet:    .harness/task-packets/TASK-001.claude.md
+[ok] packet:    .harness/task-packets/TASK-001.cursor.md
+[next] hand the packet to your AI tool, then run harness review && harness gate
+```
+
+검증/Gate(`review → gate → apply`)는 그대로 별도 명령으로 남아, 생산성 흐름
+뒤의 안전장치 위치를 유지한다.
+
 ## v0.5.0-alpha.3 — Packet × Source Map Integration (2026-05-28)
 
 평가서 권장사항 #2 부분 대응. `packet` stage 가 source-map.json artifact 를 1급

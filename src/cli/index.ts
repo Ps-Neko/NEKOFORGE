@@ -38,6 +38,7 @@ import { registerRulePack } from "./commands/rule-pack.js";
 import { registerSkillPack } from "./commands/skill-pack.js";
 import { registerDoctor } from "./commands/doctor.js";
 import { registerPromote } from "./commands/promote.js";
+import { registerPrepare } from "./commands/prepare.js";
 import { appendAuditEvent, appendAuditEventSync } from "../utils/audit.js";
 import { resolveWorkspaceCwd } from "../core/stage-runner.js";
 import { ENGINE_VERSION } from "../version.js";
@@ -91,6 +92,7 @@ function buildProgram(): Command {
   registerSkillPack(program);
   registerDoctor(program);
   registerPromote(program);
+  registerPrepare(program);
 
   program.showHelpAfterError(
     "(run `harness <command> --help` for command-specific help)"
