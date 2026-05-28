@@ -6,8 +6,8 @@
 
 좋은 후보 (우선순위):
 
-1. **AI 코드 도구 (Claude Code / Codex / Cursor) 를 일상으로 쓰는 시니어 / 팀 리드** — 본 도구의 정체성 (AI 산출물 검증) 과 정확히 일치.
-2. **소규모 팀 (1~5명) 의 release-gatekeeper 역할 담당자** — gate / apply 의 가치를 즉시 이해.
+1. **AI 코드 도구 (Claude Code / Codex / Cursor) 를 일상으로 쓰는 시니어 / 팀 리드** — 기존 소스 맥락을 AI 작업 패킷으로 바꾸는 가치를 즉시 확인할 수 있음.
+2. **소규모 팀 (1~5명) 의 개발 흐름 관리자** — 맥락 정리, worker prompt, gate / apply 의 연결 가치를 이해하기 좋음.
 3. **개인 OSS 메인테이너** — `.harness/` 의 단일 사실원 + 결정적 export 가 도구 갈아치움에서 안전.
 
 피해야 할 후보:

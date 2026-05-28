@@ -17,6 +17,7 @@ import { registerPlan } from "./commands/plan.js";
 import { registerDesign } from "./commands/design.js";
 import { registerPolicy } from "./commands/policy.js";
 import { registerTeam } from "./commands/team.js";
+import { registerPacket } from "./commands/packet.js";
 import { registerWork } from "./commands/work.js";
 import { registerReview } from "./commands/review.js";
 import { registerGate } from "./commands/gate.js";
@@ -69,6 +70,7 @@ function buildProgram(): Command {
   registerDesign(program);
   registerPolicy(program);
   registerTeam(program);
+  registerPacket(program);
   registerWork(program);
   registerReview(program);
   registerGate(program);

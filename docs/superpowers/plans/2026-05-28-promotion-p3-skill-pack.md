@@ -610,7 +610,7 @@ import { readPromotedSkillPacks } from "../../skill-packs/promoted.js";
 - [ ] **Step 4: 통과 확인**
 
 Run: `node --test --import tsx tests/integration/promote-cli.test.ts`
-Then: `node --test --import tsx tests/integration/cli-help.test.ts` ("28 commands" 단언은 promote 서브커맨드라 불변 — 최상위 명령 수 안 늘어남, 회귀만 확인)
+Then: `node --test --import tsx tests/integration/cli-help.test.ts` ("29 commands" 단언 유지 확인)
 Expected: PASS.
 
 - [ ] **Step 5: 커밋**

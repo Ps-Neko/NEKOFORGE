@@ -15,6 +15,7 @@ import { runTeam } from "../../core/team/index.js";
 import { runQualityContract } from "../../core/quality-contract/index.js";
 import { runReview } from "../../core/review/index.js";
 import { runGate } from "../../core/gate/index.js";
+import { runPacket } from "../../core/packet/index.js";
 import { createCodexStubAdapter } from "../../integrations/codex/stub.js";
 import { isoNow, systemClock } from "../../utils/time.js";
 import { canonicalHash } from "../../utils/integrity.js";
@@ -71,62 +72,6 @@ const SAFETY_DIFF = [
   "+  return process.env.JWT_SECRET || \"demo-secret-key-1234567890\";",
   "+}",
   "+"
-].join("\n");
-
-const PRODUCTIVITY_CONTEXT = [
-  "# Context",
-  "",
-  "> Auto-detected source context from the productivity demo project.",
-  "",
-  "## Auto-detected Project Snapshot",
-  "",
-  "### Source Map",
-  "- package.json: scripts and project commands",
-  "- src/auth/login.ts: existing login behavior",
-  "- src/auth/session.ts: session creation helper",
-  "- tests/auth/login.test.ts: current auth tests",
-  "",
-  "### Languages / File Types",
-  "- TypeScript (2)",
-  "- Markdown (1)",
-  "- JSON (1)",
-  "",
-  "### Package Scripts",
-  "- test: node --test tests/**/*.test.ts",
-  "- typecheck: tsc --noEmit",
-  "",
-  "### Documentation",
-  "- README.md",
-  "",
-  "### Tests",
-  "- tests/auth/login.test.ts",
-  "",
-  "### Risk-sensitive Files",
-  "- src/auth/login.ts",
-  "- src/auth/session.ts",
-  "",
-  "## 1. Domain Terms",
-  "- login attempt, lockout window, session token",
-  "",
-  "## 2. Existing Code Structure",
-  "- auth code lives under src/auth",
-  "- tests mirror auth behavior under tests/auth",
-  "",
-  "## 3. Relevant Files for This Task",
-  "- src/auth/login.ts",
-  "- tests/auth/login.test.ts",
-  "",
-  "## 4. External Dependencies",
-  "- no external service required for the demo",
-  "",
-  "## 5. Security Constraints",
-  "- do not bypass authentication",
-  "- do not introduce hardcoded secrets",
-  "",
-  "## 6. Test Constraints",
-  "- keep existing login tests",
-  "- add a lockout edge case test before apply",
-  ""
 ].join("\n");
 
 function parseScenario(raw: string | undefined): DemoScenario {
@@ -276,7 +221,6 @@ async function runProductivityDemo(taskId: string, clean: boolean): Promise<void
     );
     await runClarify(deps);
     await runContext(deps);
-    await deps.artifact.writeMarkdown("context.md", PRODUCTIVITY_CONTEXT);
     await runBasePlanningFlow(
       workspace,
       deps,
@@ -287,39 +231,12 @@ async function runProductivityDemo(taskId: string, clean: boolean): Promise<void
 
     await runWorkersInit({ profile: "standard", force: true }, deps);
     const dispatch = await runDispatchAll({ taskId, profile: "standard" }, deps);
-    const packetRel = `task-packets/${taskId}.md`;
-    await deps.artifact.writeMarkdown(
-      packetRel,
-      [
-        `# AI Work Packet - ${taskId}`,
-        "",
-        "## Goal",
-        "Add lockout after five failed login attempts without breaking existing auth behavior.",
-        "",
-        "## Existing Source Context",
-        "- Auth code lives in `src/auth/`.",
-        "- Current login behavior is covered by `tests/auth/login.test.ts`.",
-        "- Available commands: `npm test`, `npm run typecheck`.",
-        "",
-        "## Suggested AI Work",
-        "- Update `src/auth/login.ts` with a small lockout policy.",
-        "- Add a focused edge-case test in `tests/auth/login.test.ts`.",
-        "- Keep session creation unchanged.",
-        "",
-        "## Worker Prompts",
-        ...dispatch.prompts.map((p) => `- ${p.role}: ${p.path}`),
-        "",
-        "## Safety Layer",
-        "- Run review and gate before apply.",
-        "- Do not commit, push, deploy, or run `harness apply` from a worker.",
-        ""
-      ].join("\n")
-    );
+    const packet = await runPacket({ taskId, workerPrompts: dispatch.prompts }, deps);
 
     console.error(`[demo]    workspace=${workspace}`);
     console.error(`[scenario] productivity: source -> context -> task packet -> worker prompts`);
     console.error(`[context] .harness/context.md`);
-    console.error(`[packet]  .harness/${packetRel}`);
+    console.error(`[packet]  ${packet.packetPath}`);
     console.error(`[prompts] ${dispatch.prompts.length} worker prompt(s)`);
     console.error(`[handoff] ${dispatch.handoffPath}`);
     console.error(`[next]    open the task packet; no code was applied`);
