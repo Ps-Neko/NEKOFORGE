@@ -54,8 +54,15 @@ harness skill-pack <list|enable|disable|status|audit>
 harness self-host [--goal <text>] [--task-id <id>] [--with-worker-stubs]
 harness demo [safety|productivity] [--task <id>] [--clean]
 harness auto <goal> [--task <id>]
-harness promote <subcommand>
 ```
+
+### 1.6 Advanced / Maintainer 전용
+
+```text
+harness promote <subcommand>          # rule/skill-pack 사람검토 채용 (운영자용)
+```
+
+> 일반 사용자 진입 경로(`context → spec → plan → packet → review → gate → apply`) 에서는 promote 가 필요하지 않다. 카탈로그 채용은 메인테이너가 별도로 운영한다.
 
 총 29개 (상위 명령 기준 — subcommand 포함 시 더 많음). PRODUCT.md §11 "비-성공 시나리오" 의 "CLI 명령어가 30개를 넘는다" 상한 내.
 
@@ -471,7 +478,9 @@ harness doctor [--json]
 - `--json`: stdout 으로 JSON 한 줄. 자동화 친화적.
 - 비-목표: 자동 fix 시도 없음. fix hint 만 제공.
 
-### 3.29 `harness promote <subcommand>` (Promotion Gate)
+### 3.29 `harness promote <subcommand>` (Promotion Gate · Advanced)
+
+> **운영자/메인테이너 전용 명령군.** 일반 사용자(소스 → 패킷 → 검증 흐름)에서는 호출할 필요가 없다. 카탈로그(rule/skill-pack) 채용을 사람 검토 게이트로 운영하기 위한 도구.
 
 ```text
 harness promote submit <id> --module <path> --export <name>
