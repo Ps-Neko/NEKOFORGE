@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { buildDeps } from "../../src/core/stage-runner.js";
 import { runInit } from "../../src/core/init.js";
 import { runPacket } from "../../src/core/packet/index.js";
+import type { SourceMap } from "../../src/core/source-map/index.js";
 
 test("packet stage builds an AI work packet from context and task evidence", async (t) => {
   const cwd = await mkdtemp(join(tmpdir(), "nekoforge-packet-"));
@@ -110,4 +111,81 @@ test("packet stage can render tool-specific packets for Codex, Claude, and Curso
   assert.match(codex, /Paste This To The AI Tool/);
   assert.match(claude, /Do not commit, push, deploy/);
   assert.match(cursor, /src\/billing\/invoice\.ts/);
+});
+
+test("packet stage prefers source-map.json over context.md text parsing when both exist", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-packet-source-map-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await runInit({ cwd });
+  const deps = buildDeps(cwd);
+
+  await deps.artifact.writeMarkdown(
+    "intake.md",
+    ["# Intake", "", "- goal: |", "  Add lockout", ""].join("\n")
+  );
+
+  await deps.artifact.writeMarkdown(
+    "context.md",
+    [
+      "# Context",
+      "",
+      "### Suggested Relevant Files",
+      "- src/STALE/from-context.ts",
+      ""
+    ].join("\n")
+  );
+
+  const sourceMap: SourceMap = {
+    schemaVersion: "0.5",
+    engineVersion: "0.5.0-alpha.2",
+    generatedAt: "2026-05-28T12:00:00.000Z",
+    files: ["src/auth/login.ts", "tests/auth/login.test.ts"],
+    languages: { TypeScript: 2 },
+    packageScripts: ["test: node --test", "lint: eslint ."],
+    docs: ["README.md"],
+    tests: ["tests/auth/login.test.ts"],
+    riskFiles: ["src/auth/login.ts"],
+    relevantFiles: ["src/auth/login.ts", "tests/auth/login.test.ts"],
+    limits: { maxFiles: 120, scanned: 2, truncated: false }
+  };
+  await deps.artifact.writeJson("source-map.json", sourceMap, "source-map");
+
+  const result = await runPacket({ taskId: "TASK-003" }, deps);
+  const packet = await readFile(join(cwd, result.packetPath), "utf8");
+
+  assert.match(packet, /src\/auth\/login\.ts/, "should use source-map relevant files");
+  assert.match(packet, /lint: eslint \./, "should include source-map package scripts");
+  assert.doesNotMatch(packet, /from-context\.ts/, "should ignore stale context.md text");
+});
+
+test("packet stage falls back to context.md text parsing when source-map.json is missing", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-packet-fallback-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await runInit({ cwd });
+  const deps = buildDeps(cwd);
+  await deps.artifact.writeMarkdown(
+    "intake.md",
+    ["# Intake", "", "- goal: |", "  Legacy project sync", ""].join("\n")
+  );
+  await deps.artifact.writeMarkdown(
+    "context.md",
+    [
+      "# Context",
+      "",
+      "### Suggested Relevant Files",
+      "- src/legacy/widget.ts",
+      "",
+      "### Package Scripts",
+      "- test: node --test",
+      ""
+    ].join("\n")
+  );
+
+  const result = await runPacket({ taskId: "TASK-004" }, deps);
+  const packet = await readFile(join(cwd, result.packetPath), "utf8");
+
+  assert.match(packet, /src\/legacy\/widget\.ts/);
+  assert.match(packet, /test: node --test/);
 });

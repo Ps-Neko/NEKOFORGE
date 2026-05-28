@@ -1,4 +1,5 @@
 import type { StageDeps } from "../stage-runner.js";
+import type { SourceMap } from "../source-map/index.js";
 
 export type PacketTool = "generic" | "codex" | "claude" | "cursor" | "all";
 
@@ -201,6 +202,38 @@ function packetRelativePath(taskId: string, tool: "generic" | "codex" | "claude"
   return `task-packets/${taskId}${suffix}.md`;
 }
 
+interface ProjectSignalsView {
+  relevant: string[];
+  tests: string[];
+  scripts: string[];
+  riskFiles: string[];
+}
+
+function viewFromSourceMap(sm: SourceMap): ProjectSignalsView {
+  return {
+    relevant: sm.relevantFiles.slice(0, 12),
+    tests: sm.tests.slice(0, 12),
+    scripts: sm.packageScripts.slice(0, 12),
+    riskFiles: sm.riskFiles.slice(0, 12)
+  };
+}
+
+function viewFromContextMarkdown(context: string | null): ProjectSignalsView {
+  return {
+    relevant: extractSectionList(context, "### Suggested Relevant Files"),
+    tests: extractSectionList(context, "### Tests"),
+    scripts: extractSectionList(context, "### Package Scripts"),
+    riskFiles: extractSectionList(context, "### Risk-sensitive Files")
+  };
+}
+
+async function loadProjectSignalsView(deps: StageDeps): Promise<ProjectSignalsView> {
+  const sourceMap = await deps.artifact.readJson<SourceMap>("source-map.json", "source-map");
+  if (sourceMap) return viewFromSourceMap(sourceMap);
+  const context = await deps.artifact.readMarkdown("context.md");
+  return viewFromContextMarkdown(context);
+}
+
 export async function runPacket(
   input: PacketInput,
   deps: StageDeps
@@ -210,24 +243,20 @@ export async function runPacket(
   }
 
   const intake = await deps.artifact.readMarkdown("intake.md");
-  const context = await deps.artifact.readMarkdown("context.md");
   const spec = await deps.artifact.readMarkdown("SPEC.md");
   const plan = await deps.artifact.readMarkdown("PLAN.md");
   const tasks = await deps.artifact.readMarkdown("TASKS.md");
   const contract = await deps.artifact.readMarkdown("quality-contract.json");
 
-  const relevant = extractSectionList(context, "### Suggested Relevant Files");
-  const tests = extractSectionList(context, "### Tests");
-  const scripts = extractSectionList(context, "### Package Scripts");
-  const riskFiles = extractSectionList(context, "### Risk-sensitive Files");
+  const view = await loadProjectSignalsView(deps);
   const packetContext: PacketContext = {
     taskId: input.taskId,
     goal: extractGoal(intake),
     taskRow: extractTaskRow(tasks, input.taskId),
-    relevant,
-    tests,
-    scripts,
-    riskFiles,
+    relevant: view.relevant,
+    tests: view.tests,
+    scripts: view.scripts,
+    riskFiles: view.riskFiles,
     spec,
     plan,
     contract,
