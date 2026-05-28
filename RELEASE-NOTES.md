@@ -1,5 +1,20 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.2 — Source Map Artifact (2026-05-28)
+
+평가서 권장사항 #1 대응. 프로젝트 스냅샷을 **1급 machine-readable artifact** 로 분리.
+
+| 영역 | 변경 |
+|---|---|
+| Source map artifact | `.harness/source-map.json` (Ajv schema 검증) + `.harness/source-map.md` (사람용 요약) 생성 |
+| 모듈 분리 | `src/core/source-map/` 신설. `collectProjectSignals` 등 스캔 로직을 context 에서 이동 |
+| Schema | `source-map.schema.ts` 등록 (총 14개 schema) |
+| Context | `runContext` 는 이제 `runSourceMap` 결과를 입력으로 받아 사람용 `context.md` 만 렌더 |
+| Depcruise | `source-map/` 을 leaf 모듈로 등록(promotion 과 동일). 다른 stage 가 import 가능 |
+| Tests | `tests/unit/source-map.test.ts` 5개 신규 (총 448 → 회귀 0) |
+
+이제 packet/dispatch 등 다른 stage 는 `.harness/source-map.json` 을 직접 읽어 재사용할 수 있다.
+
 ## v0.5.0-alpha.1 — Source Packet Productivity Pass (2026-05-28)
 
 NEKOFORGE의 중심을 "검증 도구"가 아니라 **기존 소스를 AI 작업 맥락으로 바꾸는 생산성 하네스**로 재정렬.
