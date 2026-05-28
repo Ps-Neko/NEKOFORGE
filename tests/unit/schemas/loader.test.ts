@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createValidator, KNOWN_SCHEMA_IDS } from "../../../src/schemas/loader.js";
 
-test("loader registers 13 schemas", () => {
-  assert.equal(KNOWN_SCHEMA_IDS.length, 13);
+test("loader registers 14 schemas", () => {
+  assert.equal(KNOWN_SCHEMA_IDS.length, 14);
   for (const id of [
     "decision",
     "team",
@@ -17,7 +17,8 @@ test("loader registers 13 schemas", () => {
     "workers",
     "worker-result",
     "rule-packs",
-    "skill-packs"
+    "skill-packs",
+    "source-map"
   ]) {
     assert.ok(KNOWN_SCHEMA_IDS.includes(id), `missing schema: ${id}`);
   }

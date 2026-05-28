@@ -130,7 +130,8 @@ harness context [--from <file>]
 
 - 소스·문서·테스트·스크립트·위험파일 자동 스캔 + 작업 goal 기반 관련 파일 후보를 정리한다.
 - `--from <file>`: 사용자가 작성한 추가 맥락을 `User-provided Context` 섹션으로 반영한다.
-- 파일 : `.harness/context.md`.
+- 파일 : `.harness/context.md` (사람용) + `.harness/source-map.json` (machine-readable, schema 검증) + `.harness/source-map.md` (사람용 요약).
+- 다른 stage(packet, dispatch 등) 는 `source-map.json` 을 재사용해 동일한 프로젝트 스냅샷에서 일관된 작업을 수행한다.
 - 거부 : `clarify.md` 없음 → 10, `--from` 파일 없음 → 1.
 - v3 신규 단독 명령 (v1·v2 에서는 spec 의 선행 자동 단계).
 
