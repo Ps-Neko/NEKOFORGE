@@ -1,6 +1,6 @@
 {
   "name": "nekoforge",
-  "version": "0.5.0-alpha.0",
+  "version": "0.5.0-alpha.1",
   "description": "NEKOFORGE — source-aware local AI development harness: turns existing codebases into reusable context and task packets, and gates AI changes behind a tamper-evident verdict before explicit apply.",
   "private": true,
   "type": "module",
