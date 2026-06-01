@@ -1,5 +1,11 @@
 # NEKOFORGE
 
+> ⚠️ **이 프로젝트는 실험적·보류 상태입니다.**
+> 핵심 제품은 [NEKOWORK](https://github.com/Ps-Neko/NEKOWORK)입니다.
+> NEKOFORGE의 14단계 워크플로는 NEKOWORK가 외부 채택을 확보한 뒤,
+> 사용자 요청에 따라 단계 단위로 NEKOWORK에 흡수될 예정입니다.
+> 이 repo는 설계 참조 및 부품 보관용으로 유지됩니다.
+
 [![CI](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
