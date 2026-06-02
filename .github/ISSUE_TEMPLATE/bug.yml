@@ -46,7 +46,7 @@ body:
     id: version
     attributes:
       label: nekoforge --version
-      placeholder: "0.5.0-alpha.0"
+      placeholder: "0.5.0-alpha.6"
     validations:
       required: true
 
