@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { secretFallbackRule } from "../../../src/rules/secret-fallback.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { secretFallbackRule } from "../../../../src/rules/security/secret-fallback.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("secret-fallback: process.env || literal triggers critical", async () => {
   const ctx = mockCtx({

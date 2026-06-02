@@ -2,9 +2,9 @@
  * SECURITY.md §3.4 — 기능 변경 vs 테스트 무변경.
  * 정책 testFirst=true 일 때 등급 격상.
  */
-import type { DeterministicRule } from "./types.js";
-import { makeFinding } from "./types.js";
-import { isCodeFile } from "../utils/language.js";
+import type { DeterministicRule } from "../types.js";
+import { makeFinding } from "../types.js";
+import { isCodeFile } from "../../utils/language.js";
 
 const RULE_ID = "no-test-risk";
 

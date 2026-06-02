@@ -2,11 +2,10 @@
  * gate 단계: deterministic rule + review + tests 종합 → verdict.
  * 출력: REPORT.md + .harness/decision.json (schema 검증 통과 필수).
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
 import {
-  ALL_RULES,
   ALL_ARCHITECTURE_RULES,
   ALL_DESIGN_RULES,
   ALL_API_RULES,
@@ -31,29 +30,36 @@ import {
 import { makeFinding } from "../../rules/types.js";
 import { canonicalHash } from "../../utils/integrity.js";
 import { ENGINE_VERSION } from "../../version.js";
-import { harnessRoot } from "../../utils/paths.js";
-import { loadPromotedRules } from "../promotion/promoted.js";
-import type { PromotedManifest } from "../promotion/store-types.js";
+import {
+  resolveReviewStatus,
+  hasNamedAdapter,
+  inferTestStatusFromHooks,
+  REQUIRED_EVIDENCE,
+  type TeamJson,
+  type CodexFindings,
+  type QualityContractJson,
+  type HookResultsJson
+} from "./evidence.js";
+import {
+  runAllRules,
+  runAllRulesExceptCodex,
+  deriveHighRiskFlags,
+  uniqueRuleIds
+} from "./rules-run.js";
+import { applyScoreCap, mergeCap, uniqueTriggeredPacks } from "./caps.js";
+import {
+  renderReport,
+  computeFactoryCells,
+  renderQualityScoreMd,
+  detectUiInDiff,
+  renderFactoryCellsMd,
+  renderReviewMd
+} from "./render.js";
 
-/**
- * 3번 — review adapter 무시(--no-review-adapter) 시 reviewStatus 를 not_run 으로
- * 강제해 "검증 안 함"이 verdict 에 가시화되게 한다(ⓐ 강등 + strict 차단과 연동).
- * codex status 가 임의값이어도 유효 union 으로 정규화한다.
- */
-export function resolveReviewStatus(
-  noReviewAdapter: boolean,
-  codexStatus: string | undefined
-): "passed" | "warnings" | "failed" | "not_run" {
-  if (noReviewAdapter) return "not_run";
-  if (
-    codexStatus === "passed" ||
-    codexStatus === "warnings" ||
-    codexStatus === "failed"
-  ) {
-    return codexStatus;
-  }
-  return "not_run";
-}
+// 공개 API 호환 — 분리 모듈의 헬퍼를 gate/index 에서 재노출(기존 importer 보존).
+export { resolveReviewStatus, inferTestStatusFromHooks };
+export { loadPromotedForCwd, collectActiveRuleIds } from "./rules-run.js";
+
 import { computeVerdict, type Verdict } from "./verdict.js";
 import {
   calculateQualityScore,
@@ -77,69 +83,6 @@ import {
   resolveSkillPacks
 } from "../../skill-packs/index.js";
 
-interface TeamJson {
-  pattern?: string;
-  agents?: Array<{ id: string; role: string; owns: string[] }>;
-}
-
-interface CodexFindings {
-  adapterId?: string;
-  status: "passed" | "warnings" | "failed" | "not_run";
-  findings: Array<{ severity: string; title: string }>;
-}
-
-function hasNamedAdapter(c: CodexFindings): boolean {
-  return !!c.adapterId && c.adapterId !== "none";
-}
-
-const REQUIRED_EVIDENCE = [
-  "SPEC.md",
-  "PLAN.md",
-  "TASKS.md",
-  "harness-design.md",
-  "team.json",
-  "quality-policy.md",
-  "rules.json",
-  "hooks.json",
-  "team-runtime.md",
-  "agent-routing.json",
-  "worklog.md",
-  "quality-contract.json"
-] as const;
-
-interface QualityContractJson {
-  taskId: string;
-  qualityBars: Record<string, { minimum: number; required: boolean }>;
-  riskProfile?: { uiTouched?: boolean };
-}
-
-interface HookResultsJson {
-  results?: Array<{
-    hookId?: string;
-    status?: string;
-    command?: string;
-    exitCode?: number;
-  }>;
-}
-
-/**
- * self-host #6 후속 — work 단계의 post-tool hook 결과에서 `npm test` 류 명령을
- * 찾아 tests.status 자동 추정. CLI 의 --test-status 명시값이 우선.
- */
-export function inferTestStatusFromHooks(
-  data: HookResultsJson | null
-): "passed" | "failed" | "not_run" | null {
-  if (!data || !Array.isArray(data.results)) return null;
-  const testHook = data.results.find(
-    (r) =>
-      typeof r.command === "string" &&
-      /(^|\s)(npm|yarn|pnpm|bun)\s+(test|run\s+test)\b/.test(r.command)
-  );
-  if (!testHook) return null;
-  if (testHook.status === "ok") return "passed";
-  if (testHook.status === "failed") return "failed";
-  return null;
-}
 
 export interface GateInput {
   noReviewAdapter?: boolean;
@@ -800,276 +743,3 @@ export async function runGate(
   };
 }
 
-async function runAllRules(ctx: RuleContext, cwd: string): Promise<RuleFinding[]> {
-  const out: RuleFinding[] = [];
-  const rules = [...ALL_RULES, ...(await loadPromotedForCwd(cwd))];
-  for (const r of rules) {
-    const fs = await r.run(ctx);
-    out.push(...fs);
-  }
-  return out;
-}
-
-async function runAllRulesExceptCodex(ctx: RuleContext, cwd: string): Promise<RuleFinding[]> {
-  const out: RuleFinding[] = [];
-  const rules = [...ALL_RULES, ...(await loadPromotedForCwd(cwd))];
-  for (const r of rules) {
-    if (r.id === "codex-missing-risk") continue;
-    if (r.id === "auto-apply-block") continue;
-    const fs = await r.run(ctx);
-    out.push(...fs);
-  }
-  return out;
-}
-
-/** cwd 기준 promoted.json 을 읽어 매니페스트로(없으면 null). */
-async function readPromotedManifestAt(cwd: string): Promise<PromotedManifest | null> {
-  try {
-    const text = await readFile(join(harnessRoot(cwd), "promotions", "promoted.json"), "utf8");
-    return JSON.parse(text) as PromotedManifest;
-  } catch {
-    return null;
-  }
-}
-
-/** 현 cwd 기준 채용분 rule(런타임 동적 로딩). gate 의 rule 순회에 합류. */
-export async function loadPromotedForCwd(cwd: string) {
-  return loadPromotedRules(() => readPromotedManifestAt(cwd));
-}
-
-/** 테스트/관측용: 활성 rule id 목록(ALL_RULES + promoted). */
-export async function collectActiveRuleIds(cwd: string): Promise<string[]> {
-  const promoted = await loadPromotedForCwd(cwd);
-  return [...ALL_RULES.map((r) => r.id), ...promoted.map((r) => r.id)];
-}
-
-function deriveHighRiskFlags(findings: readonly RuleFinding[]): NonNullable<RuleContext["highRiskFlags"]> {
-  return {
-    dangerousFileWrite: findings.some((f) => f.ruleId === "dangerous-file-write"),
-    authBypass: findings.some((f) => f.ruleId === "auth-bypass"),
-    secretFallback: findings.some((f) => f.ruleId === "secret-fallback"),
-    hookInjection: findings.some((f) => f.ruleId === "hook-injection-risk"),
-    agentPermissionExpansion: findings.some(
-      (f) => f.ruleId === "agent-permission-risk"
-    ),
-    testDeletion: findings.some((f) => f.ruleId === "test-deletion")
-  };
-}
-
-function uniqueRuleIds(findings: readonly RuleFinding[]): string[] {
-  return Array.from(
-    new Set(findings.filter((f) => f.severity !== "info").map((f) => f.ruleId))
-  );
-}
-
-interface RenderInput {
-  verdict: Verdict;
-  reasons: string[];
-  triggered: string[];
-  reviewStatus: string;
-  testStatus: string;
-  missingEvidence: string[];
-  findings: readonly RuleFinding[];
-}
-
-function renderReport(r: RenderInput): string {
-  return [
-    `# REPORT`,
-    "",
-    `- verdict: **${r.verdict}**`,
-    `- triggered rules: ${r.triggered.length > 0 ? r.triggered.join(", ") : "(none)"}`,
-    `- review status: ${r.reviewStatus}`,
-    `- tests: ${r.testStatus}`,
-    r.missingEvidence.length > 0
-      ? `- missing evidence: ${r.missingEvidence.join(", ")}`
-      : "- evidence: complete",
-    "",
-    "## Reasons",
-    ...r.reasons.map((x) => `- ${x}`),
-    "",
-    "## Findings",
-    r.findings.length === 0
-      ? "(none)"
-      : r.findings
-          .filter((f) => f.severity !== "info")
-          .map(
-            (f) =>
-              `- [${f.severity}] ${f.ruleId}: ${f.message}${f.file ? ` (${f.file}${f.line ? `:${f.line}` : ""})` : ""}`
-          )
-          .join("\n")
-  ].join("\n");
-}
-
-const VERDICT_ORDER: Record<Verdict, number> = {
-  PASS: 5,
-  PASS_WITH_WARNINGS: 4,
-  NEEDS_HUMAN_REVIEW: 3,
-  BLOCK: 2,
-  INSUFFICIENT_EVIDENCE: 1
-};
-
-/**
- * 두 verdict 중 더 보수적인 것을 채택 (낮은 order 가 더 엄격).
- */
-function applyScoreCap(
-  base: { verdict: Verdict; riskLevel: "low" | "medium" | "high" | "critical"; humanApprovalRequired: boolean; reasons: string[] },
-  cap: Verdict | null
-): typeof base {
-  if (!cap) return base;
-  if (VERDICT_ORDER[cap] >= VERDICT_ORDER[base.verdict]) return base;
-  return {
-    verdict: cap,
-    riskLevel: cap === "BLOCK" || cap === "INSUFFICIENT_EVIDENCE" ? "critical" : "high",
-    humanApprovalRequired: true,
-    reasons: [...base.reasons, `quality score cap: ${cap}`]
-  };
-}
-
-/**
- * Phase WF/RP — 여러 cap (scoreCap, rulePackCap, workerCap) 중 가장 엄격한 것을 채택.
- * 낮은 VERDICT_ORDER 가 더 엄격.
- */
-function mergeCap(a: Verdict | null, b: Verdict | null): Verdict | null {
-  if (!a) return b;
-  if (!b) return a;
-  return VERDICT_ORDER[a] <= VERDICT_ORDER[b] ? a : b;
-}
-
-/**
- * Phase RP — passTwo findings 의 ruleId 를 enabled pack 으로 역매핑.
- */
-function uniqueTriggeredPacks(
-  findings: ReadonlyArray<RuleFinding>,
-  enabledPacks: ReadonlyArray<string>
-): string[] {
-  const triggered = new Set<string>();
-  const ids = new Set(findings.map((f) => f.ruleId));
-  for (const p of enabledPacks) {
-    // 동적 import 회피 — 간단한 매칭만.
-    if (p === "security-core" && [
-      "secret-fallback",
-      "auth-bypass",
-      "dangerous-file-write",
-      "hook-injection-risk",
-      "agent-permission-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "test-discipline" && ["test-deletion", "no-test-risk"].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "architecture-core" && [
-      "large-file-risk",
-      "layer-violation",
-      "circular-dependency-risk",
-      "untyped-api-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "design-web" && [
-      "accessibility-risk",
-      "design-token-violation",
-      "responsive-break-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "release-strict" && [
-      "codex-missing-risk",
-      "release-benchmark-required",
-      "auto-apply-block"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "worker-safety-core" && [
-      "worker-safety-risk",
-      "worker-role-separation",
-      "worker-missing-required",
-      "worker-critical-finding",
-      "worker-high-finding",
-      "worker-factory-missing"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "quality-contract-core" && [
-      "quality-contract-invalid",
-      "rule-pack-missing"
-    ].some((r) => ids.has(r))) triggered.add(p);
-  }
-  return [...triggered];
-}
-
-interface FactoryCellStatusInput {
-  hasIntake: boolean;
-  hasSpec: boolean;
-  hasPlan: boolean;
-  hasDesign: boolean;
-  hasPolicy: boolean;
-  hasTeam: boolean;
-  hasWork: boolean;
-  hasReview: boolean;
-}
-
-function computeFactoryCells(
-  i: FactoryCellStatusInput
-): Record<string, "complete" | "missing" | "partial"> {
-  return {
-    product: i.hasSpec ? "complete" : "missing",
-    architecture: i.hasDesign ? "complete" : "missing",
-    build: i.hasPlan && i.hasTeam && i.hasWork ? "complete" : i.hasPlan ? "partial" : "missing",
-    quality: i.hasPolicy ? "complete" : "missing",
-    review: i.hasReview ? "complete" : "missing",
-    gate: "complete"
-  };
-}
-
-function renderQualityScoreMd(s: QualityScoreResult, hintReason: string): string {
-  return [
-    `# QUALITY SCORE — ${s.taskId}`,
-    "",
-    `Overall: **${s.scores.overall}** (threshold pass=${s.thresholds.pass}, warn=${s.thresholds.passWithWarnings})`,
-    "",
-    "## Scores",
-    ...Object.entries(s.scores)
-      .filter(([k]) => k !== "overall")
-      .map(([k, v]) => `- ${k}: ${v} (weight ${s.weights[k] ?? "-"})`),
-    "",
-    "## Failed Quality Bars",
-    s.failedQualityBars.length === 0
-      ? "(none)"
-      : s.failedQualityBars.map((x) => `- ${x}`).join("\n"),
-    "",
-    "## Reasons",
-    s.reasons.length === 0 ? "(none)" : s.reasons.map((x) => `- ${x}`).join("\n"),
-    "",
-    `Score cap hint: ${hintReason}`
-  ].join("\n");
-}
-
-// Codex review #3 (Major #3) — UI 변경 자동 감지.
-const UI_PATH_RE =
-  /\.(tsx|jsx|css|scss|sass|html)$|(^|\/)(components|app|pages|ui)\//i;
-
-function detectUiInDiff(diff: { files: Array<{ path: string }> }): boolean {
-  return diff.files.some((f) => UI_PATH_RE.test(f.path));
-}
-
-function renderFactoryCellsMd(
-  cells: Record<string, "complete" | "missing" | "partial">
-): string {
-  return [
-    "# Factory Cells",
-    "",
-    "| cell | status |",
-    "|---|---|",
-    ...Object.entries(cells).map(([k, v]) => `| ${k} | ${v} |`)
-  ].join("\n");
-}
-
-function renderReviewMd(title: string, findings: readonly RuleFinding[]): string {
-  return [
-    `# ${title} Review`,
-    "",
-    `- findings: ${findings.length}`,
-    `- critical: ${findings.filter((f) => f.severity === "critical").length}`,
-    `- high: ${findings.filter((f) => f.severity === "high").length}`,
-    `- warning: ${findings.filter((f) => f.severity === "warning").length}`,
-    "",
-    "## Findings",
-    findings.length === 0
-      ? "(none)"
-      : findings
-          .map(
-            (f) =>
-              `- [${f.severity}] ${f.ruleId}: ${f.message}${f.file ? ` (${f.file}${f.line ? `:${f.line}` : ""})` : ""}`
-          )
-          .join("\n")
-  ].join("\n");
-}

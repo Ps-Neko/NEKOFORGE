@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { agentPermissionRiskRule } from "../../../src/rules/agent-permission-risk.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { agentPermissionRiskRule } from "../../../../src/rules/security/agent-permission-risk.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("agent-permission-risk: team.json modified triggers high", async () => {
   const ctx = mockCtx({

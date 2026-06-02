@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dangerousFileWriteRule } from "../../../src/rules/dangerous-file-write.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { dangerousFileWriteRule } from "../../../../src/rules/security/dangerous-file-write.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("dangerous-file-write: .env changed triggers high", async () => {
   const ctx = mockCtx({ diff: diffOf([fc(".env")]) });

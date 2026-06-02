@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { testDeletionRule } from "../../../src/rules/test-deletion.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { testDeletionRule } from "../../../../src/rules/process/test-deletion.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("test-deletion: deleted file under tests/ triggers critical", async () => {
   const ctx = mockCtx({

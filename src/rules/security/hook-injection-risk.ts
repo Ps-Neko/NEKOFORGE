@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.6 — hook · lifecycle command · CI script 변경 (v3 신규).
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "hook-injection-risk";
 

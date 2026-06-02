@@ -6,15 +6,15 @@
  * - ALL_DESIGN_RULES : UI/UX 품질 3종 (Phase QF, uiTouched 시만).
  */
 import type { DeterministicRule } from "./types.js";
-import { secretFallbackRule } from "./secret-fallback.js";
-import { authBypassRule } from "./auth-bypass.js";
-import { testDeletionRule } from "./test-deletion.js";
-import { noTestRiskRule } from "./no-test-risk.js";
-import { dangerousFileWriteRule } from "./dangerous-file-write.js";
-import { hookInjectionRiskRule } from "./hook-injection-risk.js";
-import { agentPermissionRiskRule } from "./agent-permission-risk.js";
-import { autoApplyBlockRule } from "./auto-apply-block.js";
-import { codexMissingRiskRule } from "./codex-missing-risk.js";
+import { secretFallbackRule } from "./security/secret-fallback.js";
+import { authBypassRule } from "./security/auth-bypass.js";
+import { testDeletionRule } from "./process/test-deletion.js";
+import { noTestRiskRule } from "./process/no-test-risk.js";
+import { dangerousFileWriteRule } from "./security/dangerous-file-write.js";
+import { hookInjectionRiskRule } from "./security/hook-injection-risk.js";
+import { agentPermissionRiskRule } from "./security/agent-permission-risk.js";
+import { autoApplyBlockRule } from "./process/auto-apply-block.js";
+import { codexMissingRiskRule } from "./process/codex-missing-risk.js";
 import { largeFileRiskRule } from "./architecture/large-file-risk.js";
 import { layerViolationRule } from "./architecture/layer-violation.js";
 import { untypedApiRiskRule } from "./architecture/untyped-api-risk.js";
@@ -104,7 +104,7 @@ export const ALL_FRONTEND_RULES: readonly DeterministicRule[] = [
   contrastTokenRiskRule
 ];
 
-export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./auto-apply-block.js";
+export { evaluateAutoApplyBlock, AutoApplyBlockedError } from "./process/auto-apply-block.js";
 export type {
   DeterministicRule,
   RuleContext,

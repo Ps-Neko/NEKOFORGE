@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.2 — 인증/인가 미들웨어 제거·우회·완화 탐지.
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "auth-bypass";
 

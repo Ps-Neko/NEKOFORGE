@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.3 — 테스트 삭제 또는 skip 마커 추가.
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "test-deletion";
 

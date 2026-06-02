@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { authBypassRule } from "../../../src/rules/auth-bypass.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { authBypassRule } from "../../../../src/rules/security/auth-bypass.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("auth-bypass: requireAuth removed without re-add triggers critical", async () => {
   const ctx = mockCtx({

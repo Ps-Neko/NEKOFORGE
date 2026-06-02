@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { noTestRiskRule } from "../../../src/rules/no-test-risk.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { noTestRiskRule } from "../../../../src/rules/process/no-test-risk.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("no-test-risk: src changed and no tests changed triggers warning", async () => {
   const ctx = mockCtx({

@@ -4,8 +4,8 @@ import {
   evaluateAutoApplyBlock,
   AutoApplyBlockedError,
   autoApplyBlockRule
-} from "../../../src/rules/auto-apply-block.js";
-import { mockCtx } from "./_helpers.js";
+} from "../../../../src/rules/process/auto-apply-block.js";
+import { mockCtx } from "../_helpers.js";
 
 test("auto-apply-block: BLOCK throws AutoApplyBlockedError with exit 4", () => {
   try {

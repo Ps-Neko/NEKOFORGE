@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.1 — process.env/secret 부재 시 하드코딩 fallback 차단.
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "secret-fallback";
 
