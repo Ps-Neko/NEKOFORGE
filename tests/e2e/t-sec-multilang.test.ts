@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { seedHarness, diffLines, writeLastDiff } from "./_seed.js";
 import { runGate } from "../../src/core/gate/index.js";
 import { runApply } from "../../src/core/apply/index.js";
-import { AutoApplyBlockedError } from "../../src/rules/auto-apply-block.js";
+import { AutoApplyBlockedError } from "../../src/rules/process/auto-apply-block.js";
 
 const GATE_OPTS = {
   taskId: "TASK-001" as const,
