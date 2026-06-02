@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hookInjectionRiskRule } from "../../../src/rules/hook-injection-risk.js";
-import { fc, diffOf, mockCtx } from "./_helpers.js";
+import { hookInjectionRiskRule } from "../../../../src/rules/security/hook-injection-risk.js";
+import { fc, diffOf, mockCtx } from "../_helpers.js";
 
 test("hook-injection-risk: .harness/hooks.json changed triggers high", async () => {
   const ctx = mockCtx({

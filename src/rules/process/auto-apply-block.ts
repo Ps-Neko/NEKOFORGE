@@ -4,8 +4,8 @@
  * 다른 rule 들과 달리 본 rule 은 diff 가 아니라 verdict 를 본다.
  * apply 모듈은 진입 시점에 `evaluateAutoApplyBlock(verdict)` 를 호출한다.
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "auto-apply-block";
 

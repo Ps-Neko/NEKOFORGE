@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { codexMissingRiskRule } from "../../../src/rules/codex-missing-risk.js";
-import { mockCtx, diffOf } from "./_helpers.js";
+import { codexMissingRiskRule } from "../../../../src/rules/process/codex-missing-risk.js";
+import { mockCtx, diffOf } from "../_helpers.js";
 
 test("codex-missing-risk: high risk + 0 adapters triggers critical", async () => {
   const ctx = mockCtx({

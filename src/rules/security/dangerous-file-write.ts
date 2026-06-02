@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.5 — 민감 파일 변경 시 Human Gate.
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "dangerous-file-write";
 

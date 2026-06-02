@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { buildDeps, resolveWorkspaceCwd } from "../../core/stage-runner.js";
 import { runApply } from "../../core/apply/index.js";
 import { runMemoryAdd } from "../../core/memory/index.js";
-import { AutoApplyBlockedError } from "../../rules/auto-apply-block.js";
+import { AutoApplyBlockedError } from "../../rules/process/auto-apply-block.js";
 import { appendAuditEvent } from "../../utils/audit.js";
 
 interface ApplyOpts {

@@ -9,8 +9,8 @@
  * - adapter 0개 + 고위험 → critical (verdict 매핑 시 INSUFFICIENT_EVIDENCE).
  * - adapter ≥1 + status=not_run + 고위험 → high (NEEDS_HUMAN_REVIEW).
  */
-import type { DeterministicRule } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "codex-missing-risk";
 

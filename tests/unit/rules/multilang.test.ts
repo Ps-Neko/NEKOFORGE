@@ -3,10 +3,10 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { secretFallbackRule } from "../../../src/rules/secret-fallback.js";
-import { authBypassRule } from "../../../src/rules/auth-bypass.js";
-import { testDeletionRule } from "../../../src/rules/test-deletion.js";
-import { noTestRiskRule } from "../../../src/rules/no-test-risk.js";
+import { secretFallbackRule } from "../../../src/rules/security/secret-fallback.js";
+import { authBypassRule } from "../../../src/rules/security/auth-bypass.js";
+import { testDeletionRule } from "../../../src/rules/process/test-deletion.js";
+import { noTestRiskRule } from "../../../src/rules/process/no-test-risk.js";
 import { fc, diffOf, mockCtx } from "./_helpers.js";
 
 // ===== secret-fallback (Python / Go) =====================================

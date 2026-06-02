@@ -1,8 +1,8 @@
 /**
  * SECURITY.md §3.7 — agent 권한 확장·겸직 탐지 (v3 신규).
  */
-import type { DeterministicRule, RuleFinding } from "./types.js";
-import { makeFinding } from "./types.js";
+import type { DeterministicRule, RuleFinding } from "../types.js";
+import { makeFinding } from "../types.js";
 
 const RULE_ID = "agent-permission-risk";
 

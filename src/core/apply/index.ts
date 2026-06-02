@@ -6,7 +6,7 @@
  * Layer 3 은 evaluateAutoApplyBlock 호출.
  */
 import type { StageDeps } from "../stage-runner.js";
-import { evaluateAutoApplyBlock } from "../../rules/auto-apply-block.js";
+import { evaluateAutoApplyBlock } from "../../rules/process/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
 import { appendAuditEvent, readAuditChain } from "../../utils/audit.js";
 import { canonicalHash, extractLastDecisionHash } from "../../utils/integrity.js";
