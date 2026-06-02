@@ -5,9 +5,11 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
 [![Version](https://img.shields.io/badge/version-0.5.0--alpha.6-blue.svg)](RELEASE-NOTES.md)
 
-> NEKOFORGE는 기존 코드베이스를 재사용 가능한 개발 맥락으로 바꾸어, AI 보조 개발의 생산성과 안정성을 높이는 로컬 개발 하네스입니다.
->
-> 프로젝트 구조를 읽고, 작업 맥락을 정리하고, AI 도구에 넘길 실행 단위를 만들며, 최종 변경은 검증 후 적용하도록 합니다.
+> **기존 소스를 AI 작업 맥락으로 바꾸고, AI가 만든 변경을 적용 전에 검증·기록하는 로컬 하네스.**
+> NEKOFORGE는 프로젝트를 읽어 **Claude·Codex·Cursor 어디에든** 줄 맥락과 작업 패킷을 만들고(생산성),
+> 돌아온 변경은 **결정적 룰 + 사람 승인 + 변조증거 기록**으로 거른 뒤 *명시적으로* 적용합니다(안전).
+> 스캐너도 클라우드 리뷰어도 아닌 — 어떤 AI 도구를 쓰든 그 위에서 작업 맥락과 적용 결정을
+> 로컬에 남기는 한 겹입니다. 도구가 바뀌어도 `.harness/` 하나로 유지됩니다.
 
 ![NEKOFORGE 소스 기반 AI 개발 하네스](docs/assets/nekoforge-overview-ko.png)
 
@@ -20,6 +22,18 @@
 NEKOFORGE의 주인공은 검수가 아니라 **소스 활용 기반 생산성**입니다. 검증/Gate는 그 흐름의 마지막 안전장치입니다.
 
 처음 보는 분은 [비개발자도 읽기 쉬운 사용법](release/사용법.md)부터 보면 됩니다.
+
+## 대안과 무엇이 다른가
+
+```text
+Semgrep    = 로컬 결정적 스캐너      (코드를 검사)
+CodeRabbit = 클라우드 AI 리뷰어      (PR을 리뷰)
+NEKOFORGE  = 로컬 하네스             (맥락 생성 → 도구 비종속 작업 →
+             결정적·사람 게이트 → 변조증거 결정 기록 → explicit apply)
+```
+
+세 도구는 경쟁이 아니라 **층이 다릅니다.** 어떤 스캐너·리뷰어·AI 도구를 쓰든,
+NEKOFORGE는 그 위에서 **작업 맥락과 적용 결정을 로컬에 남기는 한 겹**입니다.
 
 ## 무엇을 해주나요?
 
@@ -222,7 +236,7 @@ INSUFFICIENT_EVIDENCE → apply 거부 (exit 4) — evidence/schema 위반
 | `no-test-risk` | src 변경 있는데 tests 변경 없음 | PASS_WITH_WARNINGS |
 | `dangerous-file-write` | `.env`, CI 워크플로, `auth/`, `Dockerfile` 등 민감 파일 변경 | NEEDS_HUMAN_REVIEW |
 
-전체 deterministic rule은 35종이며 TypeScript/JavaScript 외에 Python, Go 휴리스틱도 포함합니다.
+전체 deterministic rule은 35종(코어 룰은 5 security + 4 process 로 분류)이며 TypeScript/JavaScript 외에 Python, Go 휴리스틱도 포함합니다.
 
 ---
 
