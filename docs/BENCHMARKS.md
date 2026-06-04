@@ -37,7 +37,7 @@ $ harness benchmark --fixtures ./my-fixtures
 | `criticalRecall` | expected ∈ {BLOCK, NEEDS_HUMAN_REVIEW, INSUFFICIENT_EVIDENCE} 중 본 도구가 잡은 비율 | **1.000 (sample)** |
 | `falsePositiveRate` | expected = PASS 중 본 도구가 잘못 BLOCK/REVIEW 처리한 비율 | **0.000 (sample)** |
 
-**그룹별 (Phase QA 후)** : security 10 / architecture 6 / design 5 / api-safety 2 / dependency 3 = **30 fixture** 모두 expected 매칭.
+**그룹별 (Phase QA 후)** : security 10 / architecture 8 / design 7 / api-safety 2 / dependency 3 = **30 fixture** 모두 expected 매칭.
 
 PASS-expected negative **12개** 누적 (Beta 진입 조건 #2 의 2배 마진). critical recall 1.0 + FP rate 0.0 는 본 30 fixture 한정 — local sample 이며 외부 real-world benchmark 아님. 사용자 환경에 fixture 추가 시 지표 변동.
 
