@@ -25,8 +25,8 @@
     "url": "https://github.com/Ps-Neko/NEKOFORGE/issues"
   },
   "bin": {
-    "nekoforge": "./dist/src/cli/index.js",
-    "harness": "./dist/src/cli/index.js"
+    "nekoforge": "dist/src/cli/index.js",
+    "harness": "dist/src/cli/index.js"
   },
   "files": [
     "dist",
