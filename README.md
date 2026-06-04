@@ -23,6 +23,25 @@ NEKOFORGE의 주인공은 검수가 아니라 **소스 활용 기반 생산성**
 
 처음 보는 분은 [비개발자도 읽기 쉬운 사용법](release/사용법.md)부터 보면 됩니다.
 
+## 바로 써보기 (설치 없이 — npx)
+
+Node 20+ 만 있으면 설치·빌드 없이 한 줄로 시작합니다.
+
+```bash
+# 1) 목표 한 줄 → AI 작업 패킷 생성 (.harness/ 자동 초기화)
+$ npx nekoforge@alpha prepare "로그인 실패 5회 후 계정 잠금 추가" --tool all
+
+# 2) 만들어진 .harness/ 패킷을 Claude · Codex · Cursor 에 붙여 넣어 작업
+
+# 3) 돌아온 변경을 검증 → 게이트 → 통과 시에만 적용
+$ npx nekoforge@alpha review        # 외부 독립 리뷰가 필요하면 --adapter codex|claude
+$ npx nekoforge@alpha gate          # → verdict (PASS / NEEDS_HUMAN_REVIEW / BLOCK …)
+$ npx nekoforge@alpha apply --approved
+```
+
+`prepare` 한 번이 intake → clarify → context(+source-map) → packet 을 묶어 **도구별 작업 패킷**을 만듭니다.
+더 깊은 흐름(spec · plan · worker 등 14단계)은 아래 [개발자용 전체 흐름](#개발자용-전체-흐름-14단계--worker-factory)을 참고하세요.
+
 ## 대안과 무엇이 다른가
 
 ```text
@@ -57,49 +76,41 @@ NEKOFORGE = 기존 소스와 프로젝트 맥락을 활용해 AI 개발 생산�
 
 ## 현재 상태
 
-- `v0.5.0-alpha.6`
-- 29개 CLI 명령
+- `v0.5.0-alpha.6` — npm 에 **alpha 태그**로 배포: `npx nekoforge@alpha …`
+- 30개 명령 + 서브커맨드 (핵심 흐름은 `prepare` 하나로 끝납니다)
 - 35개 deterministic rule
 - Rule Pack 13종, Skill Pack 13종
-- `harness demo productivity` 로 소스 기반 작업 패킷 체험 가능
-- `harness demo safety` 로 위험 diff 차단 체험 가능
-- 현재는 npm 공개 배포 전 알파 상태입니다.
+- `npx nekoforge@alpha demo productivity` 로 소스 기반 작업 패킷 체험 가능
+- `npx nekoforge@alpha demo safety` 로 위험 diff 차단 체험 가능
 
-## 가장 빠른 체험
+## 격리된 데모로 감 잡기
 
-먼저 격리된 productivity demo로 "기존 소스 -> 맥락 -> 작업 패킷 -> AI 프롬프트" 흐름을 확인합니다.
+내 프로젝트를 건드리기 전에, 격리된 productivity 데모로 "기존 소스 → 맥락 → 작업 패킷 → AI 프롬프트" 흐름만 먼저 봅니다.
 
 ```bash
-$ npm install
-$ npm run build
-$ node dist/src/cli/index.js demo productivity --clean
+$ npx nekoforge@alpha demo productivity --clean
 ```
 
-안전장치가 위험 diff를 막는 장면은 별도 demo로 확인합니다.
+안전장치가 위험 diff를 막는 장면은 별도 데모로 확인합니다.
 
 ```bash
-$ node dist/src/cli/index.js demo safety --clean
+$ npx nekoforge@alpha demo safety --clean
 ```
 
-## 실제 프로젝트에서 시작 (1줄)
+## 자주 쓰면 전역 설치
+
+매번 `npx` 가 번거로우면 전역 설치 후 `nekoforge` / `harness` 로 바로 부릅니다.
 
 ```bash
-$ npm install && npm run build
-$ node dist/src/cli/index.js prepare "<작업 목표 한 줄>" --tool all
-```
-
-`prepare` 는 `.harness/` 가 없으면 자동 초기화하고, intake → clarify → context(+source-map) → packet 을 한 번에 묶어 AI 도구별 작업 패킷을 만든다. 만들어진 패킷을 Claude / Codex / Cursor 등에 그대로 붙여 넣어 작업한 뒤, `review → gate → apply` 로 검증을 거친다.
-
-전역 alias (`nekoforge` / `harness`) 사용 시 `npm link` 후:
-
-```bash
+$ npm i -g nekoforge@alpha
 $ nekoforge prepare "로그인 실패 5회 후 잠금 추가" --tool all
-$ nekoforge review --adapter codex
+$ nekoforge review --adapter codex   # 외부 독립 리뷰(선택)
 $ nekoforge gate
 $ nekoforge apply --approved
 ```
 
-더 깊은 흐름(spec/plan/policy/team 등)이 필요하면 `init --preset` 으로 14단계 워크스페이스를 시드한 뒤 단계별 명령을 호출한다.
+소스에서 직접(local checkout) 돌리려면 `npm install && npm run build` 후 `node dist/src/cli/index.js <명령>` 또는 `npm run dev -- <명령>` 을 쓴다.
+더 깊은 흐름(spec / plan / policy / team 등)이 필요하면 `init --preset` 으로 14단계 워크스페이스를 시드한 뒤 단계별 명령을 호출한다.
 
 자세한 시작 가이드는 [GETTING-STARTED.md](GETTING-STARTED.md), 예시는 [examples/00-first-verdict](examples/00-first-verdict/) 를 참고하세요.
 
