@@ -8,6 +8,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   ALL_RULES,
+  type DeterministicRule,
   type RuleContext,
   type RuleFinding
 } from "../../rules/index.js";
@@ -75,4 +76,19 @@ export function uniqueRuleIds(findings: readonly RuleFinding[]): string[] {
   return Array.from(
     new Set(findings.filter((f) => f.severity !== "info").map((f) => f.ruleId))
   );
+}
+
+/**
+ * 규칙 목록을 순회하며 findings 를 수집한다.
+ * gate/index.ts 의 반복적인 `for (const r of RULE_LIST) { out.push(...) }` 패턴을 교체.
+ */
+export async function runRuleList(
+  rules: readonly DeterministicRule[],
+  ctx: RuleContext
+): Promise<RuleFinding[]> {
+  const out: RuleFinding[] = [];
+  for (const r of rules) {
+    out.push(...(await r.run(ctx)));
+  }
+  return out;
 }
