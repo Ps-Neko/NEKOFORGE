@@ -46,8 +46,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src tests",
     "depcheck": "depcruise --config depcruise.config.cjs src",
+    "deadexports": "node scripts/deadexports.mjs",
     "benchmark": "tsx src/cli/index.ts benchmark",
-    "verify": "npm run typecheck && npm run lint && npm run depcheck && npm test",
+    "verify": "npm run typecheck && npm run lint && npm run depcheck && npm run deadexports && npm test",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -63,6 +64,7 @@
     "dependency-cruiser": "^16.10.0",
     "eslint": "^9.17.0",
     "rimraf": "^6.0.1",
+    "ts-prune": "^0.10.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.59.3"
