@@ -103,6 +103,10 @@ const SKIP_DIRS = new Set([
 ]);
 
 const MAX_FILES = 120;
+const MAX_RELEVANT = 12;
+const MAX_CONTENT_BYTES = 16 * 1024;
+const CONTENT_EXTENSIONS =
+  /\.(ts|tsx|js|jsx|mjs|cjs|py|go|java|rb|rs|php|md|json|ya?ml|toml|txt|html|css|scss|vue|svelte)$/i;
 
 const STOP_WORDS = new Set([
   "the",
@@ -127,7 +131,15 @@ const STOP_WORDS = new Set([
   "fix",
   "make",
   "use",
-  "using"
+  "using",
+  // 한국어 generic 동사/명사 — goal 노이즈 제거
+  "추가",
+  "수정",
+  "변경",
+  "구현",
+  "개선",
+  "제거",
+  "기능"
 ]);
 
 function normalizePath(path: string): string {
@@ -283,35 +295,68 @@ function detectBuildCommands(pkg: PackageJson | null): BuildCommands | undefined
 }
 
 function tokenize(text: string): string[] {
-  const tokens = text
-    .toLowerCase()
-    .match(/[a-z0-9][a-z0-9_-]{2,}/g);
+  // Unicode-aware: \p{L}\p{N} matches Korean/CJK/Latin letters and digits,
+  // so non-English goals produce tokens instead of an empty set.
+  const tokens = text.toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}_-]+/gu);
   if (!tokens) return [];
-  return [...new Set(tokens.filter((t) => !STOP_WORDS.has(t)))];
+  return [
+    ...new Set(
+      tokens.filter((t) => {
+        if (STOP_WORDS.has(t)) return false;
+        // ASCII tokens keep the original >=3 threshold (avoids "to"/"id" noise);
+        // non-ASCII (e.g. Korean) tokens are meaningful at >=2 chars.
+        const asciiOnly = /^[a-z0-9_-]+$/.test(t);
+        return asciiOnly ? t.length >= 3 : t.length >= 2;
+      })
+    )
+  ];
 }
 
-function scoreRelevantFile(file: string, tokens: string[]): number {
-  const haystack = file.toLowerCase().replace(/[._/-]+/g, " ");
+function scoreRelevantFile(file: string, content: string, tokens: string[]): number {
+  const pathHay = file.toLowerCase().replace(/[._/-]+/g, " ");
+  const contentHay = content.toLowerCase();
   let score = 0;
   for (const token of tokens) {
     const normalized = token.replace(/[-_]+/g, " ");
-    if (haystack.includes(normalized)) score += 3;
-    else if (haystack.includes(token)) score += 2;
+    if (pathHay.includes(normalized)) score += 3;
+    else if (pathHay.includes(token)) score += 2;
+    // content match is a weaker signal than a path/name match, but it lets
+    // relevance work when the file name does not contain the token (and is the
+    // only signal available for non-English goals against English file names).
+    if (contentHay.length > 0 && contentHay.includes(token)) score += 1;
   }
   if (score > 0 && isTestFile(file)) score += 1;
   if (score > 0 && isRiskFile(file)) score += 1;
   return score;
 }
 
-function rankRelevantFiles(files: string[], hints: string): string[] {
+async function readSnippet(cwd: string, file: string): Promise<string> {
+  if (!CONTENT_EXTENSIONS.test(file)) return "";
+  try {
+    const text = await readFile(join(cwd, file), "utf8");
+    return text.length > MAX_CONTENT_BYTES ? text.slice(0, MAX_CONTENT_BYTES) : text;
+  } catch {
+    return "";
+  }
+}
+
+async function rankRelevantFiles(
+  cwd: string,
+  files: string[],
+  hints: string
+): Promise<string[]> {
   const tokens = tokenize(hints);
   if (tokens.length === 0) return [];
-  return files
-    .map((file) => ({ file, score: scoreRelevantFile(file, tokens) }))
-    .filter((x) => x.score > 0)
+  const scored: Array<{ file: string; score: number }> = [];
+  for (const file of files) {
+    const content = await readSnippet(cwd, file);
+    const score = scoreRelevantFile(file, content, tokens);
+    if (score > 0) scored.push({ file, score });
+  }
+  return scored
     .sort((a, b) => b.score - a.score || a.file.localeCompare(b.file))
     .map((x) => x.file)
-    .slice(0, 12);
+    .slice(0, MAX_RELEVANT);
 }
 
 async function scanFiles(cwd: string): Promise<string[]> {
@@ -338,7 +383,7 @@ function buildSourceMap(
   files: string[],
   packageScripts: string[],
   enrichment: ProjectEnrichment,
-  hints: string,
+  relevantFiles: string[],
   userContext: string | undefined,
   generatedAt: string
 ): SourceMap {
@@ -358,7 +403,7 @@ function buildSourceMap(
     docs: files.filter(isDocFile).slice(0, 12),
     tests: files.filter(isTestFile).slice(0, 12),
     riskFiles: files.filter(isRiskFile).slice(0, 12),
-    relevantFiles: rankRelevantFiles(files, hints),
+    relevantFiles,
     limits: {
       maxFiles: MAX_FILES,
       scanned: files.length,
@@ -451,11 +496,12 @@ export async function runSourceMap(
     testRunner: detectTestRunner(pkg),
     buildCommands: detectBuildCommands(pkg)
   };
+  const relevantFiles = await rankRelevantFiles(deps.cwd, files, input.hints ?? "");
   const sourceMap = buildSourceMap(
     files,
     readPackageScripts(pkg),
     enrichment,
-    input.hints ?? "",
+    relevantFiles,
     input.userContext,
     isoNow(deps.clock)
   );
