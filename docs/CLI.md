@@ -553,7 +553,7 @@ O = 해당 artifact 존재 필요. 미충족 시 exit 10.
 ## 6. `harness --help` 출력 (기준)
 
 ```text
-harness — Verified AI Development Harness (v0.3, Phase A)
+harness — Verified AI Development Harness (v0.5.0-alpha.6)
 
 Usage:
   harness <command> [options]

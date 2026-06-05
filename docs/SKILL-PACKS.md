@@ -81,4 +81,4 @@ skill pack 자체로는 직접 BLOCK 만들지 않음
 ## 6. 본 문서가 답하지 않는 것
 
 - rule pack 정의 → docs/RULE-PACKS.md
-- worker prompt 가 skill pack 을 어떻게 흡수하는가 → `src/core/skill-packs/render.ts`
+- worker prompt 가 skill pack 을 어떻게 흡수하는가 → `src/skill-packs/render.ts`

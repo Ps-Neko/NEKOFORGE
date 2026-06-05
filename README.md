@@ -306,7 +306,7 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 | [docs/PRODUCT.md](docs/PRODUCT.md) | 무엇을 위한 도구인가, 무엇이 아닌가 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 어떻게 구성되어 있는가 |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | 단계별로 무엇이 어떤 순서로 일어나는가 |
-| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 (29 명령) |
+| [docs/CLI.md](docs/CLI.md) | 명령 인자·exit code·도움말 (30 명령) |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 와 마일스톤 |
 | [TASKS.md](TASKS.md) | 구현 task 분해 |
 

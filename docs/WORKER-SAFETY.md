@@ -26,7 +26,7 @@
 
 ## 3. worker-safety rule 휴리스틱
 
-`src/rules/worker-safety-risk.ts` 가 다음 패턴 발견 시 critical 발화:
+gate 단계(`src/core/gate/caps.ts`)가 worker result 에서 다음 패턴 발견 시 `worker-safety-risk` critical 발화:
 
 ```text
 - worker result 안에 "decision.json" 문자열 (write 시도 표현)
@@ -61,5 +61,5 @@ release mode → workerFactory.status="missing" + INSUFFICIENT_EVIDENCE
 ## 6. 본 문서가 답하지 않는 것
 
 - worker role 정의 → docs/WORKER-FACTORY.md
-- worker prompt 템플릿 → `src/core/workers/dispatch.ts`
+- worker prompt 템플릿 → `src/workers/dispatch.ts`
 - rule pack 정의 → docs/RULE-PACKS.md

@@ -103,8 +103,8 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
 |---|---|
 | 새 fixture (positive / negative) | ⭐⭐⭐ 매우 환영 — Beta 조건 직접 영향 |
 | 새 rule (deterministic 휴리스틱) | ⭐⭐⭐ 환영 — SECURITY.md §4 절차 따름 |
-| 새 rule pack 후보 | ⭐⭐ 환영 — 단, 8개 큐레이션 유지 (ECC 마켓 X) |
-| 새 skill pack 후보 | ⭐⭐ 환영 — 단, 7개 큐레이션 유지 |
+| 새 rule pack 후보 | ⭐⭐ 환영 — 단, 13개 큐레이션 유지 (ECC 마켓 X) |
+| 새 skill pack 후보 | ⭐⭐ 환영 — 단, 13개 큐레이션 유지 |
 | 새 export adapter (codex/cursor/claude/generic 외) | ⭐⭐ 환영 — 결정적 + 단방향 |
 | 새 worker role (8개 외) | ⭐ 조심 — 정체성 검토 필요 |
 | 자동 LLM 실행 / agent autonomous loop | ❌ 비-목표 (영구 §8) |

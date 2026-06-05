@@ -228,5 +228,5 @@ nekoforge promote list                    # 채용된 rule 목록(promoted.json)
 - 점수 산출 방식 상세 → BENCHMARKS.md / `src/benchmark/index.ts`
 - verdict 매핑·quality score → QUALITY-SCORE.md
 - 채용된 rule/skill 의 운영(enable/disable) → RULE-PACKS.md / SKILL-PACKS.md
-- 구현 task 분해·Phase 일정 → `docs/superpowers/plans/2026-05-26-promotion-gate-p1.md`
+- 구현 task 분해·Phase 일정 → `docs/superpowers/plans/2026-05-26-promotion-gate-p1a.md` · `docs/superpowers/plans/2026-05-27-promotion-gate-p1b.md`
 - content-hash/anchor 의 구현 상세 → SECURITY.md / `src/utils/integrity.ts`
