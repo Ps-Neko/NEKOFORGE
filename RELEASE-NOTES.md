@@ -238,7 +238,7 @@ $ harness workers init --profile strict --force
 
 - worker 자동 LLM 실행 미포함 — prompt 생성 + result import 만 (Phase WF-2 예약).
 - skill pack 은 직접 verdict 만들지 않음 (rule pack 만 verdict 영향).
-- 8 rule pack + 7 skill pack 의 카탈로그는 큐레이션 — ECC 식 마켓플레이스 미지향.
+- 13 rule pack + 13 skill pack 의 카탈로그는 큐레이션 — ECC 식 마켓플레이스 미지향.
 
 ---
 
