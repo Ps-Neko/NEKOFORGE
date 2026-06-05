@@ -3,6 +3,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { relative, resolve } from "node:path";
 
 export function readGitDiff(cwd: string): string | null {
   try {
@@ -51,6 +52,44 @@ export function readGitDiff(cwd: string): string | null {
     return out;
   } catch {
     return null;
+  }
+}
+
+/**
+ * 워킹트리에서 변경된(staged/unstaged/untracked) 파일을 cwd 기준 상대경로로 반환.
+ *
+ * `git status --porcelain` 의 경로는 repo-root 기준이라 cwd 기준으로 변환하고,
+ * untracked 디렉토리는 `--untracked-files=all` 로 파일 단위까지 펼친다.
+ * 비-git 환경·git 부재·cwd 밖 경로는 graceful 하게 제외(빈 배열).
+ */
+export function readWorkingTreeChangedFiles(cwd: string): string[] {
+  try {
+    const top = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8"
+    });
+    if (top.status !== 0) return [];
+    const root = top.stdout.trim();
+    const res = spawnSync(
+      "git",
+      ["status", "--porcelain", "--untracked-files=all"],
+      { cwd, encoding: "utf8" }
+    );
+    if (res.status !== 0) return [];
+    const out: string[] = [];
+    for (const line of res.stdout.split(/\r?\n/)) {
+      if (line.length < 4) continue;
+      let path = line.slice(3);
+      const arrow = path.indexOf(" -> ");
+      if (arrow >= 0) path = path.slice(arrow + 4); // rename → 새 경로
+      path = path.trim().replace(/^"(.*)"$/, "$1");
+      if (!path) continue;
+      const rel = relative(cwd, resolve(root, path)).replace(/\\/g, "/");
+      if (rel && !rel.startsWith("../")) out.push(rel);
+    }
+    return [...new Set(out)];
+  } catch {
+    return [];
   }
 }
 

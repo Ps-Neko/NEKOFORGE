@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -270,4 +271,39 @@ test("runSourceMap matches a relevant file by content when the name does not mat
     "content match should surface a file whose name does not contain the token"
   );
   assert.ok(!sourceMap.relevantFiles.includes("src/unrelated.ts"));
+});
+
+function git(cwd: string, ...args: string[]): void {
+  const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (r.status !== 0) {
+    throw new Error(`git ${args.join(" ")} failed: ${r.stderr ?? ""}`);
+  }
+}
+
+test("runSourceMap surfaces working-tree changed files via git recency", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-git-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  git(cwd, "init", "-q");
+  git(cwd, "config", "user.email", "t@example.com");
+  git(cwd, "config", "user.name", "t");
+  await mkdir(join(cwd, "src"), { recursive: true });
+  // committed, clean baseline — should NOT be considered recently changed.
+  await writeFile(join(cwd, "src", "stable.ts"), "export const a = 1;\n", "utf8");
+  git(cwd, "add", "-A");
+  git(cwd, "-c", "commit.gpgsign=false", "commit", "-q", "-m", "baseline");
+  // a fresh working-tree change whose name/content does NOT match the goal.
+  await writeFile(join(cwd, "src", "widget.ts"), "export const b = 2;\n", "utf8");
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps, {
+    hints: "completely unrelated authentication topic"
+  });
+
+  assert.ok(
+    sourceMap.relevantFiles.includes("src/widget.ts"),
+    "a freshly changed file should surface via git recency even without a token match"
+  );
+  assert.ok(!sourceMap.relevantFiles.includes("src/stable.ts"));
 });

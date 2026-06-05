@@ -10,6 +10,7 @@ import type { Dirent } from "node:fs";
 import { join, relative } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
 import { isoNow } from "../../utils/time.js";
+import { readWorkingTreeChangedFiles } from "../../utils/git.js";
 import { ENGINE_VERSION } from "../../version.js";
 
 export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "unknown";
@@ -104,6 +105,7 @@ const SKIP_DIRS = new Set([
 
 const MAX_FILES = 120;
 const MAX_RELEVANT = 12;
+const RECENCY_BONUS = 2;
 const MAX_CONTENT_BYTES = 16 * 1024;
 const CONTENT_EXTENSIONS =
   /\.(ts|tsx|js|jsx|mjs|cjs|py|go|java|rb|rs|php|md|json|ya?ml|toml|txt|html|css|scss|vue|svelte)$/i;
@@ -343,14 +345,21 @@ async function readSnippet(cwd: string, file: string): Promise<string> {
 async function rankRelevantFiles(
   cwd: string,
   files: string[],
-  hints: string
+  hints: string,
+  recentlyChanged: Set<string>
 ): Promise<string[]> {
   const tokens = tokenize(hints);
-  if (tokens.length === 0) return [];
+  // git recency 는 토큰 매칭이 없어도(예: 순수 영문 코드 + 한글 goal) 동작하는
+  // 언어무관 신호다. 토큰도 없고 변경 파일도 없을 때만 빈 결과.
+  if (tokens.length === 0 && recentlyChanged.size === 0) return [];
   const scored: Array<{ file: string; score: number }> = [];
   for (const file of files) {
-    const content = await readSnippet(cwd, file);
-    const score = scoreRelevantFile(file, content, tokens);
+    let score = 0;
+    if (tokens.length > 0) {
+      const content = await readSnippet(cwd, file);
+      score += scoreRelevantFile(file, content, tokens);
+    }
+    if (recentlyChanged.has(file)) score += RECENCY_BONUS;
     if (score > 0) scored.push({ file, score });
   }
   return scored
@@ -496,7 +505,13 @@ export async function runSourceMap(
     testRunner: detectTestRunner(pkg),
     buildCommands: detectBuildCommands(pkg)
   };
-  const relevantFiles = await rankRelevantFiles(deps.cwd, files, input.hints ?? "");
+  const recentlyChanged = new Set(readWorkingTreeChangedFiles(deps.cwd));
+  const relevantFiles = await rankRelevantFiles(
+    deps.cwd,
+    files,
+    input.hints ?? "",
+    recentlyChanged
+  );
   const sourceMap = buildSourceMap(
     files,
     readPackageScripts(pkg),
