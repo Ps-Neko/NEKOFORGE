@@ -3,20 +3,14 @@
  */
 import { resolve, join, isAbsolute } from "node:path";
 
-export const HARNESS_DIR = ".harness";
+const HARNESS_DIR = ".harness";
 
-export function workspaceRoot(cwd: string = process.cwd()): string {
+function workspaceRoot(cwd: string = process.cwd()): string {
   return resolve(cwd);
 }
 
 export function harnessRoot(cwd: string = process.cwd()): string {
   return join(workspaceRoot(cwd), HARNESS_DIR);
-}
-
-export function harnessPath(
-  ...parts: readonly string[]
-): string {
-  return join(harnessRoot(), ...parts);
 }
 
 export function withinHarness(
