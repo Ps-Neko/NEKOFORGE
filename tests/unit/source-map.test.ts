@@ -219,3 +219,55 @@ test("runSourceMap groups package scripts into buildCommands.{build,test,typeche
   assert.equal(sourceMap.buildCommands.typecheck, "tsc --noEmit");
   assert.equal(sourceMap.buildCommands.lint, "eslint .");
 });
+
+test("runSourceMap ranks relevant files for non-ASCII (Korean) goals", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-korean-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await mkdir(join(cwd, "src"), { recursive: true });
+  // English file name, but its Korean comment matches the Korean goal.
+  await writeFile(
+    join(cwd, "src", "session.ts"),
+    "// 로그인 실패 시 계정을 잠금 처리한다\nexport const lock = true;\n",
+    "utf8"
+  );
+  await writeFile(join(cwd, "src", "report.ts"), "export const report = 1;\n", "utf8");
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps, {
+    hints: "로그인 실패 5회 후 잠금 추가"
+  });
+
+  assert.ok(
+    sourceMap.relevantFiles.includes("src/session.ts"),
+    "Korean goal should surface a file via its Korean content"
+  );
+  assert.ok(!sourceMap.relevantFiles.includes("src/report.ts"));
+});
+
+test("runSourceMap matches a relevant file by content when the name does not match", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "nekoforge-sm-content-"));
+  t.after(async () => rm(cwd, { recursive: true, force: true }));
+
+  await mkdir(join(cwd, "src"), { recursive: true });
+  // file name "cart" does not contain "checkout", but its content does.
+  await writeFile(
+    join(cwd, "src", "cart.ts"),
+    "export function startCheckout(): void {}\n",
+    "utf8"
+  );
+  await writeFile(join(cwd, "src", "unrelated.ts"), "export const x = 1;\n", "utf8");
+  await runInit({ cwd });
+
+  const deps = { ...buildDeps(cwd), clock: FROZEN_CLOCK };
+  const { sourceMap } = await runSourceMap(deps, {
+    hints: "fix checkout total rounding"
+  });
+
+  assert.ok(
+    sourceMap.relevantFiles.includes("src/cart.ts"),
+    "content match should surface a file whose name does not contain the token"
+  );
+  assert.ok(!sourceMap.relevantFiles.includes("src/unrelated.ts"));
+});
