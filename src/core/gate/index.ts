@@ -13,8 +13,7 @@ import {
   ALL_DOCS_RULES,
   ALL_RELEASE_EVIDENCE_RULES,
   ALL_FRONTEND_RULES,
-  type RuleContext,
-  type RuleFinding
+  type RuleContext
 } from "../../rules/index.js";
 import { parseUnifiedDiff } from "../../utils/diff.js";
 import { isoNow } from "../../utils/time.js";
@@ -44,7 +43,8 @@ import {
   runAllRules,
   runAllRulesExceptCodex,
   deriveHighRiskFlags,
-  uniqueRuleIds
+  uniqueRuleIds,
+  runRuleList
 } from "./rules-run.js";
 import { applyScoreCap, mergeCap, uniqueTriggeredPacks } from "./caps.js";
 import {
@@ -230,31 +230,15 @@ export async function runGate(
   }
 
   // Phase QF — architecture/design rule 별도 실행.
-  const archFindings: RuleFinding[] = [];
-  for (const r of ALL_ARCHITECTURE_RULES) {
-    archFindings.push(...(await r.run(ctxWithFlags)));
-  }
-  const designFindings: RuleFinding[] = [];
-  for (const r of ALL_DESIGN_RULES) {
-    designFindings.push(...(await r.run(ctxWithFlags)));
-  }
+  const archFindings = await runRuleList(ALL_ARCHITECTURE_RULES, ctxWithFlags);
+  const designFindings = await runRuleList(ALL_DESIGN_RULES, ctxWithFlags);
   // Phase RP-2 — api-safety / dependency-risk / docs / release-evidence /
   // frontend-accessibility rule 추가.
-  for (const r of ALL_API_RULES) {
-    passTwo.push(...(await r.run(ctxWithFlags)));
-  }
-  for (const r of ALL_DEPENDENCY_RULES) {
-    passTwo.push(...(await r.run(ctxWithFlags)));
-  }
-  for (const r of ALL_DOCS_RULES) {
-    passTwo.push(...(await r.run(ctxWithFlags)));
-  }
-  for (const r of ALL_RELEASE_EVIDENCE_RULES) {
-    passTwo.push(...(await r.run(ctxWithFlags)));
-  }
-  for (const r of ALL_FRONTEND_RULES) {
-    passTwo.push(...(await r.run(ctxWithFlags)));
-  }
+  passTwo.push(...(await runRuleList(ALL_API_RULES, ctxWithFlags)));
+  passTwo.push(...(await runRuleList(ALL_DEPENDENCY_RULES, ctxWithFlags)));
+  passTwo.push(...(await runRuleList(ALL_DOCS_RULES, ctxWithFlags)));
+  passTwo.push(...(await runRuleList(ALL_RELEASE_EVIDENCE_RULES, ctxWithFlags)));
+  passTwo.push(...(await runRuleList(ALL_FRONTEND_RULES, ctxWithFlags)));
 
   // Phase QF — quality-contract 읽기 + quality-score 계산.
   // Codex review #3 (Critical #2) — schema invalid 와 not found 구분.
