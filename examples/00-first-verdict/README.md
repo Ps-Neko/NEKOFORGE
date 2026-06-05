@@ -22,10 +22,10 @@ $ npm run build
 ```bash
 $ npm link
 $ nekoforge --version
-0.5.0-alpha.5
+0.5.0-alpha.6
 ```
 
-## 1-B. 가장 빠른 1줄 시작 (1 분, v0.5.0-alpha.4+)
+## 1-B. 가장 빠른 1줄 시작 (1 분, v0.5.0-alpha.6+)
 
 본인 프로젝트에서 한 줄로 작업 패킷 생성:
 
@@ -166,4 +166,4 @@ $ cat REPORT.md
 - [GETTING-STARTED.md](../../GETTING-STARTED.md) — 14단계 전체 흐름
 - [docs/PRODUCT.md](../../docs/PRODUCT.md) — 본 도구의 정체성 + 비-목표
 - [docs/CLI.md](../../docs/CLI.md) — 30 명령 도움말
-- [examples/](..) — 10 시나리오 + Phase 흔적 12
+- [examples/](..) — 10 시나리오 + Phase 흔적 모음

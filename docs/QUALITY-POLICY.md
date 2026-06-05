@@ -36,7 +36,7 @@
 
 각 rule 은 `src/rules/` 의 deterministic rule 과는 다르다.
 
-- `src/rules/*.ts` : 본 도구가 코드에 적용하는 **차단/경고용 휴리스틱** (9종, SECURITY §3).
+- `src/rules/*.ts` : 본 도구가 코드에 적용하는 **차단/경고용 휴리스틱** (총 35종, SECURITY §3).
 - `.harness/rules.json` : 현재 프로젝트에서 **어떤 작업 규칙을 따를지** 의 묶음 선언. 예: "TypeScript strict 모드", "함수 50줄 이하", "API 응답 envelope 형식".
 
 ```json
@@ -190,9 +190,9 @@
 | review-first 정책 | harness-design 결과에 영향 | Producer-Reviewer 패턴 채택 시 명시 |
 | context-policy | 모든 단계 | 사이즈 가드 임계치 적용 |
 
-## 8. 9개 deterministic rule 과의 연동
+## 8. deterministic rule 과의 연동
 
-본 단계의 묶음 선택은 deterministic rule 9종(SECURITY §3) 의 발화 동작과 짝지어진다.
+본 단계의 묶음 선택은 deterministic rule 35종(SECURITY §3) 의 발화 동작과 짝지어진다.
 
 | quality-policy 항목 | 연동되는 deterministic rule | 동작 |
 |---|---|---|
@@ -260,7 +260,7 @@ quality-policy 가 한 번 정해진 뒤 변경되어야 한다면 :
 
 - 단계 시퀀스 → WORKFLOW.md §3.7
 - agent 와 패턴 선택 → HARNESS-DESIGN.md
-- deterministic rule 9종 상세 → SECURITY.md §3
+- deterministic rule 35종 상세 → docs/SECURITY.md §3
 - decision.json 에 들어가는 qualityPolicy 필드 → ARCHITECTURE.md §9
 - 본 단계의 CLI 인자 → CLI.md `harness policy`
 - rule pack / skill pack 의 큐레이션 → docs/RULE-PACKS.md, SKILL-PACKS.md (v0.5)

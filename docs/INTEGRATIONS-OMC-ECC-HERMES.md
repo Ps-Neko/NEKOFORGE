@@ -1,6 +1,6 @@
 # INTEGRATIONS — OMC / ECC / Hermes 와의 관계
 
-> 버전 0.4 · 2026-05-19 · NEKOFORGE 가 OMC / ECC / Hermes 를 **대체하지 않는다**. 각자 다른 책임을 가지고 병행한다.
+> 버전 0.5 · 2026-05-19 · NEKOFORGE 가 OMC / ECC / Hermes 를 **대체하지 않는다**. 각자 다른 책임을 가지고 병행한다.
 
 ## 1. 한 줄 요약
 

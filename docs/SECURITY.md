@@ -53,7 +53,7 @@ NEKOFORGE 는 14단계 산출물의 **골격(구조)** 과 단계 간 **강제�
 [diff/파일/메타]                       [어댑터 결과]
        │                                      │
        ▼                                      ▼
-  deterministic rules (9종)            review adapters
+  deterministic rules (35종)           review adapters
        │                                      │
        └────────────┬─────────────────────────┘
                     ▼
@@ -69,7 +69,7 @@ NEKOFORGE 는 14단계 산출물의 **골격(구조)** 과 단계 간 **강제�
               apply-log.md
 ```
 
-## 3. Deterministic Rules — 9종 명세
+## 3. Deterministic Rules — 총 35종 명세 (MVP 코어 9종 + 확장 26종)
 
 각 rule 은 `src/rules/<rule-id>.ts`. 모두 순수 함수.
 
