@@ -56,13 +56,19 @@ nekoforge/
 │   ├── WORKER-FACTORY.md             # v0.5 (Phase WF)
 │   ├── WORKER-SAFETY.md              # v0.5 (Phase WF)
 │   ├── RULE-PACKS.md                 # v0.5 (Phase RP)
-│   └── SKILL-PACKS.md                # v0.5 (Phase RP)
+│   ├── SKILL-PACKS.md                # v0.5 (Phase RP)
+│   ├── ALPHA-RECRUITMENT.md          # v0.5 (Phase EV)
+│   ├── EXTERNAL-VALIDATION-TEMPLATE.md # v0.5 (Phase EV)
+│   ├── AUTO-FACTORY-SPEC.md          # v0.5 (Phase WF-3)
+│   ├── FUTURE-WORKER-RUNTIME.md      # v0.5 (Phase WF-2)
+│   └── PROMOTION-GATE.md             # v0.5 (Phase RP-3)
 ├── package.json
 ├── tsconfig.json
 ├── src/
 │   ├── cli/
 │   │   ├── index.ts
 │   │   ├── commands/
+│   │   │   ├── _run.ts               # 내부 공통 실행 헬퍼
 │   │   │   ├── init.ts
 │   │   │   ├── ask.ts
 │   │   │   ├── context.ts
@@ -86,9 +92,17 @@ nekoforge/
 │   │   │   ├── dispatch.ts           # v0.5 (Phase WF)
 │   │   │   ├── worker-result.ts      # v0.5 (Phase WF) — subcommand
 │   │   │   ├── rule-pack.ts          # v0.5 (Phase RP) — subcommand
-│   │   │   └── skill-pack.ts         # v0.5 (Phase RP) — subcommand
+│   │   │   ├── skill-pack.ts         # v0.5 (Phase RP) — subcommand
+│   │   │   ├── doctor.ts             # v0.5 (Phase UX) — 12 검사
+│   │   │   ├── packet.ts             # v0.5 — AI 작업 패킷 생성
+│   │   │   ├── prepare.ts            # v0.5 — 1-shot 생산성 명령
+│   │   │   ├── auto.ts               # v0.5 — 자동 파이프라인
+│   │   │   ├── promote.ts            # v0.5 — 승격 게이트
+│   │   │   └── demo.ts               # v0.5 — 격리 데모
 │   │   └── ui/
 │   ├── core/
+│   │   ├── init.ts
+│   │   ├── stage-runner.ts
 │   │   ├── intake/
 │   │   ├── clarify/
 │   │   ├── context/
@@ -102,7 +116,14 @@ nekoforge/
 │   │   ├── gate/                     # workerFactory / rulePacks / skillPacks 통합 (v0.5)
 │   │   ├── apply/                    # Evidence before Apply (v0.4 Codex review #3)
 │   │   ├── quality-contract/         # v0.4 (Phase QF)
-│   │   └── memory/
+│   │   ├── memory/
+│   │   ├── report/                   # v0.4 (Phase QF)
+│   │   ├── source-map/               # v0.5 — machine-readable 프로젝트 스냅샷
+│   │   ├── packet/                   # v0.5 — AI 작업 패킷 생성
+│   │   ├── prepare/                  # v0.5 — 1-shot 생산성 orchestrator
+│   │   ├── auto/                     # v0.5 — 자동 파이프라인
+│   │   ├── doctor/                   # v0.5 (Phase UX)
+│   │   └── promotion/                # v0.5 — 승격 게이트 (룰·경험·skill-pack)
 │   ├── scoring/                      # v0.4 (Phase QF) — 8 영역 정량 점수 leaf
 │   ├── workers/                      # v0.5 (Phase WF) — leaf (gate 가 import)
 │   │   ├── types.ts                  # WorkerRole / WorkerDef / WorkersJson (cycle 방지)
@@ -111,33 +132,63 @@ nekoforge/
 │   │   ├── validate.ts               # role separation + detectForbiddenActions
 │   │   └── result.ts                 # import / list / show / collectTaskWorkerResults
 │   ├── rule-packs/                   # v0.5 (Phase RP) — leaf
-│   │   ├── catalog.ts                # 8 pack 정의
+│   │   ├── catalog.ts                # 13 pack 정의
 │   │   ├── index.ts                  # enable / disable / status
 │   │   └── resolve.ts                # template → required pack 매핑
 │   ├── skill-packs/                  # v0.5 (Phase RP) — leaf
-│   │   ├── catalog.ts                # 7 pack 정의
+│   │   ├── catalog.ts                # 13 pack 정의
 │   │   ├── index.ts                  # enable / disable / status / resolve
 │   │   └── render.ts                 # worker prompt 에 guidance 주입
 │   ├── benchmark/                    # v0.4 (Phase QF) — fixture runner
-│   ├── rules/                        # deterministic rules (9 + 4 arch + 3 design)
-│   │   ├── secret-fallback.ts
-│   │   ├── auth-bypass.ts
-│   │   ├── test-deletion.ts
-│   │   ├── no-test-risk.ts
-│   │   ├── dangerous-file-write.ts
-│   │   ├── hook-injection-risk.ts
-│   │   ├── agent-permission-risk.ts
-│   │   ├── auto-apply-block.ts
-│   │   ├── codex-missing-risk.ts
+│   ├── rules/                        # deterministic rules (35종)
+│   │   ├── index.ts
+│   │   ├── types.ts
+│   │   ├── security/                 # 5 rule — secret/auth/file/hook/agent
+│   │   │   ├── secret-fallback.ts
+│   │   │   ├── auth-bypass.ts
+│   │   │   ├── dangerous-file-write.ts
+│   │   │   ├── hook-injection-risk.ts
+│   │   │   └── agent-permission-risk.ts
+│   │   ├── process/                  # 4 rule — test/apply/codex/no-test
+│   │   │   ├── test-deletion.ts
+│   │   │   ├── no-test-risk.ts
+│   │   │   ├── auto-apply-block.ts
+│   │   │   └── codex-missing-risk.ts
 │   │   ├── architecture/             # v0.4 (Phase QF) — 4 rule
 │   │   │   ├── large-file-risk.ts
 │   │   │   ├── layer-violation.ts
 │   │   │   ├── untyped-api-risk.ts
 │   │   │   └── circular-dependency-risk.ts
-│   │   └── design/                   # v0.4 (Phase QF) — 3 rule (uiTouched 자동)
-│   │       ├── accessibility-risk.ts
-│   │       ├── design-token-violation.ts
-│   │       └── responsive-break-risk.ts
+│   │   ├── design/                   # v0.4 (Phase QF) — 3 rule (uiTouched 자동)
+│   │   │   ├── accessibility-risk.ts
+│   │   │   ├── design-token-violation.ts
+│   │   │   └── responsive-break-risk.ts
+│   │   ├── api/                      # v0.5 (Phase RP-2) — 4 rule
+│   │   │   ├── missing-input-validation-risk.ts
+│   │   │   ├── missing-rate-limit-risk.ts
+│   │   │   ├── unsafe-error-exposure-risk.ts
+│   │   │   └── missing-auth-boundary-risk.ts
+│   │   ├── dependency/               # v0.5 (Phase RP-2) — 4 rule
+│   │   │   ├── unbounded-version-risk.ts
+│   │   │   ├── new-runtime-dependency-risk.ts
+│   │   │   ├── postinstall-script-risk.ts
+│   │   │   └── lockfile-mismatch-risk.ts
+│   │   ├── docs/                     # v0.5 (Phase RP-2) — 3 rule
+│   │   │   ├── stale-count-risk.ts
+│   │   │   ├── missing-cli-doc-risk.ts
+│   │   │   └── broken-doc-link-risk.ts
+│   │   ├── release-evidence/         # v0.5 (Phase RP-2) — 4 rule
+│   │   │   ├── missing-release-note-risk.ts
+│   │   │   ├── missing-self-host-risk.ts
+│   │   │   ├── missing-migration-note-risk.ts
+│   │   │   └── missing-external-review-risk.ts
+│   │   ├── frontend/                 # v0.5 (Phase RP-2) — 4 rule
+│   │   │   ├── contrast-token-risk.ts
+│   │   │   ├── interactive-div-risk.ts
+│   │   │   ├── missing-focus-state-risk.ts
+│   │   │   └── missing-loading-state-risk.ts
+│   │   └── promotion-candidates/     # 승격 후보 (실험적)
+│   │       └── todo-comment-risk.ts
 │   ├── hooks/                        # hook 정의/실행 (Windows .cmd 우회 #6)
 │   ├── integrations/                 # 외부 도구 adapter
 │   │   ├── codex/                    # ReviewAdapter + ExportAdapter
@@ -334,24 +385,30 @@ integrations/*       →  core/*               (FORBIDDEN: adapter 는 core 를 
 
 ## 8. JSON Schema 위치 (v3)
 
-- `src/schemas/decision.schema.json` — `.harness/decision.json` (§9)
-- `src/schemas/team.schema.json` — `team.json` (harness-design 단계 산출)
-- `src/schemas/agent-routing.schema.json` — `agent-routing.json` (team 단계 산출)
-- `src/schemas/rules.schema.json` — `rules.json`
-- `src/schemas/hooks.schema.json` — `hooks.json`
-- `src/schemas/skills-map.schema.json` — `skills-map.json`
-- `src/schemas/codex-findings.schema.json` — review 어댑터 출력 정규화
-- `src/schemas/eval-case.schema.json` — memory eval-cases
+- `src/schemas/decision.schema.ts` — `.harness/decision.json` (§9)
+- `src/schemas/team.schema.ts` — `team.json` (harness-design 단계 산출)
+- `src/schemas/agent-routing.schema.ts` — `agent-routing.json` (team 단계 산출)
+- `src/schemas/rules.schema.ts` — `rules.json`
+- `src/schemas/hooks.schema.ts` — `hooks.json`
+- `src/schemas/codex-findings.schema.ts` — review 어댑터 출력 정규화
+- `src/schemas/eval-case.schema.ts` — memory eval-cases
+- `src/schemas/quality-contract.schema.ts` — `quality-contract.json` (v0.4)
+- `src/schemas/quality-score.schema.ts` — `quality-score.json` (v0.4)
+- `src/schemas/workers.schema.ts` — `workers.json` (v0.5 Phase WF)
+- `src/schemas/worker-result.schema.ts` — `worker-result.json` (v0.5 Phase WF)
+- `src/schemas/rule-packs.schema.ts` — `rule-packs.json` (v0.5 Phase RP)
+- `src/schemas/skill-packs.schema.ts` — `skill-packs.json` (v0.5 Phase RP)
+- `src/schemas/source-map.schema.ts` — `source-map.json` (v0.5)
 
 스키마 검증은 `Ajv`. 실패 시 해당 단계 즉시 실패 + verdict 자동 `INSUFFICIENT_EVIDENCE`.
 
 ## 9. decision.json 표준 형태 (v3)
 
-본 문서가 단일 출처. `schemaVersion: "0.3"` 으로 명시 (v1 0.1, v2 0.2 와 구분).
+본 문서가 단일 출처. `schemaVersion: "0.5"` 으로 명시 (v1 0.1, v2 0.2, v3 0.3, v4 0.4 와 구분).
 
 ```json
 {
-  "schemaVersion": "0.3",
+  "schemaVersion": "0.5",
   "project": "verified-ai-development-harness",
   "taskId": "TASK-001",
   "workflowStage": "gate",

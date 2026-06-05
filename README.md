@@ -326,7 +326,7 @@ NEKOWORK 가 좁고 깊은 **검증 게이트** 라면, NEKOFORGE 는 그 사상
 | [docs/WORKER-SAFETY.md](docs/WORKER-SAFETY.md) | worker 가 할 수 없는 것 + forbidden action (Phase WF) |
 | [docs/RULE-PACKS.md](docs/RULE-PACKS.md) | 13 rule pack + template 자동 추천 (Phase RP) |
 | [docs/SKILL-PACKS.md](docs/SKILL-PACKS.md) | 13 skill pack + worker prompt 흡수 (Phase RP) |
-| [examples/](examples/) | 10 시나리오 + 10 phase 흔적 ([index](examples/README.md)) |
+| [examples/](examples/) | 11 시나리오 + 14 phase 흔적 ([index](examples/README.md)) |
 
 ---
 
