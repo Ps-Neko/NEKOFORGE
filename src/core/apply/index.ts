@@ -5,6 +5,8 @@
  * 본 모듈은 Layer 2 (schema 재검증 + verdict 재체크 + approval 매칭).
  * Layer 3 은 evaluateAutoApplyBlock 호출.
  */
+import { stat } from "node:fs/promises";
+import { join } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
 import { evaluateAutoApplyBlock } from "../../rules/process/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
@@ -141,9 +143,7 @@ export async function runApply(
     );
   }
   // REPORT.md 는 cwd 루트에 있음 (artifact 외부).
-  const { stat } = await import("node:fs/promises");
   try {
-    const { join } = await import("node:path");
     await stat(join(deps.cwd, "REPORT.md"));
   } catch {
     throw new ApplyPrecondError(

@@ -6,7 +6,7 @@
 import type { RuleFinding } from "../../rules/index.js";
 import type { Verdict } from "./verdict.js";
 
-export const VERDICT_ORDER: Record<Verdict, number> = {
+const VERDICT_ORDER: Record<Verdict, number> = {
   PASS: 5,
   PASS_WITH_WARNINGS: 4,
   NEEDS_HUMAN_REVIEW: 3,
