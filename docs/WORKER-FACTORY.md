@@ -166,7 +166,7 @@ worker 가 commit/push/deploy/apply 시도       → BLOCK (worker-safety rule)
 
 ## 10. 본 문서가 답하지 않는 것
 
-- worker prompt 의 구체 템플릿 → `src/core/workers/dispatch.ts`
-- worker safety rule 휴리스틱 → SECURITY.md §3.14
+- worker prompt 의 구체 템플릿 → `src/workers/dispatch.ts`
+- worker safety rule 휴리스틱 → docs/SECURITY.md §3.14
 - rule pack 정의 → docs/RULE-PACKS.md
 - skill pack 정의 → docs/SKILL-PACKS.md

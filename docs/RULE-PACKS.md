@@ -79,5 +79,5 @@ backend-api template + security-core disabled  → BLOCK
 
 ## 6. 본 문서가 답하지 않는 것
 
-- 개별 rule 동작 → SECURITY.md §3
+- 개별 rule 동작 → docs/SECURITY.md §3
 - skill pack 정의 → docs/SKILL-PACKS.md

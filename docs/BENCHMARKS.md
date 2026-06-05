@@ -75,7 +75,7 @@ fixture 작성 시 한 rule 의 negative 시나리오가 **다른 rule 의 posit
 }
 ```
 
-본 형식이 본 도구의 deterministic rule 9종 + architecture 4 + design 3 의 ruleId 와 매칭된다.
+본 형식이 본 도구의 core deterministic rule 9종(security 5 + process 4) + architecture 4 + design 3 등 총 35종의 ruleId 와 매칭된다.
 
 ## 6. release mode 와의 관계
 
