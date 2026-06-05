@@ -6,8 +6,8 @@
 
 ## P0 — 즉시
 
-- [ ] 커밋 1·2·3 반영 (버전 alpha.6 / CLI 개수 28 / 룰 폴더 정리)
-- [ ] `RELEASE-NOTES.md` 에 alpha.6 항목 추가 (버전·CLI 28·룰 폴더 security/process 정리)
+- [ ] 커밋 1·2·3 반영 (버전 alpha.6 / CLI 개수 30 / 룰 폴더 정리)
+- [ ] `RELEASE-NOTES.md` 에 alpha.6 항목 추가 (버전·CLI 30·룰 폴더 security/process 정리)
 
 ## P1 — 내부 개선 (외부 의존 없음)
 
@@ -21,7 +21,7 @@
 
 - [ ] 외부 사용자 1명이 도구로 PR 1개 머지 — Beta 의 남은 *유일* 조건 (ROADMAP §10).
       모집 인프라(`ALPHA-RECRUITMENT.md`, 이슈 템플릿)는 완비 → 실제 모집이 액션.
-- [ ] npm 공개 배포 준비 — `"private": true` 해제 + `files`/`publishConfig` + 배포 체크리스트.
+- [ ] npm 정식(stable) 릴리스 — `alpha` 태그 배포는 완료(`private:false` / `publishConfig` / `files` 설정 + `npx nekoforge@alpha` 동작 확인). 베타 게이트(외부 PR 1건) 통과 후 stable 버전 승격 + 릴리스 체크리스트.
 
 ## 대기 (조건부 — 지금 착수 비권장)
 
