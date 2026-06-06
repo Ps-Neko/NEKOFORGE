@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runWork, WorkPrecondError } from "../../src/core/work/index.js";
+import { runWork, WorkPrecondError, WorkDuplicateError } from "../../src/core/work/index.js";
 import { buildDeps } from "../../src/core/stage-runner.js";
 
 async function inTmp<T>(fn: (dir: string) => Promise<T>): Promise<T> {
@@ -75,6 +75,36 @@ test("work: taskId with regex special chars (e.g. 'TASK.001') does not match 'TA
       WorkPrecondError,
       "taskId='TASK.001' must NOT match 'TASKX001' after regex escaping"
     );
+  });
+});
+
+test("work: taskId='TASK.001' in worklog does NOT match 'TASKX001 — completed' (completedRe escaping)", async () => {
+  await inTmp(async (dir) => {
+    // TASKS.md has both ids so the task-existence check passes for either
+    await seedMinimal(dir, "## TASK.001\n- something\n## TASKX001\n- other\n");
+
+    // Pre-populate worklog with TASKX001 completed entry (no dot)
+    // Without escaping, /^## TASK.001 .*completed\b/ would match "TASKX001 — completed"
+    // because '.' matches any char. After the fix it must NOT match.
+    await mkdir(join(dir, ".harness"), { recursive: true });
+    await writeFile(
+      join(dir, ".harness", "worklog.md"),
+      "## TASKX001 — 2026-01-01T00:00:00Z\n- diff hash: abc\n- diff captured: false\n\n",
+      "utf8"
+    );
+
+    // runWork for TASK.001 must NOT see TASKX001's entry as a duplicate.
+    // It should proceed past the duplicate check (may fail later for other reasons).
+    try {
+      await runWork({ taskId: "TASK.001" }, buildDeps(dir));
+    } catch (err) {
+      if (err instanceof WorkDuplicateError) {
+        assert.fail(
+          `taskId='TASK.001' must NOT be treated as duplicate of 'TASKX001' — completedRe escaping broken`
+        );
+      }
+      // Any other error (hooks, git, etc.) is acceptable — the point is no false duplicate
+    }
   });
 });
 

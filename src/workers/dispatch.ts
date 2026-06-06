@@ -56,10 +56,49 @@ async function loadSourceMap(deps: StageDeps): Promise<SourceMap | undefined> {
   return sm ?? undefined;
 }
 
+/**
+ * taskId format validation — rejects empty, NUL bytes, path separators,
+ * and Windows reserved device names (CON, PRN, AUX, NUL, COM1-9, LPT1-9).
+ * taskId is used in artifact file paths so format must be strictly safe.
+ */
+const TASK_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+const WINDOWS_RESERVED_RE = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+
+export class DispatchError extends Error {
+  readonly exitCode = 10;
+  constructor(message: string) {
+    super(message);
+    this.name = "DispatchError";
+  }
+}
+
+function validateTaskId(taskId: string): void {
+  if (taskId.length === 0) {
+    throw new DispatchError("taskId must not be empty");
+  }
+  if (taskId.includes("\0")) {
+    throw new DispatchError("taskId must not contain NUL bytes");
+  }
+  if (taskId.includes("/") || taskId.includes("\\")) {
+    throw new DispatchError("taskId must not contain path separators");
+  }
+  if (!TASK_ID_RE.test(taskId)) {
+    throw new DispatchError(
+      `taskId "${taskId}" is invalid: must match /^[A-Za-z0-9._-]{1,128}$/`
+    );
+  }
+  if (WINDOWS_RESERVED_RE.test(taskId)) {
+    throw new DispatchError(
+      `taskId "${taskId}" is a reserved Windows device name`
+    );
+  }
+}
+
 export async function runDispatch(
   input: DispatchInput,
   deps: StageDeps
 ): Promise<DispatchResult> {
+  validateTaskId(input.taskId);
   const workers = await readWorkers(deps);
   if (!workers) {
     throw new WorkersError(
@@ -94,6 +133,7 @@ export async function runDispatchAll(
   input: DispatchAllInput,
   deps: StageDeps
 ): Promise<DispatchAllResult> {
+  validateTaskId(input.taskId);
   const workers = await readWorkers(deps);
   if (!workers) {
     throw new WorkersError(
