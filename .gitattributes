@@ -1,0 +1,14 @@
+# Line-ending policy — normalize to LF in the repository, check out native per OS.
+# Prevents cross-platform CRLF noise (phantom diffs) and mixed-ending corruption.
+* text=auto
+
+# Scripts must stay LF to run on Unix / CI
+*.sh text eol=lf
+
+# Binary assets — never apply text/EOL filters
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
