@@ -44,7 +44,8 @@ export function resolveExecutable(cmd: string, platform: string): string {
   return WINDOWS_CMD_COMMANDS.has(cmd) ? `${cmd}.cmd` : cmd;
 }
 
-const SHELL_META_RE = /[;&|`$<>]|\$\(/;
+// Windows cmd.exe `%VAR%` expansion included alongside POSIX shell metacharacters.
+const SHELL_META_RE = /[;&|`$<>%]|\$\(/;
 
 export function isAllowedCommand(cmd: string): boolean {
   const trimmed = cmd.trim();

@@ -106,8 +106,11 @@ export async function runWork(
   }
 
   const worklog = (await deps.artifact.readMarkdown("worklog.md")) ?? "";
+  // Escape taskId before embedding in RegExp (same as the TASKS.md check above)
+  // to prevent regex injection via crafted taskId strings.
+  const escapedTaskIdForWorklog = input.taskId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const completedRe = new RegExp(
-    `^## ${input.taskId} .*completed\\b`,
+    `^## ${escapedTaskIdForWorklog} .*completed\\b`,
     "m"
   );
   if (completedRe.test(worklog)) {
