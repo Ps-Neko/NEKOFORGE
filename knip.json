@@ -1,0 +1,69 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/cli/index.ts",
+    "scripts/**/*.mjs",
+    "tests/**/*.test.ts",
+    "tests/**/_seed.ts",
+    "tests/**/_helpers.ts"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.mjs"
+  ],
+  "ignoreDependencies": [
+    "cli-table3",
+    "picocolors"
+  ],
+  "ignore": [
+    "src/rules/promotion-candidates/**"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "unlisted": "error",
+    "binaries": "off",
+    "unresolved": "error",
+    "exports": "error",
+    "nsExports": "error",
+    "types": "error",
+    "nsTypes": "error",
+    "enumMembers": "error",
+    "duplicates": "off"
+  },
+  "ignoreIssues": {
+    "src/rules/index.ts": ["exports", "types"],
+    "src/core/gate/index.ts": ["exports", "types"],
+    "src/core/gate/rules-run.ts": ["exports", "types"],
+    "src/core/context/index.ts": ["exports", "types"],
+    "src/core/harness-design/index.ts": ["exports", "types"],
+    "src/core/init.ts": ["exports", "types"],
+    "src/core/packet/index.ts": ["exports", "types"],
+    "src/core/plan/index.ts": ["exports", "types"],
+    "src/core/quality-policy/index.ts": ["exports", "types"],
+    "src/core/review/index.ts": ["exports", "types"],
+    "src/core/spec/index.ts": ["exports", "types"],
+    "src/core/team/index.ts": ["exports", "types"],
+    "src/core/work/index.ts": ["exports", "types"],
+    "src/integrations/claude/export.ts": ["exports", "types"],
+    "src/integrations/generic/export.ts": ["exports", "types"],
+    "src/rule-packs/index.ts": ["exports", "types"],
+    "src/skill-packs/index.ts": ["exports", "types"],
+    "src/benchmark/index.ts": ["exports", "types"],
+    "src/core/doctor/index.ts": ["exports", "types"],
+    "src/core/gate/verdict.ts": ["exports", "types"],
+    "src/core/promotion/store-types.ts": ["exports", "types"],
+    "src/core/source-map/index.ts": ["exports", "types"],
+    "src/hooks/runner.ts": ["exports", "types"],
+    "src/integrations/claude/review.ts": ["exports", "types"],
+    "src/integrations/codex/real.ts": ["exports", "types"],
+    "src/rules/types.ts": ["exports", "types"],
+    "src/schemas/loader.ts": ["exports", "types"],
+    "src/utils/audit.ts": ["exports", "types"],
+    "src/utils/diff.ts": ["exports", "types"],
+    "src/workers/adapters/claude.ts": ["exports", "types"],
+    "src/workers/index.ts": ["exports", "types"]
+  }
+}
