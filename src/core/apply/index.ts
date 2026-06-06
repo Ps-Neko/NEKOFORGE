@@ -7,6 +7,7 @@
  */
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
+import { harnessRoot } from "../../utils/paths.js";
 import type { StageDeps } from "../stage-runner.js";
 import { evaluateAutoApplyBlock } from "../../rules/process/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
@@ -102,6 +103,20 @@ export async function runApply(
   // ⓒ decision.json 무결성 — gate 가 audit.jsonl 에 박은 content hash 와 대조.
   // decision.json 을 gate 이후 사후 편집하면 해시가 어긋나 거부된다.
   // (decisionHash 가 없는 legacy audit 은 기존 tamper 휴리스틱에 위임하고 통과)
+  //
+  // Hardening (Fix #4): audit.jsonl 파일 자체가 존재하지 않으면 gate 가 한 번도
+  // 실행되지 않은 것 — apply 를 거부한다.
+  // (audit.jsonl 이 존재하되 gate_verdict 가 없는 경우는 CLI 를 거치지 않은 테스트 환경
+  // 또는 첫 명령 전 상태이므로 decisionHash=null 로 이어져 기존 tamper 휴리스틱에 위임된다)
+  const auditFilePath = join(harnessRoot(deps.cwd), "audit.jsonl");
+  const auditFileExists = await stat(auditFilePath).then(() => true).catch(() => false);
+  if (!auditFileExists) {
+    throw new ApplyPrecondError(
+      "audit.jsonl is missing — no gate run recorded. " +
+        "Run `harness gate` before apply. " +
+        "(If audit.jsonl was deleted, it cannot be restored; re-run gate.)"
+    );
+  }
   const { rawText: auditText } = await readAuditChain(deps.cwd);
   const anchoredHash = extractLastDecisionHash(auditText);
   if (anchoredHash !== null && canonicalHash(decision) !== anchoredHash) {
