@@ -30,6 +30,8 @@ required quality bar 미달                       → 최소 NEEDS_HUMAN_REVIEW
 
 gate 는 **verdictBase (rule 기반)** 와 **scoreCap (점수 기반)** 중 **더 보수적인 것** 을 채택한다.
 
+> 참고: `thresholds.blockBelow` 는 현재 `needsHumanReview` 와 동일한 값(60)으로 둔 **예약 필드**다. 점수만으로는 BLOCK 을 내지 않는 현 설계(BLOCK = 룰/증거 기반)에서 두 분기는 모두 `NEEDS_HUMAN_REVIEW` 로 캡되어 동작 차이가 없다. 점수 기반 BLOCK 밴드를 도입할 때 `blockBelow` 를 더 낮춰 활성화한다.
+
 ## 3. quality-score.json 형식
 
 ```json

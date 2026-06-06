@@ -58,6 +58,12 @@ const DEFAULT_THRESHOLDS = {
   pass: 85,
   passWithWarnings: 75,
   needsHumanReview: 60,
+  // 예약 필드(reserved): 현재 needsHumanReview 와 동일한 60.
+  // 설계상 BLOCK 은 점수가 아니라 critical rule finding / evidence 누락에서만 발생하므로
+  // (docs/QUALITY-SCORE.md §2), verdictHintFromScore 의 blockBelow 분기는 needsHumanReview 와
+  // 동일하게 NEEDS_HUMAN_REVIEW 로 캡한다 → 두 분기는 기능 차이가 없다.
+  // 추후 점수 기반 BLOCK 밴드를 도입하려면 이 값을 needsHumanReview 보다 낮춘 뒤
+  // 위 분기가 BLOCK 을 반환하도록 로직을 함께 수정한다.
   blockBelow: 60
 };
 
