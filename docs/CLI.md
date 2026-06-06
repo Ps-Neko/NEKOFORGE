@@ -589,6 +589,7 @@ Commands:
   skill-pack  Manage worker guidance skill packs
   doctor      Diagnose the local harness workspace
   promote     Promote candidate rules and skill packs
+  prepare     Prepare an AI work packet from a single goal
 
 Global options:
   --workspace <path>   override .harness/ location
