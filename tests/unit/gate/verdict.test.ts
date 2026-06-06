@@ -78,3 +78,30 @@ test("strict exit: BLOCK → 4", () => {
 test("strict exit: INSUFFICIENT_EVIDENCE → 4", () => {
   assert.equal(gateStrictExitCode("INSUFFICIENT_EVIDENCE"), 4);
 });
+
+// Fix #1 regression guard — testStatus='insufficient' must NOT yield PASS.
+// 'insufficient' means testing ran but coverage/depth is too low to trust;
+// it should cap at NEEDS_HUMAN_REVIEW so the insufficiency is always visible.
+test("verdict: testStatus=insufficient with clean findings → NEEDS_HUMAN_REVIEW, not PASS", () => {
+  const out = computeVerdict({
+    findings: [],
+    testStatus: "insufficient",
+    reviewStatus: "passed"
+  });
+  assert.notEqual(out.verdict, "PASS", "insufficient test coverage must not yield PASS");
+  assert.equal(out.verdict, "NEEDS_HUMAN_REVIEW");
+  assert.ok(
+    out.reasons.some((r) => /insufficient/i.test(r)),
+    `expected an 'insufficient' reason, got: ${JSON.stringify(out.reasons)}`
+  );
+});
+
+test("verdict: testStatus=insufficient with review not_run → NEEDS_HUMAN_REVIEW", () => {
+  const out = computeVerdict({
+    findings: [],
+    testStatus: "insufficient",
+    reviewStatus: "not_run"
+  });
+  assert.equal(out.verdict, "NEEDS_HUMAN_REVIEW");
+  assert.ok(out.humanApprovalRequired);
+});

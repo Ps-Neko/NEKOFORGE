@@ -465,6 +465,47 @@ test("T-SEC-14: high-risk + 0 adapters → INSUFFICIENT_EVIDENCE", async (t) => 
   assert.ok(d.triggered.includes("codex-missing-risk"));
 });
 
+// ===== T-SEC-17 audit.jsonl deletion bypass → apply refused (Fix #4) =========
+// Attack vector: run gate (PASS), delete audit.jsonl + audit-anchor.json,
+// rewrite decision.json to PASS. Without this fix, apply would skip the hash
+// check (anchoredHash=null) and proceed. With the fix, apply refuses because
+// audit.jsonl is missing/empty.
+test("T-SEC-17: audit.jsonl deleted after gate → apply refused (integrity bypass blocked)", async (t) => {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+
+  // Run gate to get a clean PASS decision + audit trail
+  await runGate(GATE_OPTS, ws.deps);
+  const d = await readDecision(ws.cwd);
+  // Seed produces a clean diff so verdict should be PASS or PASS_WITH_WARNINGS
+  assert.ok(
+    d.verdict === "PASS" || d.verdict === "PASS_WITH_WARNINGS",
+    `Expected PASS-family verdict, got: ${d.verdict}`
+  );
+
+  // Simulate the attack: delete audit.jsonl and audit-anchor.json
+  // (decision.json is kept as-is — attacker would keep or rewrite it to PASS,
+  // but here we test that even the legitimate decision is refused when audit is gone)
+  await rmFile(join(ws.cwd, ".harness", "audit.jsonl"));
+  await rmFile(join(ws.cwd, ".harness", "audit-anchor.json"));
+
+  // apply must refuse because audit.jsonl file is absent
+  try {
+    await runApply({ approved: true }, ws.deps);
+    assert.fail("apply should have refused due to missing audit.jsonl");
+  } catch (err) {
+    assert.ok(
+      err instanceof ApplyPrecondError,
+      `expected ApplyPrecondError, got: ${String(err)}`
+    );
+    assert.equal((err as ApplyPrecondError).exitCode, 2);
+    assert.ok(
+      /audit\.jsonl is missing/i.test((err as Error).message),
+      `expected audit.jsonl missing message, got: ${(err as Error).message}`
+    );
+  }
+});
+
 async function rmFile(path: string): Promise<void> {
   const { rm } = await import("node:fs/promises");
   await rm(path, { force: true });

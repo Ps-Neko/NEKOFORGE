@@ -96,7 +96,10 @@ export async function runWork(
   }
 
   const tasksDoc = (await deps.artifact.readMarkdown("TASKS.md")) ?? "";
-  if (!new RegExp(`\\b${input.taskId}\\b`).test(tasksDoc)) {
+  // Escape taskId before embedding in RegExp to prevent regex injection:
+  // e.g. taskId='.*' would otherwise match any non-empty string.
+  const escapedTaskId = input.taskId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (!new RegExp(`\\b${escapedTaskId}\\b`).test(tasksDoc)) {
     throw new WorkPrecondError(
       `task ${input.taskId} not found in TASKS.md`
     );
