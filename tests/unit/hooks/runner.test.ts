@@ -47,6 +47,12 @@ test("isAllowedCommand: shell metachars rejected", () => {
   assert.equal(isAllowedCommand("echo $(whoami)"), false);
 });
 
+test("isAllowedCommand: Windows cmd.exe %VAR% expansion rejected", () => {
+  assert.equal(isAllowedCommand("npm run %COMSPEC%"), false);
+  assert.equal(isAllowedCommand("node %USERPROFILE%\\evil.js"), false);
+  assert.equal(isAllowedCommand("%windir%\\system32\\cmd.exe"), false);
+});
+
 test("isAllowedCommand: unknown internal rejected", () => {
   assert.equal(isAllowedCommand("internal:evil"), false);
 });
