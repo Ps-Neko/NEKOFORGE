@@ -8,6 +8,7 @@ import type { WorkerRole, WorkersJson } from "./index.js";
 import { profileRequiredRoles, readWorkers, WorkersError } from "./index.js";
 import { resolveSkillGuidance } from "../skill-packs/index.js";
 import type { SourceMap } from "../core/source-map/index.js";
+import { isoNow } from "../utils/time.js";
 
 export interface DispatchInput {
   taskId: string;
@@ -128,7 +129,7 @@ export async function runDispatchAll(
     requiredRoles: required,
     dispatchedRoles: roles,
     prompts: prompts.map((p) => ({ role: p.role, path: p.path })),
-    generatedAt: new Date().toISOString()
+    generatedAt: isoNow(deps.clock)
   };
   const manifestRel = `worker-runs/${input.taskId}/worker-run-manifest.json`;
   await deps.artifact.writeJson(manifestRel, manifest);
