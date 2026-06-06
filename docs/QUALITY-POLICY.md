@@ -1,6 +1,6 @@
 # QUALITY-POLICY — 품질 운영층 매뉴얼 (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 v3 단계 `quality-policy` (WORKFLOW.md §3.7) 의 의사결정 매뉴얼이다. Everything Claude Code 의 풍부한 rules/hooks/context/security 카탈로그를 **묶음 선택** 형태로 흡수하되, 카탈로그 자체를 복제하지 않는다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 v3 단계 `quality-policy` (WORKFLOW.md §3.7) 의 의사결정 매뉴얼이다. Everything Claude Code 의 풍부한 rules/hooks/context/security 카탈로그를 **묶음 선택** 형태로 흡수하되, 카탈로그 자체를 복제하지 않는다.
 
 ## 1. 본 단계의 책임
 

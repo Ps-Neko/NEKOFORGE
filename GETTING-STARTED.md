@@ -221,4 +221,4 @@ $ harness self-host --with-worker-stubs
 - [docs/WORKFLOW.md](docs/WORKFLOW.md) — 14단계 상세 흐름
 - [docs/CLI.md](docs/CLI.md) — 30 명령 도움말
 - [docs/SECURITY.md](docs/SECURITY.md) — 위협 모델
-- [examples/](examples/) — 10개 시나리오 + self-host 8회 기록
+- [examples/](examples/) — 10개 시나리오 + self-host 12회 기록

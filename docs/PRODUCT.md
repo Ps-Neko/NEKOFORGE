@@ -1,6 +1,6 @@
 # PRODUCT — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 v3 사양 기준 제품 정체성, 사용자, 가치, 비목표를 못박는 1차 명세다. 모든 다른 문서(ARCHITECTURE, WORKFLOW, HARNESS-DESIGN, QUALITY-POLICY, SECURITY, ROADMAP, CLI, TASKS)는 이 문서를 상위 근거로 삼는다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 v3 사양 기준 제품 정체성, 사용자, 가치, 비목표를 못박는 1차 명세다. 모든 다른 문서(ARCHITECTURE, WORKFLOW, HARNESS-DESIGN, QUALITY-POLICY, SECURITY, ROADMAP, CLI, TASKS)는 이 문서를 상위 근거로 삼는다.
 
 ## 1. 한 줄 정의
 
