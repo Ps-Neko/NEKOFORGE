@@ -25,7 +25,7 @@ export function registerDoctor(program: Command): void {
             await stat(join(deps.cwd, ".harness"));
             harnessExists = true;
           } catch {
-            harnessExists = false;
+            // .harness 미존재 → 초기값 false 유지
           }
           if (harnessExists) {
             await mkdir(join(deps.cwd, ".harness"), { recursive: true });

@@ -241,13 +241,13 @@ export function computeAnchor(text: string, atIso?: string): AuditAnchor {
     const first = JSON.parse(lines[0]!) as { line_hash?: string };
     firstHash = first.line_hash ?? null;
   } catch {
-    firstHash = null;
+    // 파싱 실패 → 초기값 null 유지
   }
   try {
     const last = JSON.parse(lines[lines.length - 1]!) as { line_hash?: string };
     lastHash = last.line_hash ?? null;
   } catch {
-    lastHash = null;
+    // 파싱 실패 → 초기값 null 유지
   }
   return {
     schemaVersion: "0.3",
