@@ -44,7 +44,7 @@ export async function runInit(input: InitInput = {}): Promise<InitResult> {
     await stat(root);
     exists = true;
   } catch {
-    exists = false;
+    // 미설치 → 초기값 false 유지
   }
   if (exists && !input.force) throw new HarnessAlreadyInitializedError(root);
 
