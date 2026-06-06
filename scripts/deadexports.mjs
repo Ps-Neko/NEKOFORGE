@@ -1,52 +1,43 @@
 #!/usr/bin/env node
 /**
- * Dead-export gate: runs ts-prune against tsconfig.prune.json (includes tests)
- * and fails if any truly-unused exports remain outside the known allowlist.
+ * Dead-export gate: runs knip (successor to the unmaintained ts-prune) and
+ * fails if any unused exports/files/dependencies remain outside the allowlist
+ * declared in knip.json.
  *
- * Allowlist rationale:
- *   - src/rules/index.ts      : barrel re-exports (evaluateAutoApplyBlock, AutoApplyBlockedError,
- *                                Severity) intentionally re-exported for future public consumers.
- *   - src/core/gate/index.ts  : loadPromotedForCwd explicitly marked "공개 API 호환" in-source.
- *   - promotion-candidates/   : todoCommentRiskRule referenced by export-name string in promote CLI.
+ * Allowlist rationale (see knip.json):
+ *   - ignoreDependencies: cli-table3, picocolors — used at runtime via dynamic
+ *     require; knip's static analysis misses them (out of scope for this gate).
+ *   - ignore: src/rules/promotion-candidates/** — todoCommentRiskRule is
+ *     referenced by export-name string in the promote CLI (dynamic import).
+ *   - ignoreIssues per-file: public-API types/classes exported intentionally
+ *     for downstream consumers (Error subclasses, input/result interfaces, etc.)
+ *   - ignoreExportsUsedInFile: suppresses module-internal re-use false positives.
  */
 import { execSync } from "node:child_process";
 
-// Regex patterns that, if matched, suppress the flagged export.
-// Each entry is matched against the raw ts-prune output line.
-const ALLOWLIST = [
-  /src[/\\]rules[/\\]index\.ts.*evaluateAutoApplyBlock/,
-  /src[/\\]rules[/\\]index\.ts.*AutoApplyBlockedError/,
-  /src[/\\]rules[/\\]index\.ts.*Severity/,
-  /src[/\\]core[/\\]gate[/\\]index\.ts.*loadPromotedForCwd/,
-  /promotion-candidates[/\\]todo-comment-risk\.ts.*todoCommentRiskRule/,
-];
-
 let output;
+let exitCode = 0;
 try {
-  output = execSync("npx ts-prune -p tsconfig.prune.json", {
+  output = execSync("npx knip --reporter compact --no-progress", {
     encoding: "utf8",
     stdio: ["pipe", "pipe", "pipe"],
   });
 } catch (e) {
-  // ts-prune exits non-zero if it finds anything; capture stdout anyway
+  // knip exits non-zero when violations are found; capture stdout anyway
   output = e.stdout ?? "";
+  exitCode = e.status ?? 1;
 }
 
-const violations = output
-  .split("\n")
-  .map((l) => l.trim())
-  .filter(Boolean)
-  .filter((l) => !l.includes("(used in module)"))
-  .filter((l) => !ALLOWLIST.some((re) => re.test(l)));
+const trimmed = (output ?? "").trim();
 
-if (violations.length === 0) {
+if (exitCode === 0 || trimmed === "") {
   console.log("dead-export gate: PASS (0 violations)");
   process.exit(0);
 } else {
-  console.error("dead-export gate: FAIL — unexpected unused exports:");
-  violations.forEach((v) => console.error("  " + v));
+  console.error("dead-export gate: FAIL — knip found issues:");
+  console.error(trimmed);
   console.error(
-    "\nTo fix: remove the `export` keyword, import the symbol directly, or add to the allowlist in scripts/deadexports.mjs."
+    "\nTo fix: remove the export/dependency, add an import, or add to the allowlist in knip.json."
   );
   process.exit(1);
 }
