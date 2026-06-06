@@ -5,8 +5,6 @@
  * declared in knip.json.
  *
  * Allowlist rationale (see knip.json):
- *   - ignoreDependencies: cli-table3, picocolors — used at runtime via dynamic
- *     require; knip's static analysis misses them (out of scope for this gate).
  *   - ignore: src/rules/promotion-candidates/** — todoCommentRiskRule is
  *     referenced by export-name string in the promote CLI (dynamic import).
  *   - ignoreIssues per-file: public-API types/classes exported intentionally

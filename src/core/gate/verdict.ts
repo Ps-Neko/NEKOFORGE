@@ -77,6 +77,18 @@ export function computeVerdict(input: VerdictInputs): VerdictOutput {
     };
   }
 
+  // 'insufficient' means tests ran but coverage/depth was too low to be trusted.
+  // Must NOT yield PASS — caps at NEEDS_HUMAN_REVIEW so the gap is always visible.
+  if (input.testStatus === "insufficient") {
+    reasons.push("insufficient test coverage or depth");
+    return {
+      verdict: "NEEDS_HUMAN_REVIEW",
+      riskLevel: "high",
+      humanApprovalRequired: true,
+      reasons
+    };
+  }
+
   if (high.length > 0) {
     reasons.push(...high.map((f) => `[${f.ruleId}] ${f.message}`));
     return {

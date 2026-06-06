@@ -32,3 +32,41 @@ test("loadActiveRules: DEFAULT + promoted 합집합", async () => {
   const active = await loadActiveRules(async () => manifest, async () => ({ ruleA }));
   assert.equal(active.length, DEFAULT_BENCHMARK_RULES.length + 1);
 });
+
+// Fix #2 regression guard — a corrupt/missing promoted module must NOT crash the gate.
+// Graceful degradation: the bad entry is skipped with a warning, others still load.
+test("loadPromotedRules: corrupt module (importer throws) → skipped, still returns valid rules", async () => {
+  const ruleB: DeterministicRule = { id: "promoted-b", describe: "y", run: async () => [] };
+  const twoEntryManifest: PromotedManifest = {
+    rules: [
+      { id: "promoted-a", modulePath: "./a.js", exportName: "ruleA", promotedAt: "2026-01-01T00:00:00Z", approvalHash: "aaa" },
+      { id: "promoted-corrupt", modulePath: "./corrupt.js", exportName: "badExport", promotedAt: "2026-01-02T00:00:00Z", approvalHash: "bbb" },
+      { id: "promoted-b", modulePath: "./b.js", exportName: "ruleB", promotedAt: "2026-01-03T00:00:00Z", approvalHash: "ccc" }
+    ]
+  };
+  const brokenImporter = async (p: string) => {
+    if (p === "./corrupt.js") throw new Error("module not found");
+    if (p === "./a.js") return { ruleA };
+    if (p === "./b.js") return { ruleB };
+    return {};
+  };
+
+  const rules = await loadPromotedRules(async () => twoEntryManifest, brokenImporter);
+  // Should return 2 valid rules, skipping the corrupt one
+  assert.equal(rules.length, 2);
+  assert.ok(rules.some((r) => r.id === "promoted-a"), "promoted-a should be present");
+  assert.ok(rules.some((r) => r.id === "promoted-b"), "promoted-b should be present");
+  assert.ok(!rules.some((r) => r.id === "promoted-corrupt"), "corrupt entry should be skipped");
+});
+
+test("loadPromotedRules: all modules corrupt → returns empty array (no crash)", async () => {
+  const badManifest: PromotedManifest = {
+    rules: [
+      { id: "bad-1", modulePath: "./bad1.js", exportName: "r", promotedAt: "2026-01-01T00:00:00Z", approvalHash: "xxx" }
+    ]
+  };
+  const alwaysThrows = async () => { throw new Error("disk error"); };
+
+  const rules = await loadPromotedRules(async () => badManifest, alwaysThrows);
+  assert.deepEqual(rules, []);
+});

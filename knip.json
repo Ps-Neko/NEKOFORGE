@@ -12,10 +12,7 @@
     "tests/**/*.ts",
     "scripts/**/*.mjs"
   ],
-  "ignoreDependencies": [
-    "cli-table3",
-    "picocolors"
-  ],
+  "ignoreDependencies": [],
   "ignore": [
     "src/rules/promotion-candidates/**"
   ],
