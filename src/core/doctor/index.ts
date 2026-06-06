@@ -7,6 +7,7 @@
 import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import type { StageDeps } from "../stage-runner.js";
+import { isoNow } from "../../utils/time.js";
 
 export type DoctorStatus = "ok" | "warn" | "error";
 
@@ -200,7 +201,7 @@ export async function runDoctor(deps: StageDeps): Promise<DoctorReport> {
 
   return {
     schemaVersion: "0.5",
-    generatedAt: new Date().toISOString(),
+    generatedAt: isoNow(deps.clock),
     nodeVersion: process.versions.node,
     cwd,
     checks,
