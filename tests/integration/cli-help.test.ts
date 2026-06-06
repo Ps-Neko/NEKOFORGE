@@ -48,7 +48,9 @@ const COMMANDS = [
   // Phase UX 9점화 신규
   "doctor",
   // Promotion Gate P1b
-  "promote"
+  "promote",
+  // one-shot pipeline
+  "prepare"
 ] as const;
 
 interface RunResult {
@@ -82,7 +84,7 @@ test("harness --version exits 0 and prints version", () => {
   assert.match(r.stdout, /0\.5\.0/);
 });
 
-test("harness lists all 29 commands in --help", () => {
+test("harness lists all 30 commands in --help", () => {
   const r = runCli(["--help"]);
   assert.equal(r.status, 0);
   for (const cmd of COMMANDS) {

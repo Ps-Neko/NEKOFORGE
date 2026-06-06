@@ -88,6 +88,43 @@ export function uniqueTriggeredPacks(
       "quality-contract-invalid",
       "rule-pack-missing"
     ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "api-safety" && [
+      "missing-input-validation-risk",
+      "missing-rate-limit-risk",
+      "unsafe-error-exposure-risk",
+      "missing-auth-boundary-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "dependency-risk" && [
+      "unbounded-version-risk",
+      "new-runtime-dependency-risk",
+      "postinstall-script-risk",
+      "lockfile-mismatch-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "docs-quality" && [
+      "stale-count-risk",
+      "missing-release-note-risk",
+      "missing-cli-doc-risk",
+      "broken-doc-link-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "release-evidence" && [
+      "release-benchmark-required",
+      "missing-self-host-risk",
+      "missing-migration-note-risk",
+      "missing-external-review-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "frontend-accessibility" && [
+      "accessibility-risk",
+      "missing-focus-state-risk",
+      "interactive-div-risk",
+      "missing-loading-state-risk",
+      "contrast-token-risk"
+    ].some((r) => ids.has(r))) triggered.add(p);
+    if (p === "ai-generated-code-risk" && [
+      "no-test-risk",
+      "untyped-api-risk",
+      "secret-fallback",
+      "auth-bypass"
+    ].some((r) => ids.has(r))) triggered.add(p);
   }
   return [...triggered];
 }

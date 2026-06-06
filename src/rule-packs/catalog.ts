@@ -61,10 +61,9 @@ export const RULE_PACK_CATALOG: readonly RulePackDef[] = [
     id: "quality-contract-core",
     rules: [
       "quality-contract-invalid",
-      "quality-score-required",
-      "failed-required-bars"
+      "rule-pack-missing"
     ],
-    describe: "계약/점수 강제 — schema valid + score 산출 + bar 충족"
+    describe: "계약/점수 강제 — schema valid + required rule-pack 존재 확인"
   },
   // Phase RP-2 (v0.5) — 5 신규 pack
   {
