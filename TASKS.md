@@ -1,6 +1,6 @@
 # TASKS — Verified AI Development Harness v3 (Phase B 구현 분해)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 ROADMAP.md §3 Phase B 의 작업을 task 단위로 분해한 작업 목록이다. 각 task 는 ARCHITECTURE.md §4 모듈, SECURITY.md §3 의 9 룰, CLI.md §3 의 14 명령과 추적 가능해야 한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 ROADMAP.md §3 Phase B 의 작업을 task 단위로 분해한 작업 목록이다. 각 task 는 ARCHITECTURE.md §4 모듈, SECURITY.md §3 의 9 룰, CLI.md §3 의 14 명령과 추적 가능해야 한다.
 
 ## 0. 규칙
 

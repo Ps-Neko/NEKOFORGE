@@ -1,6 +1,6 @@
 # WORKFLOW — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 PRODUCT.md §7 "단계 분리 보장" 을 14개 단계의 시퀀스로 풀어낸 실행 매뉴얼이다. ARCHITECTURE.md §4 모듈 매핑과 1:1 대응한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 PRODUCT.md §7 "단계 분리 보장" 을 14개 단계의 시퀀스로 풀어낸 실행 매뉴얼이다. ARCHITECTURE.md §4 모듈 매핑과 1:1 대응한다.
 
 ## 1. 전체 시퀀스
 

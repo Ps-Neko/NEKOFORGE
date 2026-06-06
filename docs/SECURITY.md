@@ -1,6 +1,6 @@
 # SECURITY — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 (Phase A) · 2026-05-19 (Codex feedback round 후속) · 본 문서는 PRODUCT.md §3 원칙 1·3(독립 검증 / 위험 작업 차단)을 실제 차단 메커니즘으로 구현하는 명세다. WORKFLOW.md §3.12 gate 와 §3.13 apply 가 본 명세를 참조한다.
+> 버전 0.5 · 2026-05-18 (Phase A) · 2026-05-19 (Codex feedback round 후속) · 본 문서는 PRODUCT.md §3 원칙 1·3(독립 검증 / 위험 작업 차단)을 실제 차단 메커니즘으로 구현하는 명세다. WORKFLOW.md §3.12 gate 와 §3.13 apply 가 본 명세를 참조한다.
 
 ## 0. 책임 경계 — 본 도구가 책임지는 것과 책임지지 않는 것
 

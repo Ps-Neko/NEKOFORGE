@@ -1,6 +1,6 @@
 # ARCHITECTURE — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 PRODUCT.md §3 원칙(분리·차단·증거·독립·로컬·도구 독립·설계 실행 분리)을 만족하는 구현 구조를 정의한다. 구현 task 는 TASKS.md 에서 본 구조를 그대로 참조한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 PRODUCT.md §3 원칙(분리·차단·증거·독립·로컬·도구 독립·설계 실행 분리)을 만족하는 구현 구조를 정의한다. 구현 task 는 TASKS.md 에서 본 구조를 그대로 참조한다.
 
 ## 1. 설계 목표 (Architectural Goals)
 

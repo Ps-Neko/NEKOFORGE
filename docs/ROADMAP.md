@@ -1,6 +1,6 @@
 # ROADMAP — Verified AI Development Harness (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 PRODUCT.md §10 성공 기준 7개를 일정에 매핑하고, 어떤 기능이 어느 단계에서 들어오는지 정한다. ROADMAP 항목 추가/삭제는 PRODUCT.md 와 정합해야 한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 PRODUCT.md §10 성공 기준 7개를 일정에 매핑하고, 어떤 기능이 어느 단계에서 들어오는지 정한다. ROADMAP 항목 추가/삭제는 PRODUCT.md 와 정합해야 한다.
 
 ## 1. 일정 개관
 

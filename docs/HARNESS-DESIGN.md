@@ -1,6 +1,6 @@
 # HARNESS-DESIGN — 팀 아키텍처 설계 매뉴얼 (v3)
 
-> 버전 0.3 · 2026-05-18 · 본 문서는 v3 신규 단계 `harness-design` (WORKFLOW.md §3.6) 의 의사결정 매뉴얼이다. revfactory/harness 의 "도메인 → 팀 구조 설계" 패턴을 흡수하되, 산출물은 **Claude Code 비종속** 형식으로 `.harness/` 에 저장한다. 이후 `harness export claude` 가 어댑터로 `.claude/` 형태를 생성한다.
+> 버전 0.5 · 2026-05-20 · 본 문서는 v3 신규 단계 `harness-design` (WORKFLOW.md §3.6) 의 의사결정 매뉴얼이다. revfactory/harness 의 "도메인 → 팀 구조 설계" 패턴을 흡수하되, 산출물은 **Claude Code 비종속** 형식으로 `.harness/` 에 저장한다. 이후 `harness export claude` 가 어댑터로 `.claude/` 형태를 생성한다.
 
 ## 1. 본 단계의 책임
 
