@@ -159,9 +159,14 @@ Node.js 20+ 가 CVE-2024-27980 fix 로 `.cmd`/`.bat` 의 `shell:false` 실행을
   - **anchor append-only 위반**: 이전 gate 의 anchor 와 비교해 `firstHash` 가 바뀌었거나 `lineCount` 가 감소한 경우.
   - **chain 재작성 / anchor 삭제** (`detectAnchorTampering`): 이전 anchor 의 `lastHash` 가 현재 chain 에 없으면(통째 재계산) 또는 anchor 부재인데 chain 에 이전 `gate_verdict` 가 있으면(anchor 삭제) 감지. prevAnchor/prior gate_verdict 가 있을 때만 발화 → 정상 첫 실행 무영향.
 - **증거 content-hash 결박**: gate 가 `decision.json` canonical sha256 + 입력 diff hash + codex findings hash + engineVersion 을 `gate_verdict` audit 이벤트에 박는다. apply 가 decision 을 재해싱해 대조 → gate 이후 `decision.json` 변조 시 거부. (평문 위변조를 휴리스틱이 아니라 chain-anchored hash 로 방어)
+- **apply 시점 재검증(하드닝)**: apply 는 gate 의 검증을 신뢰만 하지 않고 스스로 다시 확인한다 — 과거엔 chain 무결성을 gate 만 검증해 gate↔apply 사이 변조에 무방비였다.
+  1. **chain `valid` 재검증** — audit chain 의 `line_hash`/`prev_hash` 를 apply 가 재검증해, `decisionHash` 만 맞춰 둔 단일 라인 재작성 우회를 거부한다.
+  2. **입력 diff 결박** — `gate_verdict.inputDiffHash` 와 현재 `last-diff.patch` 의 content hash 를 대조해, "gate 가 판정한 바로 그 diff" 가 사후에 바뀌거나 삭제되면 거부한다.
+  3. **채용 룰 import 봉쇄** — `promoted.json` 의 `modulePath` 를 프로젝트 루트 안으로 강제해, `.harness/` 쓰기 권한자가 루트 밖 임의 파일을 gate 실행 시점에 import=실행시키는 RCE 를 차단한다.
+  4. **심링크 탈출 차단** — artifact 경로 해소 시 realpath 로 최심 실존 조상을 검사해, `.harness/` 안의 심볼릭 링크/정션이 루트 밖을 가리키면 거부한다.
 - 등급 : `high` → NEEDS_HUMAN_REVIEW.
 - 본 finding 은 `src/rules/` 하의 deterministic rule 카탈로그가 아니라 gate 모듈이 직접 생성한다 (audit 입력이 diff 가 아닌 audit.jsonl 자체이기 때문).
-- **로컬-first 한계**: chain 과 anchor 를 **동시에** 재작성하는 공격은 외부 신뢰 앵커(원격/서명) 없이는 막을 수 없다 — 의도된 한계.
+- **로컬-first 한계(정직한 경계)**: 위 재검증으로 **단일 아티팩트·단일 라인 변조와 gate↔apply 사이 diff 바꿔치기는 차단**되지만, chain·anchor·`decision.json` 을 **동시에 일관되게** 재작성하는 공격은 keyless sha256 의 특성상 외부 신뢰 앵커(원격/서명) 없이는 막을 수 없다 — 의도된 한계. 즉 verdict 는 "사후 편집·게으른 변조에 대해 tamper-evident" 이지, "로컬 쓰기 권한을 가진 결연한 공격자에 대해 tamper-proof" 는 아니다(그 공격자는 소스를 직접 고치고 게이트를 건너뛸 수도 있다). 이 한계를 닫으려면 audit anchor 를 git commit 등 외부 불변 참조에 결박해야 한다(향후 과제).
 
 ### 3.11 architecture rules (Phase QF 신규, 4종)
 
