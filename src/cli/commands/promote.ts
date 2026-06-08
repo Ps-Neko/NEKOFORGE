@@ -73,7 +73,7 @@ export function registerPromote(program: Command): void {
         if (!fxCheck.ok) { const e = new Error(`INVALID_TRIAL: ${fxCheck.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
         const rule = await loadCandidateRule(cand);
         const readManifest = async () => readPromotedManifest(deps.artifact);
-        const active = await loadActiveRules(readManifest);
+        const active = await loadActiveRules(readManifest, undefined, deps.cwd);
         const t = await runTrial(resolve(o.fixtures), [rule], { activeBaseline: active });
         const rec: TrialRecord = {
           baseline: pick(t.baseline), candidate: pick(t.candidate),

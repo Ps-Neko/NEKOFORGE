@@ -5,7 +5,7 @@
  */
 import { mkdir, readFile, writeFile, appendFile, stat } from "node:fs/promises";
 import { dirname, join, isAbsolute } from "node:path";
-import { harnessRoot, withinHarness } from "../utils/paths.js";
+import { harnessRoot, withinHarness, realWithinHarness } from "../utils/paths.js";
 import type { ArtifactReader, ArtifactWriter } from "./types.js";
 import type { SchemaValidator } from "../schemas/loader.js";
 
@@ -35,6 +35,10 @@ export class FsArtifact implements ArtifactReader, ArtifactWriter {
     // `..` 정규화로 .harness/ 밖으로 탈출하는 것을 차단(B 감사 — withinHarness 연결).
     if (!withinHarness(abs, this.cwd)) {
       throw new Error(`artifact path escapes .harness/: ${relativePath}`);
+    }
+    // 심링크/정션 탈출 차단 — 문자열상 .harness/ 안이라도 링크가 루트 밖을 가리키면 거부.
+    if (!realWithinHarness(abs, this.cwd)) {
+      throw new Error(`artifact path escapes .harness/ via a symlink: ${relativePath}`);
     }
     return abs;
   }

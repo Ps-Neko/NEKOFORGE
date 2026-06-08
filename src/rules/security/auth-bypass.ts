@@ -3,6 +3,7 @@
  */
 import type { DeterministicRule, RuleFinding } from "../types.js";
 import { makeFinding } from "../types.js";
+import { astAuthBypassFindings, dedupeFindings } from "./ast-scan.js";
 
 const RULE_ID = "auth-bypass";
 
@@ -84,7 +85,9 @@ export const authBypassRule: DeterministicRule = {
           }
         }
       });
+      // AST 보강 — 정규식이 놓치는 정적 항상-참 가드(if (1===1), if (!false) 등).
+      findings.push(...astAuthBypassFindings(f.addedLines, f.path, RULE_ID));
     }
-    return findings;
+    return dedupeFindings(findings);
   }
 };
