@@ -40,6 +40,23 @@ test("secret-fallback: ALL_CAPS assignment with literal triggers critical", asyn
   assert.equal(out.length, 1);
 });
 
+test("secret-fallback: AST catches string-concatenation env fallback (regex misses)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/config.ts", {
+        addedLines: [
+          'const key = process.env.API_KEY || "sk-" + "test-fallback-12345";'
+        ]
+      })
+    ])
+  });
+  const out = await secretFallbackRule.run(ctx);
+  assert.ok(
+    out.some((f) => f.severity === "critical"),
+    "concatenated fallback secret should be flagged"
+  );
+});
+
 test("secret-fallback: empty fallback is ignored", async () => {
   const ctx = mockCtx({
     diff: diffOf([
