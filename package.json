@@ -42,7 +42,7 @@
     "prepublishOnly": "npm run build",
     "start": "node dist/src/cli/index.js",
     "dev": "tsx src/cli/index.ts",
-    "test": "node --test --import tsx tests/**/*.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src tests",
     "depcheck": "depcruise --config depcruise.config.cjs src",
