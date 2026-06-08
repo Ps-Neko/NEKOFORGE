@@ -117,7 +117,19 @@ export async function runApply(
         "(If audit.jsonl was deleted, it cannot be restored; re-run gate.)"
     );
   }
-  const { rawText: auditText } = await readAuditChain(deps.cwd);
+  // audit chain 무결성 재검증 — gate 만 검증하던 것을 apply 에서도 강제한다.
+  // 단일 라인 재작성(decisionHash 는 그대로 두고 다른 라인을 고쳐 우회)을 차단한다.
+  // gate 는 자기 실행 중에만 chain 을 검증했으므로, gate→apply 사이의 변조가
+  // 정작 가장 중요한 순간(apply)에 무방비였다. valid 를 더 이상 버리지 않는다.
+  const { valid: auditChainValid, rawText: auditText } = await readAuditChain(
+    deps.cwd
+  );
+  if (!auditChainValid) {
+    throw new ApplyPrecondError(
+      "audit.jsonl chain integrity check failed: the audit trail was modified " +
+        "after it was written (line_hash/prev_hash mismatch). Re-run `harness gate`."
+    );
+  }
   const anchoredHash = extractLastDecisionHash(auditText);
   if (anchoredHash !== null && canonicalHash(decision) !== anchoredHash) {
     throw new ApplyPrecondError(

@@ -6,7 +6,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   seedHarness,
@@ -502,6 +502,64 @@ test("T-SEC-17: audit.jsonl deleted after gate → apply refused (integrity bypa
     assert.ok(
       /audit\.jsonl is missing/i.test((err as Error).message),
       `expected audit.jsonl missing message, got: ${(err as Error).message}`
+    );
+  }
+});
+
+// ===== T-SEC-18 audit chain single-line rewrite → apply refused =============
+// Attack vector (the "un-foolable verdict" gap): an attacker with .harness/ write
+// access edits one audit.jsonl line. The last gate_verdict's decisionHash is left
+// intact (still equals canonicalHash(decision.json)), so the existing decision-hash
+// check at apply PASSES. Only chain integrity (line_hash/prev_hash) is broken.
+// Before this fix apply discarded the `valid` field and proceeded. Now apply must
+// re-validate the chain and refuse.
+test("T-SEC-18: tampered audit line (chain broken, decisionHash intact) → apply refused", async (t) => {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+  await writeLastDiff(
+    ws.cwd,
+    diffLines(
+      "diff --git a/src/foo.ts b/src/foo.ts",
+      "@@ -1 +1 @@",
+      "-export const x = 1;",
+      "+export const x = 2;"
+    )
+  );
+  await runGate(GATE_OPTS, ws.deps);
+  const d = await readDecision(ws.cwd);
+  assert.ok(
+    d.verdict === "PASS" || d.verdict === "PASS_WITH_WARNINGS",
+    `expected PASS-family verdict, got ${d.verdict}`
+  );
+
+  // Edit the gate_verdict line's content WITHOUT touching decisionHash and
+  // WITHOUT recomputing line_hash. decision.json is left intact, so the
+  // decision-hash check still passes — only the chain (line_hash recomputation)
+  // can detect this edit.
+  const auditPath = join(ws.cwd, ".harness", "audit.jsonl");
+  const lines = (await readFile(auditPath, "utf8"))
+    .split("\n")
+    .filter((l) => l.length > 0);
+  assert.ok(lines.length >= 1, "gate should append a gate_verdict audit line");
+  const gv = JSON.parse(lines[0]!) as Record<string, unknown>;
+  assert.equal(gv.type, "gate_verdict", "first audit line should be the gate_verdict");
+  gv.injected = "tamper"; // content changes but line_hash is NOT recomputed
+  lines[0] = JSON.stringify(gv);
+  await writeFile(auditPath, lines.join("\n") + "\n", "utf8");
+
+  try {
+    await runApply({ approved: true }, ws.deps);
+    assert.fail("apply must refuse when audit chain integrity is broken");
+  } catch (err) {
+    assert.ok(
+      err instanceof ApplyPrecondError,
+      `expected ApplyPrecondError, got ${String(err)}`
+    );
+    assert.equal((err as ApplyPrecondError).exitCode, 2);
+    assert.match(
+      (err as Error).message,
+      /chain integrity/i,
+      `expected chain-integrity rejection, got: ${(err as Error).message}`
     );
   }
 });
