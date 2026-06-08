@@ -564,6 +564,61 @@ test("T-SEC-18: tampered audit line (chain broken, decisionHash intact) → appl
   }
 });
 
+// ===== T-SEC-19 evaluated diff swapped after gate → apply refused ===========
+// Attack vector: gate evaluates last-diff.patch and anchors canonicalHash(diff)
+// as inputDiffHash in the gate_verdict. Previously apply never read inputDiffHash,
+// so an attacker could let a benign diff pass gate, then swap last-diff.patch for
+// a malicious one before apply — decision.json + audit chain stay intact. apply now
+// re-binds the gated diff: its current content hash must equal the anchored
+// inputDiffHash.
+test("T-SEC-19: last-diff.patch swapped after gate → apply refused", async (t) => {
+  const ws = await seedHarness();
+  t.after(ws.cleanup);
+  await writeLastDiff(
+    ws.cwd,
+    diffLines(
+      "diff --git a/src/foo.ts b/src/foo.ts",
+      "@@ -1 +1 @@",
+      "-export const x = 1;",
+      "+export const x = 2;"
+    )
+  );
+  await runGate(GATE_OPTS, ws.deps);
+  const d = await readDecision(ws.cwd);
+  assert.ok(
+    d.verdict === "PASS" || d.verdict === "PASS_WITH_WARNINGS",
+    `expected PASS-family verdict, got ${d.verdict}`
+  );
+
+  // Swap the evaluated diff for a different one. decision.json and audit.jsonl
+  // are left untouched, so both the decision-hash and chain checks still pass.
+  await writeLastDiff(
+    ws.cwd,
+    diffLines(
+      "diff --git a/src/evil.ts b/src/evil.ts",
+      "@@ -1 +1 @@",
+      "-export const y = 1;",
+      "+export const y = 2;"
+    )
+  );
+
+  try {
+    await runApply({ approved: true }, ws.deps);
+    assert.fail("apply must refuse when the gated diff was swapped after gate");
+  } catch (err) {
+    assert.ok(
+      err instanceof ApplyPrecondError,
+      `expected ApplyPrecondError, got ${String(err)}`
+    );
+    assert.equal((err as ApplyPrecondError).exitCode, 2);
+    assert.match(
+      (err as Error).message,
+      /last-diff\.patch integrity|inputDiffHash/i,
+      `expected diff-binding rejection, got: ${(err as Error).message}`
+    );
+  }
+});
+
 async function rmFile(path: string): Promise<void> {
   const { rm } = await import("node:fs/promises");
   await rm(path, { force: true });
