@@ -79,3 +79,40 @@ test("auth-bypass: if (request.userId) is not flagged", async () => {
   const out = await authBypassRule.run(ctx);
   assert.equal(out.length, 0);
 });
+
+test("auth-bypass: AST catches if (1 === 1) bypass (regex misses)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/route.ts", {
+        addedLines: ["  if (1 === 1) return next();"]
+      })
+    ])
+  });
+  const out = await authBypassRule.run(ctx);
+  assert.ok(out.some((f) => f.severity === "critical"));
+});
+
+test("auth-bypass: AST catches if (!false) bypass (regex misses)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/route.ts", {
+        addedLines: ["  if (!false) return next();"]
+      })
+    ])
+  });
+  const out = await authBypassRule.run(ctx);
+  assert.ok(out.some((f) => f.severity === "critical"));
+});
+
+test("auth-bypass: legitimate constant-false guard is not flagged", async () => {
+  // if (false) is dead code, not an auth *bypass* — must not trigger.
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/route.ts", {
+        addedLines: ["  if (1 === 2) return next();"]
+      })
+    ])
+  });
+  const out = await authBypassRule.run(ctx);
+  assert.equal(out.length, 0);
+});

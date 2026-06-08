@@ -3,6 +3,7 @@
  */
 import type { DeterministicRule, RuleFinding } from "../types.js";
 import { makeFinding } from "../types.js";
+import { astSecretFallbackFindings, dedupeFindings } from "./ast-scan.js";
 
 const RULE_ID = "secret-fallback";
 
@@ -93,7 +94,9 @@ export const secretFallbackRule: DeterministicRule = {
       f.addedLines.forEach((line, idx) => {
         findings.push(...inspectLine(line, f.path, idx));
       });
+      // AST 보강 — 정규식이 놓치는 문자열 연결/템플릿 fallback 시크릿.
+      findings.push(...astSecretFallbackFindings(f.addedLines, f.path, RULE_ID));
     }
-    return findings;
+    return dedupeFindings(findings);
   }
 };

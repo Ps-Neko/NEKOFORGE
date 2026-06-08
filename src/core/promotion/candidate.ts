@@ -1,4 +1,4 @@
-import { isAbsolute } from "node:path";
+import { isAbsolute, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { canonicalHash } from "../../utils/integrity.js";
 import type { DeterministicRule } from "../../rules/types.js";
@@ -10,6 +10,15 @@ export type ModuleImporter = (modulePath: string) => Promise<Record<string, unkn
 const defaultImporter: ModuleImporter = (p) =>
   import(isAbsolute(p) ? pathToFileURL(p).href : p) as Promise<Record<string, unknown>>;
 
+/** modulePath 가 root(프로젝트 루트) 안에 있는지. import 전 RCE 봉쇄용 경계 검사. */
+function moduleWithinRoot(modulePath: string, root: string): boolean {
+  const absRoot = resolve(root);
+  const abs = isAbsolute(modulePath)
+    ? resolve(modulePath)
+    : resolve(absRoot, modulePath);
+  return abs === absRoot || abs.startsWith(absRoot + sep);
+}
+
 function isDeterministicRule(v: unknown): v is DeterministicRule {
   return (
     !!v &&
@@ -20,11 +29,24 @@ function isDeterministicRule(v: unknown): v is DeterministicRule {
   );
 }
 
-/** 후보 모듈을 dynamic import 해 DeterministicRule 로 반환. importer 주입 가능(테스트). */
+/**
+ * 후보 모듈을 dynamic import 해 DeterministicRule 로 반환. importer 주입 가능(테스트).
+ *
+ * root 가 주어지면 import 전에 modulePath 가 프로젝트 루트 안에 있는지 검사한다.
+ * promoted.json(.harness/ 내부 파일)이 변조돼 modulePath 가 /tmp/evil.js 등 루트
+ * 밖 임의 파일을 가리키면 gate 실행 시점에 그 파일이 import=실행된다(RCE). 루트
+ * 경계를 강제해 이 경로를 봉쇄한다.
+ */
 export async function loadCandidateRule(
   candidate: CandidateDef,
-  importer: ModuleImporter = defaultImporter
+  importer: ModuleImporter = defaultImporter,
+  root?: string
 ): Promise<DeterministicRule> {
+  if (root !== undefined && !moduleWithinRoot(candidate.modulePath, root)) {
+    throw new Error(
+      `candidate ${candidate.id}: modulePath "${candidate.modulePath}" escapes the project root (${resolve(root)}) — refusing dynamic import`
+    );
+  }
   const mod = await importer(candidate.modulePath);
   const rule = mod[candidate.exportName];
   if (!isDeterministicRule(rule)) {

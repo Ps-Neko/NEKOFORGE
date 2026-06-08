@@ -12,7 +12,11 @@ import type { StageDeps } from "../stage-runner.js";
 import { evaluateAutoApplyBlock } from "../../rules/process/auto-apply-block.js";
 import { isoNow } from "../../utils/time.js";
 import { appendAuditEvent, readAuditChain } from "../../utils/audit.js";
-import { canonicalHash, extractLastDecisionHash } from "../../utils/integrity.js";
+import {
+  canonicalHash,
+  extractLastDecisionHash,
+  extractLastInputDiffHash
+} from "../../utils/integrity.js";
 import { readGitDiff } from "../../utils/git.js";
 import { runHooks } from "../../hooks/runner.js";
 import type { Hook } from "../../hooks/types.js";
@@ -117,13 +121,42 @@ export async function runApply(
         "(If audit.jsonl was deleted, it cannot be restored; re-run gate.)"
     );
   }
-  const { rawText: auditText } = await readAuditChain(deps.cwd);
+  // audit chain 무결성 재검증 — gate 만 검증하던 것을 apply 에서도 강제한다.
+  // 단일 라인 재작성(decisionHash 는 그대로 두고 다른 라인을 고쳐 우회)을 차단한다.
+  // gate 는 자기 실행 중에만 chain 을 검증했으므로, gate→apply 사이의 변조가
+  // 정작 가장 중요한 순간(apply)에 무방비였다. valid 를 더 이상 버리지 않는다.
+  const { valid: auditChainValid, rawText: auditText } = await readAuditChain(
+    deps.cwd
+  );
+  if (!auditChainValid) {
+    throw new ApplyPrecondError(
+      "audit.jsonl chain integrity check failed: the audit trail was modified " +
+        "after it was written (line_hash/prev_hash mismatch). Re-run `harness gate`."
+    );
+  }
   const anchoredHash = extractLastDecisionHash(auditText);
   if (anchoredHash !== null && canonicalHash(decision) !== anchoredHash) {
     throw new ApplyPrecondError(
       "decision.json integrity check failed: content hash does not match the value " +
         "anchored in audit.jsonl by gate (decision.json edited after gate?)"
     );
+  }
+
+  // 입력 diff 결박 — gate 가 평가한 last-diff.patch 의 content hash(inputDiffHash)를
+  // audit 에 박아둔다. 이전에는 apply 가 이 값을 전혀 읽지 않아, 양성 diff 로 gate 를
+  // 통과시킨 뒤 last-diff.patch 를 악성으로 바꿔치기해도 decision.json 해시는 그대로라
+  // 통과했다. 이제 gate 가 판정한 바로 그 diff 가 사후에 바뀌지 않았음을 강제한다.
+  // (legacy: inputDiffHash 가 없는 구버전 gate 는 null → 기존 동작 유지)
+  const anchoredDiffHash = extractLastInputDiffHash(auditText);
+  if (anchoredDiffHash !== null) {
+    const gatedDiff = (await deps.artifact.readMarkdown("last-diff.patch")) ?? "";
+    if (canonicalHash(gatedDiff) !== anchoredDiffHash) {
+      throw new ApplyPrecondError(
+        "last-diff.patch integrity check failed: the diff gate evaluated was changed " +
+          "or removed after gate (its content hash no longer matches the inputDiffHash " +
+          "anchored in audit.jsonl). Re-run `harness gate`."
+      );
+    }
   }
 
   // Codex review #3 (Critical #1) — Evidence before Apply.

@@ -56,3 +56,26 @@ export function extractLastDecisionHash(auditText: string): string | null {
   }
   return null;
 }
+
+/**
+ * audit.jsonl 텍스트에서 가장 마지막 gate_verdict 라인의 inputDiffHash 를 꺼낸다.
+ * gate 가 평가한 입력 diff(last-diff.patch)의 canonical sha256. 없으면 null(legacy gate).
+ * apply 가 이 값으로 "gate 가 평가한 diff" 가 사후에 바뀌지 않았음을 결박한다.
+ */
+export function extractLastInputDiffHash(auditText: string): string | null {
+  const lines = auditText.split("\n").filter((l) => l.length > 0);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(lines[i]!) as {
+        type?: string;
+        inputDiffHash?: string;
+      };
+      if (parsed.type === "gate_verdict" && typeof parsed.inputDiffHash === "string") {
+        return parsed.inputDiffHash;
+      }
+    } catch {
+      // 깨진 라인은 건너뛴다(chain 검증은 별도 책임).
+    }
+  }
+  return null;
+}

@@ -48,9 +48,10 @@ async function readPromotedManifestAt(cwd: string): Promise<PromotedManifest | n
   }
 }
 
-/** 현 cwd 기준 채용분 rule(런타임 동적 로딩). gate 의 rule 순회에 합류. */
+/** 현 cwd 기준 채용분 rule(런타임 동적 로딩). gate 의 rule 순회에 합류.
+ * root=cwd 로 modulePath 를 프로젝트 루트 안으로 봉쇄한다(promoted.json 변조 RCE 차단). */
 export async function loadPromotedForCwd(cwd: string) {
-  return loadPromotedRules(() => readPromotedManifestAt(cwd));
+  return loadPromotedRules(() => readPromotedManifestAt(cwd), undefined, cwd);
 }
 
 /** 테스트/관측용: 활성 rule id 목록(ALL_RULES + promoted). */
