@@ -35,7 +35,7 @@ export function registerBenchmark(program: Command): void {
             return null;
           }
         };
-        const active = await loadActiveRules(readManifest);
+        const active = await loadActiveRules(readManifest, undefined, cwd);
         const r = await runBenchmarkWithRules(root, active, opts.group);
         const hroot = harnessRoot(cwd);
         await mkdir(hroot, { recursive: true });
