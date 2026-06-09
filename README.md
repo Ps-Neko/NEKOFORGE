@@ -3,7 +3,7 @@
 [![CI](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org/)
-[![Version](https://img.shields.io/badge/version-0.5.0--alpha.6-blue.svg)](RELEASE-NOTES.md)
+[![Version](https://img.shields.io/badge/version-0.5.0--alpha.7-blue.svg)](RELEASE-NOTES.md)
 
 > **기존 소스를 AI 작업 맥락으로 바꾸고, AI가 만든 변경을 적용 전에 검증·기록하는 로컬 하네스.**
 > NEKOFORGE는 프로젝트를 읽어 **Claude·Codex·Cursor 어디에든** 줄 맥락과 작업 패킷을 만들고(생산성),
@@ -76,7 +76,7 @@ NEKOFORGE = 기존 소스와 프로젝트 맥락을 활용해 AI 개발 생산�
 
 ## 현재 상태
 
-- `v0.5.0-alpha.6` — npm 에 **alpha 태그**로 배포: `npx nekoforge@alpha …`
+- `v0.5.0-alpha.7` — npm 에 **alpha 태그**로 배포: `npx nekoforge@alpha …`
 - 30개 명령 + 서브커맨드 (핵심 흐름은 `prepare` 하나로 끝납니다)
 - 35개 deterministic rule
 - Rule Pack 13종, Skill Pack 13종

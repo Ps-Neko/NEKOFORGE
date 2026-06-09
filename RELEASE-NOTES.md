@@ -1,5 +1,25 @@
 # RELEASE NOTES
 
+## v0.5.0-alpha.7 — Senior-Review Hardening: CI 게이트 복원 + 해자 무결성 + AST 보강 룰 (2026-06-09)
+
+6/08 전면 평가(8차원 다중에이전트 리뷰 + 적대적 재검증)에서 드러난 회귀·해자 누수를
+"시니어가 만족할 때까지" 닫은 하드닝 릴리스. **직전 alpha.6 발행본(2026-06-04)에는 이
+하드닝이 빠져 있었으므로**, 본 릴리스로 사용자에게 반영한다.
+
+| 영역 | 변경 |
+|---|---|
+| 🔴 CI 게이트 복원 | 테스트 디스커버리를 `scripts/run-tests.mjs`(fs 기반)로 근본 수정 — 0개 발견 시 fail. 기존 글롭 버그로 ubuntu CI 에서 86 파일 중 27 개(해자 테스트 다수)만 실행되고도 green 이던 회귀를 제거. CI = `npm run verify` 로 로컬/CI 패리티, node22 |
+| 🟠 해자 무결성 | `apply` 가 audit chain `valid` 재검증(단일라인 우회 차단, T-SEC-18) + `inputDiffHash` 로 `last-diff.patch` 결박(gate 후 diff 바꿔치기 차단, T-SEC-19) + promoted-rule 동적 import 프로젝트 루트 봉쇄(gate-time RCE) + `withinHarness` realpath 심링크/정션 차단 |
+| 🟠 룰 AST 보강 | `acorn` 도입(regex 위 레이어, dedup) — `secret-fallback` / `auth-bypass` 가 `if(1===1)` · `!false` · 문자열 concat secret 까지 탐지 |
+| 테스트 | `gate --strict` CLI spawn 통합 테스트 추가. **verify 505 pass / 0 fail** |
+| 문서 | `SECURITY.md` 에 apply-시점 방어 + 정직한 위협 경계 명시 |
+| 의존성 | 3 → 4 (`acorn` 추가) |
+| 벤치마크 | 30/30 fixture · recall 1.00 · FP 0.00 |
+
+검증 출처: 6/08 다중에이전트 평가 + 적대적 재검증 → 후속 시니어 리뷰 하드닝(PR #47, 8커밋 TDD, squash 머지). 독립 self-review/codex 관점 포함. 종합 점수 6.5 → ~7.5.
+
+> ⚠️ 정직한 경계(미구현, defer): 외부 git-commit 신뢰 앵커(chain+anchor 동시 재작성 차단), placeholder 19룰 TP/TN, 자동 발행 워크플로.
+
 ## v0.5.0-alpha.6 — Dispatch × Source Map Integration (2026-05-28)
 
 source-map artifact 가 마지막 stage(`dispatch`)까지 흘러들어가는 체이닝
