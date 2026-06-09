@@ -2,7 +2,7 @@
  * gate 단계: deterministic rule + review + tests 종합 → verdict.
  * 출력: REPORT.md + .harness/decision.json (schema 검증 통과 필수).
  *
- * runGate 본문은 위상별 헬퍼(run-helpers.ts)로 분리되어 있다.
+ * runGate 본문은 위상별 헬퍼(phase-*.ts)로 분리되어 있다.
  * 공개 인터페이스(GateInput/GateResult/runGate 시그니처)는 변경 없음.
  */
 import type { StageDeps } from "../stage-runner.js";
@@ -12,20 +12,19 @@ export { resolveReviewStatus, inferTestStatusFromHooks } from "./evidence.js";
 export { loadPromotedForCwd, collectActiveRuleIds } from "./rules-run.js";
 
 import { type Verdict } from "./verdict.js";
+import { checkEvidenceAndCells, readArtifactsAndBuildCtx } from "./phase-inputs.js";
+import { runRulesAndAudit } from "./phase-rules.js";
 import {
-  checkEvidenceAndCells,
-  readArtifactsAndBuildCtx,
-  runRulesAndAudit,
   evaluateQualityContract,
   evaluateWorkerFactory,
   evaluatePacks,
-  computeFinalVerdict,
-  assembleDecision,
-  writeGateOutputs,
-  type GateInput
-} from "./run-helpers.js";
+  computeFinalVerdict
+} from "./phase-synthesis.js";
+import { assembleDecision } from "./phase-decision.js";
+import { writeGateOutputs } from "./phase-outputs.js";
+import type { GateInput } from "./gate-types.js";
 
-// GateInput 은 run-helpers.ts 에서 정의 — 순환 방지를 위해 여기서 재노출.
+// GateInput 은 gate-types.ts 에서 정의 — 순환 방지를 위해 여기서 재노출.
 export type { GateInput };
 
 export interface GateResult {

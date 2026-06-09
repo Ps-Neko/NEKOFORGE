@@ -2,18 +2,21 @@
 
 > 우선순위별 개선 목록. ROADMAP §9 의 마일스톤(M0~M8)은 모두 도달했고, 이후 경로는
 > 대부분 외부 검증 게이트라 **"내부에서 지금 가능" vs "외부 수요 대기"** 로 나눈다.
-> 작성 기준: `v0.5.0-alpha.6` (2026-06).
+> 작성 기준: `v0.5.0-alpha.6` (2026-06). 갱신: `v0.5.0-alpha.7` (2026-06-09, npm 발행 완료).
 
 ## P0 — 즉시
 
-- [ ] 커밋 1·2·3 반영 (버전 alpha.6 / CLI 개수 30 / 룰 폴더 정리)
-- [ ] `RELEASE-NOTES.md` 에 alpha.6 항목 추가 (버전·CLI 30·룰 폴더 security/process 정리)
+- [x] 커밋 1·2·3 반영 (버전 / CLI 개수 / 룰 폴더 정리) — 완료, alpha.7 발행
+- [x] `RELEASE-NOTES.md` 항목 — alpha.6·alpha.7 모두 기재 완료
 
 ## P1 — 내부 개선 (외부 의존 없음)
 
-- [ ] **`gate/index.ts` 모듈화** — 1,075줄(2위 파일 361줄의 3배). 책임별 분리:
-      rule 실행 / verdict·score 합성 / evidence·schema 검증 / REPORT 렌더.
-      현재 439 테스트 안전망 확보 → 리팩터 적기.
+- [x] **gate 모듈화 (2026-06-09 완료)** — index.ts 는 이전에 이미 9단계 오케스트레이터로
+      분리됐고("1,075줄"은 그 시점 stale), 잔여 거대 파일 `run-helpers.ts`(978줄, src 최대)를
+      책임별 6파일로 분해: `gate-types`(공유 타입) / `phase-inputs`(증거·artifact) /
+      `phase-rules`(룰·audit) / `phase-synthesis`(quality·worker·pack·verdict 합성) /
+      `phase-decision`(decision JSON) / `phase-outputs`(산출·audit event).
+      gate/ 최대 파일 978→328, src 최대 978→532. 505 테스트 green, 행동 100% 보존.
 - [ ] Quality Score 정성(LLM) 평가 2차 — `QUALITY-SCORE.md` 보류 항목 구현.
 - [ ] Benchmark 외부 fixture 일반화 — 현재 local fixtures 30개 한정(recall 1.000/FP 0.000).
 
