@@ -32,10 +32,10 @@ $ node dist/src/cli/index.js demo safety --clean
 ```bash
 $ npm link
 $ nekoforge --version          # (또는 harness — 같은 명령)
-0.5.0-alpha.6
+0.5.0-alpha.7
 ```
 
-## 1-B. 1-shot 시작 — 가장 빠른 entry (1 분, v0.5.0-alpha.6+)
+## 1-B. 1-shot 시작 — 가장 빠른 entry (1 분, v0.5.0-alpha.7+)
 
 본인 프로젝트에서 한 줄로 시작:
 

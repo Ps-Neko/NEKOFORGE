@@ -22,10 +22,10 @@ $ npm run build
 ```bash
 $ npm link
 $ nekoforge --version
-0.5.0-alpha.6
+0.5.0-alpha.7
 ```
 
-## 1-B. 가장 빠른 1줄 시작 (1 분, v0.5.0-alpha.6+)
+## 1-B. 가장 빠른 1줄 시작 (1 분, v0.5.0-alpha.7+)
 
 본인 프로젝트에서 한 줄로 작업 패킷 생성:
 
