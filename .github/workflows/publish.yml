@@ -1,0 +1,80 @@
+# npm 발행 워크플로 — 사람이 명시적으로 트리거(workflow_dispatch)할 때만 실행.
+#
+# 설계 의도:
+#   - NEKOFORGE 비-목표("자동 commit/push/deploy")를 지키려 push/tag 자동 발행은 두지 않는다.
+#     사람이 버전을 올리고(package.json + src/version.ts) 커밋·푸시한 뒤, 이 워크플로를 실행한다.
+#   - 인증은 npm OIDC **Trusted Publishing** — 장기 토큰도 2FA OTP 도 필요 없다.
+#   - 발행 전 `npm run verify` 게이트를 강제한다(red 빌드는 발행되지 않는다).
+#
+# ── 1회 설정 (한 번만, npmjs.com 에서) ──────────────────────────────────────
+#   npmjs.com → `nekoforge` 패키지 → Settings → "Trusted Publisher" → GitHub Actions:
+#     Organization or user : Ps-Neko
+#     Repository           : NEKOFORGE
+#     Workflow filename    : publish.yml
+#     Environment          : (비움)
+#   저장하면 이후 이 워크플로의 `npm publish` 가 토큰 없이 통과한다.
+#
+# ── 실행 ────────────────────────────────────────────────────────────────────
+#   Actions 탭 → "publish" → Run workflow  (또는 `gh workflow run publish.yml -f tag=alpha`)
+#   - dry_run=true 로 먼저 돌리면 trusted publisher 설정 전에도 verify+build+pack 까지 검증 가능.
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm dist-tag (예: alpha / latest)"
+        required: false
+        default: "alpha"
+      dry_run:
+        description: "true 면 실제 발행 없이 verify + npm publish --dry-run 까지만"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC trusted publishing + provenance attestation
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      # OIDC trusted publishing 은 npm >= 11.5.1 필요(node22 기본 npm 은 10.x).
+      - name: Update npm
+        run: npm install -g npm@latest
+      # 발행 전 게이트 — package.json 의 `verify` 와 1:1(typecheck+lint+depcheck+deadexports+test).
+      - name: Verify (typecheck + lint + depcheck + deadexports + tests)
+        run: npm run verify
+      - name: Build
+        run: npm run build
+      # 이미 발행된 버전이면 빠르게 실패(친절한 안내). dry-run 테스트는 통과시킨다.
+      - name: Guard — refuse to republish an existing version
+        if: ${{ !inputs.dry_run }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          echo "target: $NAME@$VER  (tag: ${{ inputs.tag }})"
+          if npm view "$NAME@$VER" version > /dev/null 2>&1; then
+            echo "::error::$NAME@$VER 는 이미 npm 에 존재합니다. package.json 과 src/version.ts 버전을 먼저 올리세요."
+            exit 1
+          fi
+      - name: Publish (dry-run)
+        if: ${{ inputs.dry_run }}
+        run: npm publish --tag "${{ inputs.tag }}" --provenance --access public --dry-run
+      - name: Publish to npm (OIDC — no token, no 2FA)
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --tag "${{ inputs.tag }}" --provenance --access public
