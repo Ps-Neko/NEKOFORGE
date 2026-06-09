@@ -49,6 +49,22 @@ const BYPASS_PATTERNS: Array<{ re: RegExp; msg: string }> = [
   { re: /\bif\s+os\.Getenv\(['"]ENV['"]\)\s*!=\s*['"]production['"]/, msg: "go non-production conditional auth" }
 ];
 
+/**
+ * 주석·문자열-only 라인인지. 이런 라인의 토큰은 실제 코드가 아니므로 카운팅에서 제외한다.
+ * (진짜 `requireAuth(` 삭제를, 같은 토큰을 언급한 주석/문자열 추가로 상쇄해 가리는 마스킹 방지.)
+ */
+function isCommentOrStringOnly(line: string): boolean {
+  const t = line.trim();
+  if (t === "") return false;
+  // 라인 주석/블록 주석 시작.
+  if (t.startsWith("//") || t.startsWith("#") || t.startsWith("*") || t.startsWith("/*")) {
+    return true;
+  }
+  // 순수 문자열 리터럴 라인 (따옴표로 시작/끝, 후행 콤마/세미콜론 허용).
+  if (/^(['"`]).*\1[,;]?$/.test(t)) return true;
+  return false;
+}
+
 export const authBypassRule: DeterministicRule = {
   id: RULE_ID,
   describe: "인증/인가 우회 또는 미들웨어 제거 탐지",
@@ -58,9 +74,11 @@ export const authBypassRule: DeterministicRule = {
     for (const f of ctx.diff.files) {
       if (f.status === "deleted") continue;
 
+      const realAdded = f.addedLines.filter((l) => !isCommentOrStringOnly(l));
+      const realDeleted = f.deletedLines.filter((l) => !isCommentOrStringOnly(l));
       for (const token of AUTH_TOKENS) {
-        const removedCount = f.deletedLines.filter((l) => l.includes(token)).length;
-        const addedCount = f.addedLines.filter((l) => l.includes(token)).length;
+        const removedCount = realDeleted.filter((l) => l.includes(token)).length;
+        const addedCount = realAdded.filter((l) => l.includes(token)).length;
         if (removedCount > addedCount) {
           findings.push(
             makeFinding(

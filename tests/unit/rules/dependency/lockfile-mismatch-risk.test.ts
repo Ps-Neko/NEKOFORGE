@@ -106,3 +106,66 @@ test("lockfile-mismatch: nested package.json with nested lockfile is clean", asy
     "nested lockfile in the same diff must suppress the finding"
   );
 });
+
+// GAP 1 (FP): a bare top-level "version": "2.0.0" bump matches the numeric
+// dep-value pattern but is NOT a dependency change. With section awareness the
+// top-level meta key must not be read as a dependency change -> no finding.
+test("lockfile-mismatch: top-level version bump is not a dep change (no FP)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "version": "2.0.0",'],
+        deletedLines: ['  "version": "1.9.3",']
+      })
+    ])
+  });
+  const out = await lockfileMismatchRiskRule.run(ctx);
+  assert.equal(
+    out.filter((f) => f.ruleId === RULE_ID).length,
+    0,
+    "a version bump alone must not be flagged as a missing-lockfile dep change"
+  );
+});
+
+// GAP 1 (FP): a numeric value inside the scripts section (e.g. a node version arg)
+// must not be read as a dependency change.
+test("lockfile-mismatch: numeric value inside scripts section is not a dep change", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: [
+          '  "scripts": {',
+          '    "node18": "8080 server.js",'
+        ]
+      })
+    ])
+  });
+  const out = await lockfileMismatchRiskRule.run(ctx);
+  assert.equal(
+    out.filter((f) => f.ruleId === RULE_ID).length,
+    0,
+    "a scripts-section line must not be read as a dep change"
+  );
+});
+
+// GAP 2 (FN): a git/tarball/npm-alias/github dependency spec whose value does NOT
+// start with ^/~/digit was missed by the old numeric-only pattern. With the spec
+// patterns added (and no lockfile), the warning must now fire.
+test("lockfile-mismatch: git/github/npm-alias dep without lockfile triggers warning", async () => {
+  for (const spec of [
+    '    "a": "git+https://github.com/u/a.git",',
+    '    "b": "github:user/repo#semver:^1.0.0",',
+    '    "c": "npm:@scope/real@^1.2.3",',
+    '    "d": "https://example.com/pkg.tgz",',
+    '    "e": "file:../local-pkg"'
+  ]) {
+    const ctx = mockCtx({
+      diff: diffOf([fc("package.json", { addedLines: [spec] })])
+    });
+    const out = await lockfileMismatchRiskRule.run(ctx);
+    assert.ok(
+      out.some((f) => f.ruleId === RULE_ID && f.severity === "warning"),
+      `expected a warning for non-numeric dep spec: ${spec}`
+    );
+  }
+});

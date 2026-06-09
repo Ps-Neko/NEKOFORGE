@@ -29,9 +29,10 @@ const FORBIDDEN_IMPORTS: Array<{
     reason: "integrations → core forbidden",
     severity: "critical"
   },
-  // utils → core/cli
+  // utils → core/cli (최상위 leaf util 레이어에 한정 — core/**/utils 같은
+  // 하위 헬퍼 디렉터리는 제외).
   {
-    fromRe: /utils\//,
+    fromRe: /^(src\/)?utils\//,
     toRe: /from .*\.\.\/(core|cli)\//,
     reason: "utils → core/cli forbidden (leaf only)",
     severity: "high"
@@ -45,6 +46,18 @@ const FORBIDDEN_IMPORTS: Array<{
   }
 ];
 
+// import 문은 한 줄(`import .. from ..`)이거나, 멀티라인의 `from "..."` 마무리
+// 줄, 또는 `from .. import ..` (python-ish) 형태일 수 있다. 사전필터가 멀티라인의
+// from-only 줄을 떨어뜨려 위반을 놓치던 갭(GAP1)을 닫는다.
+function isImportLine(tline: string): boolean {
+  return (
+    /^import\b/.test(tline) ||
+    /^from\s+['"].*['"]/.test(tline) ||
+    /^}?\s*from\s+['"].*['"]/.test(tline) ||
+    /^from\s+\S+\s+import\b/.test(tline)
+  );
+}
+
 export const layerViolationRule: DeterministicRule = {
   id: RULE_ID,
   describe: "core/utils/integrations 의 의존성 규칙 침범 탐지",
@@ -54,8 +67,7 @@ export const layerViolationRule: DeterministicRule = {
       if (f.status === "deleted") continue;
       f.addedLines.forEach((line, idx) => {
         const tline = line.trim();
-        if (!/^import .* from /.test(tline) && !/^from .* import /.test(tline))
-          return;
+        if (!isImportLine(tline)) return;
         for (const p of FORBIDDEN_IMPORTS) {
           // 경로 컨텍스트: source file path 와 라인 둘 다 검사.
           if (p.fromRe.test(f.path) || p.fromRe.test(tline)) {

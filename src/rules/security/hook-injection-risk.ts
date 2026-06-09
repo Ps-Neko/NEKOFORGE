@@ -9,13 +9,14 @@ const RULE_ID = "hook-injection-risk";
 const HOOK_FILE_PATTERNS = [
   /(^|\/)\.harness\/hooks\.json$/,
   /(^|\/)\.husky\//,
+  /(^|\/)\.githooks\//,
   /(^|\/)\.lefthook\.ya?ml$/,
   /(^|\/)\.pre-commit-config\.ya?ml$/,
   /(^|\/)package\.json$/
 ];
 
 const LIFECYCLE_SCRIPT_RE =
-  /"(postinstall|preinstall|prepare|prepublish|prepublishOnly|precommit|postcommit)"\s*:/;
+  /"(postinstall|preinstall|prepare|prepublish|prepublishOnly|precommit|postcommit|prepack|postpack|postpublish)"\s*:/;
 
 export const hookInjectionRiskRule: DeterministicRule = {
   id: RULE_ID,

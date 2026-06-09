@@ -91,6 +91,39 @@ test("missing-release-note-risk: lowercase release-notes.md is recognized (case-
   assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
 });
 
+// GAP6 FP: CHANGELOG.md 로 문서화한 경우도 릴리스 노트로 인정 → 미발화
+test("missing-release-note-risk: CHANGELOG.md update satisfies the requirement", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/schemas/user.schema.ts", {
+        addedLines: ["export const userSchema = z.object({ id: z.string() });"]
+      }),
+      fc("CHANGELOG.md", {
+        addedLines: ["## 1.2.0", "- breaking: userSchema requires id"]
+      })
+    ])
+  });
+  const out = await missingReleaseNoteRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
+// GAP6 FP: HISTORY.md (대문자/소문자 무관) 도 표준 릴리스 문서로 인정 → 미발화
+test("missing-release-note-risk: HISTORY.md update satisfies the requirement", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "version": "1.2.0",'],
+        deletedLines: ['  "version": "1.1.0",']
+      }),
+      fc("docs/HISTORY.md", {
+        addedLines: ["- 1.2.0 release"]
+      })
+    ])
+  });
+  const out = await missingReleaseNoteRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
 // 경계 3(regex 회피): schema 처럼 보이지만 경로가 src/schemas/ 가 아니라 src/models/ → 미발화
 test("missing-release-note-risk: schema-like file outside src/schemas does not trigger", async () => {
   const ctx = mockCtx({

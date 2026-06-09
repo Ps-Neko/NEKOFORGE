@@ -17,8 +17,20 @@ const GO_GETENV_FALLBACK =
   /\b(?:GetEnvOrDefault|GetEnvDefault|EnvOrDefault|GetenvDefault)\s*\(\s*['"][A-Z][A-Z0-9_]*['"]\s*,\s*['"]([^'"]+)['"]\s*[,)]/g;
 const ASSIGN_SECRET =
   /\b([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASS|PWD|API|AUTH))\s*[:=]\s*['"]([^'"\s]{4,})['"]/g;
+// 공백 포함 패스프레이즈: `DB_PASSWORD = "correct horse battery staple"`.
+// ASSIGN_SECRET 가 공백을 불허해 놓치는 케이스. 따옴표 안 전체(공백 포함)를 캡처하되
+// 엔트로피 가드(길이>=12 + distinct char>=10)로 산문/라벨 FP 를 막는다.
+const ASSIGN_SECRET_PASSPHRASE =
+  /\b([A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASS(?:WORD|PHRASE)?|PWD|API|AUTH))\s*[:=]\s*['"]([^'"]{12,})['"]/g;
 
 const EXCLUDE_VALUES = new Set(["", "null", "undefined", "true", "false", "TODO", "TBD"]);
+
+/** 공백 포함 값의 엔트로피 가드 — distinct char 가 적은 산문/반복 라벨을 배제. */
+function looksLikePassphrase(value: string): boolean {
+  if (!/\s/.test(value)) return false; // 공백 없는 값은 ASSIGN_SECRET 가 이미 처리.
+  const distinct = new Set(value.replace(/\s+/g, "")).size;
+  return distinct >= 10;
+}
 
 function inspectLine(line: string, file: string, idx: number): RuleFinding[] {
   const out: RuleFinding[] = [];
@@ -76,6 +88,25 @@ function inspectLine(line: string, file: string, idx: number): RuleFinding[] {
           RULE_ID,
           "critical",
           `hardcoded secret-like assignment to ${name}`,
+          { file, line: idx + 1 }
+        )
+      );
+    }
+  }
+  for (const m of line.matchAll(ASSIGN_SECRET_PASSPHRASE)) {
+    const name = m[1] ?? "";
+    const literal = m[2] ?? "";
+    if (
+      !EXCLUDE_VALUES.has(literal) &&
+      !literal.startsWith("$") &&
+      !literal.startsWith("process.env") &&
+      looksLikePassphrase(literal)
+    ) {
+      out.push(
+        makeFinding(
+          RULE_ID,
+          "critical",
+          `hardcoded passphrase-like assignment to ${name}`,
           { file, line: idx + 1 }
         )
       );

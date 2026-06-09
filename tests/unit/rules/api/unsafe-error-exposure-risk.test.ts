@@ -117,6 +117,51 @@ test("unsafe-error-exposure: deleted file is skipped", async () => {
   assert.equal(mine.length, 0);
 });
 
+// Gap #6 (FP): a SUCCESS response with a bare `message` key (string literal,
+// no `err.`/`error.` prefix) must NOT be flagged. Previously the bare word
+// `message` matched and produced a false positive on normal success paths.
+test("unsafe-error-exposure: success response with bare message key is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: ['  res.json({ message: "Account created" });']
+      })
+    ])
+  });
+  const out = await unsafeErrorExposureRiskRule.run(ctx);
+  const mine = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(mine.length, 0);
+});
+
+// Gap #6 (FP guard): status(201).json success message also must not fire.
+test("unsafe-error-exposure: 201 success message key is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: ['  res.status(201).json({ ok: true, message: "Saved" });']
+      })
+    ])
+  });
+  const out = await unsafeErrorExposureRiskRule.run(ctx);
+  const mine = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(mine.length, 0);
+});
+
+// Gap #6 (TP guard): the real exposure `err.message` (property access) STILL fires.
+test("unsafe-error-exposure: qualified err.message still fires after FP fix", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: ["  res.json({ message: err.message });"]
+      })
+    ])
+  });
+  const out = await unsafeErrorExposureRiskRule.run(ctx);
+  const mine = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0]?.severity, "warning");
+});
+
 // Boundary: the regex's [^}]* cannot cross a closing brace, so a sensitive token
 // appearing AFTER a `}` within the call is NOT matched (regex-evasion / blind spot).
 test("unsafe-error-exposure: token after a closing brace evades the regex (blind spot)", async () => {

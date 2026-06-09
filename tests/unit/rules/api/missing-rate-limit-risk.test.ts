@@ -126,3 +126,87 @@ test("missing-rate-limit-risk: case-insensitive rate-limit marker suppresses war
   const hits = out.filter((f) => f.ruleId === RULE_ID);
   assert.equal(hits.length, 0);
 });
+
+// Gap #4 (FN): `register` handler file (signup synonym) was not in the keyword
+// list, so a registration endpoint with no rate limit slipped through.
+test("missing-rate-limit-risk: register handler file without rate limit triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/register.ts", {
+        status: "added",
+        addedLines: [
+          "export async function register(req, res) {",
+          "  const user = await createUser(req.body);",
+          "  res.json({ id: user.id });",
+          "}"
+        ]
+      })
+    ])
+  });
+  const out = await missingRateLimitRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "warning");
+});
+
+// Gap #4 (FN): an auth route added inside a domain file (users.ts) — not named
+// like an auth handler — must still be detected via the route body.
+test("missing-rate-limit-risk: auth route in a domain file (users.ts) triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/users.ts", {
+        status: "modified",
+        addedLines: [
+          "router.post('/login', async (req, res) => {",
+          "  const user = await authenticate(req.body.email, req.body.password);",
+          "  res.json({ token: sign(user) });",
+          "});"
+        ]
+      })
+    ])
+  });
+  const out = await missingRateLimitRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "warning");
+});
+
+// Gap #5 (FP): `rateLimiter()` is rate-limit protection but did not match the
+// old `\brateLimit\b` word boundary → the protected handler was wrongly flagged.
+test("missing-rate-limit-risk: rateLimiter() marker suppresses warning (no FP)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/login.ts", {
+        status: "added",
+        addedLines: [
+          "router.post('/login', rateLimiter({ max: 5 }), async (req, res) => {",
+          "  return res.json(await login(req.body));",
+          "});"
+        ]
+      })
+    ])
+  });
+  const out = await missingRateLimitRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 0);
+});
+
+// Gap #4 TN guard: a non-auth domain file (no auth route) must NOT fire even
+// though it lives on the API surface — guards against over-firing.
+test("missing-rate-limit-risk: non-auth domain file on API surface is clean", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/users.ts", {
+        status: "modified",
+        addedLines: [
+          "router.get('/users/:id', async (req, res) => {",
+          "  res.json(await db.users.find(req.params.id));",
+          "});"
+        ]
+      })
+    ])
+  });
+  const out = await missingRateLimitRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 0);
+});

@@ -79,16 +79,38 @@ test("new-runtime-dependency-risk: non-numeric-valued package.json edits are cle
   assert.equal(hits.length, 0);
 });
 
-// Boundary/regex-evasion: non-numeric version specs are not matched by DEP_LINE_RE.
-test("new-runtime-dependency-risk: non-numeric version specifiers do not match", async () => {
+// GAP 2 (FN): git/tarball/npm-alias/github dependency specs (value does not start
+// with ^/~/digit) used to be missed. They are real runtime deps and must now be
+// counted by the info note.
+test("new-runtime-dependency-risk: git/github/npm-alias/tarball specs are counted (FN fix)", async () => {
   const ctx = mockCtx({
     diff: diffOf([
       fc("package.json", {
         addedLines: [
-          '    "foo": "latest",',
-          '    "bar": "*",',
-          '    "baz": "git+https://example.com/baz.git"'
+          '    "a": "git+https://github.com/u/a.git",',
+          '    "b": "github:user/repo",',
+          '    "c": "npm:@scope/real@^1.2.3",',
+          '    "d": "https://example.com/pkg.tgz",',
+          '    "e": "file:../local"'
         ]
+      })
+    ])
+  });
+  const out = await newRuntimeDependencyRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 1);
+  assert.match(hits[0].message, /5 dependency line\(s\) added/);
+});
+
+// TN: a bare "*"/"latest" value with no key-of-interest is still fine to count is
+// NOT required — but a top-level meta key with a numeric value (version bump) must
+// NOT be counted as a dependency (section/meta awareness, no FP).
+test("new-runtime-dependency-risk: top-level version bump is not counted", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "version": "2.0.0",'],
+        deletedLines: ['  "version": "1.9.0",']
       })
     ])
   });

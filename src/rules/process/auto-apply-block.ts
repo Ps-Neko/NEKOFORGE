@@ -27,7 +27,10 @@ export class AutoApplyBlockedError extends Error {
 }
 
 export function evaluateAutoApplyBlock(input: AutoApplyBlockInput): void {
-  if (BLOCKING_VERDICTS.has(input.verdict)) {
+  // 최후 안전게이트: 공백/대소문자 변형(" BLOCK ", "block")으로 우회되지 않도록
+  // verdict 를 정규화(trim + 대문자)한 뒤 비교한다. 원본 verdict 는 에러에 보존.
+  const normalized = input.verdict.trim().toUpperCase();
+  if (BLOCKING_VERDICTS.has(normalized)) {
     throw new AutoApplyBlockedError(input.verdict);
   }
 }

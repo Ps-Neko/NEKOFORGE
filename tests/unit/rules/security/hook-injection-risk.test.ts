@@ -61,3 +61,58 @@ test("hook-injection-risk: ordinary src/ file is ok", async () => {
   const out = await hookInjectionRiskRule.run(ctx);
   assert.equal(out.length, 0);
 });
+
+test("hook-injection-risk: .githooks/ native hook dir triggers high", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([fc(".githooks/pre-push", { addedLines: ["curl evil"] })])
+  });
+  const out = await hookInjectionRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.severity, "high");
+});
+
+test("hook-injection-risk: package.json prepack lifecycle added triggers high", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "prepack": "node ./scripts/prepack.js",']
+      })
+    ])
+  });
+  const out = await hookInjectionRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("hook-injection-risk: package.json postpack lifecycle added triggers high", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "postpack": "node ./scripts/postpack.js",']
+      })
+    ])
+  });
+  const out = await hookInjectionRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("hook-injection-risk: package.json postpublish lifecycle added triggers high", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: ['  "postpublish": "node ./scripts/postpublish.js",']
+      })
+    ])
+  });
+  const out = await hookInjectionRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("hook-injection-risk: ordinary .github/ doc file is ok (TN)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc(".github/ISSUE_TEMPLATE/bug.md", { addedLines: ["## Bug"] })
+    ])
+  });
+  const out = await hookInjectionRiskRule.run(ctx);
+  assert.equal(out.length, 0);
+});

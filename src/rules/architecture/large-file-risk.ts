@@ -12,6 +12,21 @@ const RULE_ID = "large-file-risk";
 const ADDED_LINES_HIGH = 600;
 const ADDED_LINES_WARNING = 300;
 
+// 생성물(손으로 유지하지 않는 파일)은 라인 수가 커도 "해체" 대상이 아니다.
+// lockfile / snapshot / 타입선언 번들 / 미니파이 번들 / 대형 fixture 데이터 등.
+const GENERATED_FILE_RE =
+  /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|composer\.lock|Cargo\.lock|poetry\.lock|Gemfile\.lock)$/;
+const GENERATED_EXT_RE = /\.(snap|d\.ts|min\.js|min\.css|map|lock)$/;
+const FIXTURE_PATH_RE = /(^|\/)(fixtures?|__snapshots__|__fixtures__|testdata)\//;
+
+function isGenerated(path: string): boolean {
+  return (
+    GENERATED_FILE_RE.test(path) ||
+    GENERATED_EXT_RE.test(path) ||
+    FIXTURE_PATH_RE.test(path)
+  );
+}
+
 export const largeFileRiskRule: DeterministicRule = {
   id: RULE_ID,
   describe: "단일 파일 변경량이 임계치를 넘으면 경고 (해체 권장)",
@@ -19,6 +34,7 @@ export const largeFileRiskRule: DeterministicRule = {
     const findings: RuleFinding[] = [];
     for (const f of ctx.diff.files) {
       if (f.status === "deleted") continue;
+      if (isGenerated(f.path)) continue;
       const added = f.addedLines.length;
       if (added >= ADDED_LINES_HIGH) {
         findings.push(

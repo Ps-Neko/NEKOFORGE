@@ -115,3 +115,80 @@ test("missing-auth-boundary-risk: API-path change with no handler signature is c
   const out = await missingAuthBoundaryRiskRule.run(ctx);
   assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
 });
+
+// Gap #1 (FN): arrow-export const handler `export const h = async (req,res)=>{}`
+// must be recognized as a handler. Previously HANDLER_RE only matched
+// `export function`, so this real unauthenticated handler slipped through.
+test("missing-auth-boundary-risk: arrow-export const handler without auth triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/orders.ts", {
+        status: "added",
+        addedLines: [
+          "export const handler = async (req, res) => {",
+          "  return res.json(await db.orders.all());",
+          "};"
+        ]
+      })
+    ])
+  });
+  const out = await missingAuthBoundaryRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "warning");
+});
+
+// Gap #1 (FN): Next.js `pages/api/**` route is part of the API surface.
+test("missing-auth-boundary-risk: Next pages/api handler without auth triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("pages/api/orders.ts", {
+        status: "added",
+        addedLines: [
+          "export default async function handler(req, res) {",
+          "  return res.json(await db.orders.all());",
+          "}"
+        ]
+      })
+    ])
+  });
+  const out = await missingAuthBoundaryRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "warning"));
+});
+
+// Gap #1 (FN): app/api route surface also covered.
+test("missing-auth-boundary-risk: app/api route handler without auth triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("app/api/orders/route.ts", {
+        status: "added",
+        addedLines: [
+          "export const GET = async (req) => {",
+          "  return Response.json(await db.orders.all());",
+          "};"
+        ]
+      })
+    ])
+  });
+  const out = await missingAuthBoundaryRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "warning"));
+});
+
+// Gap #2 (FP): a pure util `export function` under src/api/ with NO req/res
+// signature is not an HTTP handler and must NOT be flagged.
+test("missing-auth-boundary-risk: pure util export function (no req/res) is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/format.ts", {
+        status: "added",
+        addedLines: [
+          "export function formatCurrency(value: number, locale: string): string {",
+          "  return new Intl.NumberFormat(locale).format(value);",
+          "}"
+        ]
+      })
+    ])
+  });
+  const out = await missingAuthBoundaryRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});

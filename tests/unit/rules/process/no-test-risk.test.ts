@@ -63,3 +63,75 @@ test("no-test-risk: only import-reorder src change is ignored", async () => {
   const out = await noTestRiskRule.run(ctx);
   assert.equal(out.length, 0);
 });
+
+// --- Gap 4: empty/trivial test file defeats the gate (FN) ---
+test("no-test-risk: src change + only an EMPTY test file still triggers (FN)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/foo.ts", { addedLines: ["export function f() { return 2; }"] }),
+      fc("tests/foo.test.ts", { addedLines: [] })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("no-test-risk: src change + comment-only test file still triggers (FN)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/foo.ts", { addedLines: ["export function f() { return 2; }"] }),
+      fc("tests/foo.test.ts", {
+        addedLines: ["// TODO: write tests later", "", "describe('foo', () => {});"]
+      })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("no-test-risk: src change + .skip-only test file still triggers (FN)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/foo.ts", { addedLines: ["export function f() { return 2; }"] }),
+      fc("tests/foo.test.ts", {
+        addedLines: ['it.skip("later", () => { assert.ok(true); });']
+      })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+});
+
+test("no-test-risk: src change + REAL test file is ok (TN, no over-correction)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/foo.ts", { addedLines: ["export function f() { return 2; }"] }),
+      fc("tests/foo.test.ts", {
+        addedLines: ['test("f returns 2", () => { assert.equal(f(), 2); });']
+      })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 0);
+});
+
+// --- Gap 5: generated artifacts should not be treated as src needing tests (FP) ---
+test("no-test-risk: src/generated change is NOT flagged (FP)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/generated/api.ts", { addedLines: ["export const X = 1;"] })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 0);
+});
+
+test("no-test-risk: *.gen.ts change is NOT flagged (FP)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/schema.gen.ts", { addedLines: ["export const Y = 2;"] })
+    ])
+  });
+  const out = await noTestRiskRule.run(ctx);
+  assert.equal(out.length, 0);
+});
