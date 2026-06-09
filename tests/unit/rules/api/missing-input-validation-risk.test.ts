@@ -116,3 +116,73 @@ test("missing-input-validation: deleted file is skipped", async () => {
   const out = await missingInputValidationRiskRule.run(ctx);
   assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
 });
+
+// Gap #3 (FN): `JSON.parse(...)` is NOT schema validation. Previously the bare
+// `.parse(` token suppressed the warning, so unvalidated req.body slipped through.
+test("missing-input-validation: JSON.parse does not count as validation (still warns)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: [
+          "app.post('/users', (req, res) => {",
+          "  const data = JSON.parse(req.body.payload);",
+          "  db.insert(data);",
+          "});"
+        ]
+      })
+    ])
+  });
+  const out = await missingInputValidationRiskRule.run(ctx);
+  const hits = out.filter((f) => f.ruleId === RULE_ID);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].severity, "warning");
+});
+
+// Gap #3 (FN): Date.parse(...) is likewise a standard parser, not validation.
+test("missing-input-validation: Date.parse does not count as validation (still warns)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: [
+          "  const when = Date.parse(req.query.when);",
+          "  schedule(when);"
+        ]
+      })
+    ])
+  });
+  const out = await missingInputValidationRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 1);
+});
+
+// Gap #3 (TN guard): a real schema-variable `.parse(req.body)` STILL counts as
+// validation (must not regress the documented zod path).
+test("missing-input-validation: schema-variable .parse still suppresses", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: [
+          "const parsed = userSchema.parse(req.body);",
+          "db.insert(parsed);"
+        ]
+      })
+    ])
+  });
+  const out = await missingInputValidationRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
+// Gap #3 (TN guard): zod `.safeParse(req.body)` also counts as validation.
+test("missing-input-validation: zod safeParse suppresses", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/api/handler.ts", {
+        addedLines: [
+          "const result = schema.safeParse(req.body);",
+          "if (!result.success) return res.status(400).end();"
+        ]
+      })
+    ])
+  });
+  const out = await missingInputValidationRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});

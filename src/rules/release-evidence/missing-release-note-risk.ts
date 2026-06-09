@@ -11,7 +11,10 @@ const RULE_ID = "missing-release-note-risk";
 
 const SCHEMA_RE = /(^|\/)src\/schemas\/.*\.schema\.ts$/;
 const PACKAGE_VERSION_LINE_RE = /"version":\s*"[^"]+"/;
-const RELEASE_NOTES_RE = /(^|\/)RELEASE-NOTES\.md$/i;
+// RELEASE-NOTES.md 외에 표준 릴리스 문서 별칭(CHANGELOG / HISTORY / CHANGES /
+// NEWS)도 릴리스 노트로 인정한다. 확장자는 .md / .markdown / .txt 허용.
+const RELEASE_NOTES_RE =
+  /(^|\/)(RELEASE-NOTES|RELEASE_NOTES|CHANGELOG|CHANGES|HISTORY|NEWS)(\.(md|markdown|txt|rst))?$/i;
 
 export const missingReleaseNoteRiskRule: DeterministicRule = {
   id: RULE_ID,

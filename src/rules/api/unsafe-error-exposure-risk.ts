@@ -8,8 +8,11 @@ import { makeFinding } from "../types.js";
 
 const RULE_ID = "unsafe-error-exposure-risk";
 
+// 응답 sink 가 error 의 .stack / .message 를 *property access* 형태로 노출할 때만.
+// 성공응답 `res.json({ message: "Account created" })` 의 bare `message` 키는 dot 앞이
+// 없으므로 불일치 (FP 제거). `err.message` / `error.stack` 형태만 매칭.
 const STACK_EXPOSE_RE =
-  /\b(res|response|reply|ctx)\.(json|send|status\(\d+\)\.json|status\(\d+\)\.send)\s*\(\s*\{?[^}]*\b(stack|message)\b/;
+  /\b(res|response|reply|ctx)\.(json|send|status\(\d+\)\.json|status\(\d+\)\.send)\s*\(\s*\{?[^}]*\.(stack|message)\b/;
 
 export const unsafeErrorExposureRiskRule: DeterministicRule = {
   id: RULE_ID,

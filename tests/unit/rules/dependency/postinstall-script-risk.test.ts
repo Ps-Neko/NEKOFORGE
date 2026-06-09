@@ -84,9 +84,10 @@ test("postinstall-script-risk: deleted package.json is skipped", async () => {
   assert.equal(out.length, 0);
 });
 
-// Boundary: the regex requires the key in double quotes followed immediately by
-// a colon. A space before the colon evades detection (rule limitation).
-test("postinstall-script-risk: space before colon evades the regex (limitation)", async () => {
+// GAP 3 (evasion closed): a space before the colon ("postinstall" : ...) used to
+// evade detection. The lifecycle regex now tolerates optional whitespace before the
+// colon, so this obfuscation is caught.
+test("postinstall-script-risk: space before colon no longer evades detection", async () => {
   const ctx = mockCtx({
     diff: diffOf([
       fc("package.json", {
@@ -95,7 +96,8 @@ test("postinstall-script-risk: space before colon evades the regex (limitation)"
     ])
   });
   const out = await postinstallScriptRiskRule.run(ctx);
-  assert.equal(out.length, 0);
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.severity, "warning");
 });
 
 // Boundary: similarly named file (mypackage.json) IS matched because the regex
@@ -110,4 +112,66 @@ test("postinstall-script-risk: package.json.bak is not treated as package.json",
   });
   const out = await postinstallScriptRiskRule.run(ctx);
   assert.equal(out.length, 0);
+});
+
+// GAP 3 (FN): publish-time lifecycle keys prepublishOnly/prepack/postpack run code
+// on the maintainer's machine during publish and were previously missed.
+test("postinstall-script-risk: prepublishOnly/prepack/postpack lifecycle keys fire", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: [
+          '  "scripts": {',
+          '    "prepublishOnly": "node ./scripts/guard.js",',
+          '    "prepack": "npm run build",',
+          '    "postpack": "node ./scripts/cleanup.js"'
+        ]
+      })
+    ])
+  });
+  const out = await postinstallScriptRiskRule.run(ctx);
+  assert.equal(out.length, 3, "all three publish-time lifecycle keys must fire");
+  assert.ok(out.every((f) => f.severity === "warning"));
+});
+
+// GAP 3 (FP): a "prepare" key inside a tool-config block (release-it/husky/etc.)
+// is NOT an npm lifecycle script and must not be flagged. Other npm lifecycle keys
+// (postinstall) inside scripts still fire.
+test("postinstall-script-risk: prepare inside a tool-config block does not fire (no FP)", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: [
+          '  "release-it": {',
+          '    "hooks": {',
+          '      "prepare": "npm run build"',
+          '    }',
+          '  }'
+        ]
+      })
+    ])
+  });
+  const out = await postinstallScriptRiskRule.run(ctx);
+  assert.equal(
+    out.length,
+    0,
+    "prepare inside a non-scripts tool-config block must not be flagged"
+  );
+});
+
+// TN: a "prepare" key inside the scripts section still fires (real npm lifecycle).
+test("postinstall-script-risk: prepare inside scripts section still fires", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("package.json", {
+        addedLines: [
+          '  "scripts": {',
+          '    "prepare": "husky install"'
+        ]
+      })
+    ])
+  });
+  const out = await postinstallScriptRiskRule.run(ctx);
+  assert.equal(out.length, 1);
+  assert.equal(out[0]?.severity, "warning");
 });

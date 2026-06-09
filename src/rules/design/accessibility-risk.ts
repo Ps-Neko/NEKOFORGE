@@ -8,8 +8,22 @@ import { makeFinding } from "../types.js";
 
 const RULE_ID = "accessibility-risk";
 
+const IMG_OPEN_RE = /<img\b/i;
 const IMG_NO_ALT_RE = /<img\b(?![^>]*\balt\s*=)/i;
 const BUTTON_EMPTY_RE = /<button\b[^>]*>\s*<\/button>/i;
+
+// `<img` 가 같은 줄에서 닫히지 않으면(멀티라인 태그) 닫는 `>` 까지의 전체 태그
+// 텍스트를 모아 alt 유무를 판정한다. alt 가 뒷줄에 있을 때의 FP(GAP5)를 막는다.
+function imgTagSpan(lines: string[], startIdx: number): string {
+  let span = lines[startIdx] ?? "";
+  if (span.includes(">")) return span; // 한 줄에서 닫힘 — 단일 라인 처리.
+  for (let i = startIdx + 1; i < lines.length && i < startIdx + 25; i++) {
+    const next = lines[i] ?? "";
+    span += "\n" + next;
+    if (next.includes(">")) break;
+  }
+  return span;
+}
 const DIV_ONCLICK_NO_ROLE_RE = /<div\b(?=[^>]*\bonClick)(?![^>]*\brole\s*=)/i;
 const ANCHOR_NO_HREF_RE = /<a\b(?![^>]*\bhref\s*=)/i;
 const INPUT_NO_LABEL_RE = /<input\b(?![^>]*\baria-label\s*=)(?![^>]*\bid\s*=)/i;
@@ -23,13 +37,16 @@ export const accessibilityRiskRule: DeterministicRule = {
       if (!/\.(tsx|jsx|html)$/i.test(f.path)) continue;
       if (f.status === "deleted") continue;
       f.addedLines.forEach((line, idx) => {
-        if (IMG_NO_ALT_RE.test(line)) {
-          findings.push(
-            makeFinding(RULE_ID, "high", "<img> without alt", {
-              file: f.path,
-              line: idx + 1
-            })
-          );
+        if (IMG_OPEN_RE.test(line)) {
+          const span = imgTagSpan(f.addedLines, idx);
+          if (IMG_NO_ALT_RE.test(span)) {
+            findings.push(
+              makeFinding(RULE_ID, "high", "<img> without alt", {
+                file: f.path,
+                line: idx + 1
+              })
+            );
+          }
         }
         if (BUTTON_EMPTY_RE.test(line)) {
           findings.push(

@@ -125,3 +125,117 @@ test("interactive-div-risk: reports correct 1-based line index", async () => {
   assert.equal(findings.length, 1);
   assert.equal(findings[0]?.line, 2);
 });
+
+// FN (multiline JSX): a <div> split across lines with onClick on a later line must fire.
+// Line is attributed to where the <div tag opens (1-based).
+test("interactive-div-risk: multiline div with onClick on a later line triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Card.tsx", {
+        addedLines: [
+          "<div",
+          "  className=\"card\"",
+          "  onClick={handleClick}",
+          ">",
+          "  click me",
+          "</div>"
+        ]
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0]?.severity, "warning");
+  assert.equal(findings[0]?.line, 1);
+});
+
+// FN (multiline + role guard still works): role on a later line suppresses.
+test("interactive-div-risk: multiline div with role on a later line is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Card.tsx", {
+        addedLines: [
+          "<div",
+          "  onClick={handleClick}",
+          "  role=\"button\"",
+          ">ok</div>"
+        ]
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 0);
+});
+
+// FN (handler coverage): onPointerDown on a div must fire.
+test("interactive-div-risk: div with onPointerDown triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Drag.tsx", {
+        addedLines: ['<div onPointerDown={onDown}>x</div>']
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0]?.severity, "warning");
+});
+
+// FN (handler coverage): onTouchStart on a div must fire.
+test("interactive-div-risk: div with onTouchStart triggers warning", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Drag.tsx", {
+        addedLines: ['<div onTouchStart={onTouch}>x</div>']
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 1);
+});
+
+// FP (comment): a div onClick inside a // comment must NOT fire.
+test("interactive-div-risk: div onClick inside a line comment is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Card.tsx", {
+        addedLines: ['  // example: <div onClick={fn}>x</div> avoid this']
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 0);
+});
+
+// FP (data- attribute): data-onClick is not a real handler (word boundary / prefix).
+test("interactive-div-risk: div with data-onClick attribute is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Card.tsx", {
+        addedLines: ['<div data-onClick="x">label</div>']
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 0);
+});
+
+// TN (FP guard for benchmark parity): a plain <div> with no handler must stay clean.
+test("interactive-div-risk: plain div with only className is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/ui/Card.tsx", {
+        addedLines: ['<div className="w-full md:w-1/2 lg:w-1/3">card</div>']
+      })
+    ])
+  });
+  const out = await interactiveDivRiskRule.run(ctx);
+  const findings = out.filter((f) => f.ruleId === "interactive-div-risk");
+  assert.equal(findings.length, 0);
+});

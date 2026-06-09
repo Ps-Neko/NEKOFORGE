@@ -12,8 +12,14 @@ import { makeFinding } from "../types.js";
 const RULE_ID = "missing-auth-boundary-risk";
 
 const API_PATH_RE =
-  /(^|\/)(src\/(api|server|routes|controllers)|app\/api)\/.+\.(ts|js|mjs|py)$/;
-const HANDLER_RE = /\b(export\s+(async\s+)?function|router\.\w+\(|app\.\w+\(|@(Get|Post|Put|Delete|Patch)\()/;
+  /(^|\/)(src\/(api|server|routes|controllers|handlers)|app\/api|pages\/api)\/.+\.(ts|js|mjs|py)$/;
+// 핸들러 시그니처: export function / arrow-export const handler / express router/app /
+// NestJS 데코레이터. arrow-export 는 `export const h = async (req, res) => {}` 형태.
+const HANDLER_RE =
+  /\b(export\s+(default\s+)?(async\s+)?function|export\s+(default\s+)?const\s+\w+\s*=\s*(async\s*)?\(|router\.\w+\(|app\.\w+\(|@(Get|Post|Put|Delete|Patch)\()/;
+// req/res(또는 ctx/request/reply) 시그니처가 동반될 때만 진짜 핸들러로 인정 —
+// `src/api/format.ts` 의 순수 util `export function`(req/res 없음) FP 방지.
+const REQ_RES_RE = /\b(req|res|request|reply|ctx|context)\b/;
 const AUTH_TOKEN_RE =
   /\b(requireAuth\(|verifyJwt\(|verifyToken\(|AuthGuard|@UseGuards\(|passport\.authenticate|Depends\(get_current_user|@login_required|RequireAuth\(|AuthMiddleware\()/;
 const PUBLIC_HINT_RE = /\b(public|webhook|health|status|ping)\b/i;
@@ -28,7 +34,7 @@ export const missingAuthBoundaryRiskRule: DeterministicRule = {
       if (f.status === "deleted") continue;
       const added = f.addedLines.join("\n");
       if (added.length === 0) continue;
-      const hasHandler = HANDLER_RE.test(added);
+      const hasHandler = HANDLER_RE.test(added) && REQ_RES_RE.test(added);
       if (!hasHandler) continue;
       const hasAuth = AUTH_TOKEN_RE.test(added);
       const looksPublic = PUBLIC_HINT_RE.test(f.path);

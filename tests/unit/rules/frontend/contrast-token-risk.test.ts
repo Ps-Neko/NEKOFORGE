@@ -121,3 +121,110 @@ test("contrast-token-risk: empty diff yields no findings", async () => {
   const out = await contrastTokenRiskRule.run(mockCtx());
   assert.equal(out.length, 0);
 });
+
+// FN: rgb() pure white must be treated as an extreme color.
+test("contrast-token-risk: rgb(255,255,255) white triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  color: rgb(255, 255, 255);"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "info"));
+});
+
+// FN: rgba() pure black with alpha must trigger.
+test("contrast-token-risk: rgba(0,0,0,0.5) black triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  background: rgba(0, 0, 0, 0.5);"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "info"));
+});
+
+// FN: hsl() pure white (lightness 100%) must trigger.
+test("contrast-token-risk: hsl(0,0%,100%) white triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  color: hsl(0, 0%, 100%);"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "info"));
+});
+
+// FN: 8-digit hex (#ffffffff) extreme color with alpha must trigger.
+test("contrast-token-risk: 8-digit hex #ffffffff triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  color: #ffffffff;"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "info"));
+});
+
+// FN: 4-digit hex (#000f) extreme black with alpha must trigger.
+test("contrast-token-risk: 4-digit hex #000f triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  color: #000f;"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(out.some((f) => f.ruleId === RULE_ID && f.severity === "info"));
+});
+
+// FP: an UNRELATED var() on the same line must NOT suppress a raw extreme color.
+test("contrast-token-risk: unrelated var() does not suppress a separate raw #fff", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  border: 1px solid var(--ring); background: #fff;"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.ok(
+    out.some((f) => f.ruleId === RULE_ID && f.severity === "info"),
+    "raw #fff outside the var() fallback must still fire"
+  );
+});
+
+// FP: a CSS custom-property DEFINITION line is the design token itself → not a token bypass.
+test("contrast-token-risk: custom-property definition (--white: #fff) is not flagged", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/tokens.css", {
+        addedLines: ["  --color-white: #ffffff;"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
+// TN (regression guard): non-extreme rgb() must not trigger.
+test("contrast-token-risk: rgb(31,41,55) non-extreme color is clean", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/styles/theme.css", {
+        addedLines: ["  color: rgb(31, 41, 55);"]
+      })
+    ])
+  });
+  const out = await contrastTokenRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});

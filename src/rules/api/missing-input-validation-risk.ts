@@ -10,8 +10,25 @@ import { makeFinding } from "../types.js";
 const RULE_ID = "missing-input-validation-risk";
 
 const DIRECT_BODY_RE = /\breq\.(body|query|params)(?!\s*[a-zA-Z_])/;
-const VALIDATION_RE =
-  /\b(zod|joi|yup|ajv|\.parse\(|\.safeParse\(|validateSync|validateAsync|validate\()/;
+// 검증으로 인정하는 명시적 라이브러리/메서드.
+//  - zod/joi/yup/ajv 이름
+//  - `.safeParse(` (zod 전용)
+//  - validateSync/validateAsync/validate(
+//  - schema 변수의 `.parse(` — 단, JSON/Date/URL 등 표준 파서는 제외해야 함.
+// 표준 `.parse(`(JSON.parse/Date.parse/URL.parse/path.parse/qs.parse 등)는 검증이
+// 아니므로 매칭에서 제외 — 이들이 잘못 억제하던 FN 수정.
+const STD_PARSE_OWNERS =
+  "JSON|Date|URL|URLSearchParams|Number|Boolean|Math|qs|querystring|path|semver|Buffer|BigInt";
+const VALIDATION_RE = new RegExp(
+  [
+    "\\b(zod|joi|yup|ajv)\\b",
+    "\\.safeParse\\(",
+    "\\b(validateSync|validateAsync)\\b",
+    "\\bvalidate\\(",
+    // 표준 파서 소유자가 아닌 식별자의 `.parse(` 만 schema 검증으로 인정.
+    `(?<!\\b(?:${STD_PARSE_OWNERS}))\\.parse\\(`
+  ].join("|")
+);
 
 export const missingInputValidationRiskRule: DeterministicRule = {
   id: RULE_ID,

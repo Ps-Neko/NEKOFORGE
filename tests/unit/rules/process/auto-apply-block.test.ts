@@ -24,6 +24,27 @@ test("auto-apply-block: INSUFFICIENT_EVIDENCE throws", () => {
   );
 });
 
+test("auto-apply-block: lowercase 'block' throws (FN: case bypass)", () => {
+  assert.throws(
+    () => evaluateAutoApplyBlock({ verdict: "block" }),
+    AutoApplyBlockedError
+  );
+});
+
+test("auto-apply-block: ' BLOCK ' with whitespace throws (FN: trim bypass)", () => {
+  assert.throws(
+    () => evaluateAutoApplyBlock({ verdict: " BLOCK " }),
+    AutoApplyBlockedError
+  );
+});
+
+test("auto-apply-block: mixed-case 'Insufficient_Evidence' throws", () => {
+  assert.throws(
+    () => evaluateAutoApplyBlock({ verdict: "Insufficient_Evidence" }),
+    AutoApplyBlockedError
+  );
+});
+
 test("auto-apply-block: PASS does not throw", () => {
   assert.doesNotThrow(() => evaluateAutoApplyBlock({ verdict: "PASS" }));
 });

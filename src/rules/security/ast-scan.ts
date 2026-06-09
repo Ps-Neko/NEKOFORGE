@@ -224,12 +224,7 @@ export function astSecretFallbackFindings(
   ruleId: string
 ): RuleFinding[] {
   const out: RuleFinding[] = [];
-  for (const { node, line } of locatedNodes(addedLines)) {
-    if (node.type !== "LogicalExpression") continue;
-    if (node.operator !== "||" && node.operator !== "??") continue;
-    if (!isProcessEnvAccess(asNode(node.left))) continue;
-    const literal = staticString(asNode(node.right));
-    if (literal === undefined) continue;
+  const flag = (literal: string, line: number): void => {
     if (literal.length >= 8 && !EXCLUDE_VALUES.has(literal)) {
       out.push(
         makeFinding(
@@ -239,6 +234,32 @@ export function astSecretFallbackFindings(
           { file, line }
         )
       );
+    }
+  };
+  for (const { node, line } of locatedNodes(addedLines)) {
+    if (node.type === "LogicalExpression") {
+      if (node.operator !== "||" && node.operator !== "??") continue;
+      if (!isProcessEnvAccess(asNode(node.left))) continue;
+      const literal = staticString(asNode(node.right));
+      if (literal !== undefined) flag(literal, line);
+      continue;
+    }
+    // 삼항 fallback: `env ? env : "secret"` (직접형) / `!env ? "secret" : env` (부정형).
+    // LogicalExpression(||/??) 시맨틱을 그대로 미러 — test 가 env 접근이면 alternate,
+    // test 가 env 의 부정(!env)이면 consequent 가 fallback 분기.
+    if (node.type === "ConditionalExpression") {
+      const test = asNode(node.test);
+      if (isProcessEnvAccess(test)) {
+        const literal = staticString(asNode(node.alternate));
+        if (literal !== undefined) flag(literal, line);
+      } else if (
+        test?.type === "UnaryExpression" &&
+        test.operator === "!" &&
+        isProcessEnvAccess(asNode(test.argument))
+      ) {
+        const literal = staticString(asNode(node.consequent));
+        if (literal !== undefined) flag(literal, line);
+      }
     }
   }
   return out;
@@ -252,7 +273,9 @@ export function astAuthBypassFindings(
 ): RuleFinding[] {
   const out: RuleFinding[] = [];
   for (const { node, line } of locatedNodes(addedLines)) {
-    if (node.type !== "IfStatement") continue;
+    // `if (1===1)` / `if (!false)` 등 정적 항상-참 가드.
+    // `true ? next() : requireAuth()` 등 정적 항상-참 삼항 (IfStatement 미러).
+    if (node.type !== "IfStatement" && node.type !== "ConditionalExpression") continue;
     if (staticTruthy(asNode(node.test))) {
       out.push(
         makeFinding(ruleId, "critical", "auth bypass pattern: constant-true guard", {

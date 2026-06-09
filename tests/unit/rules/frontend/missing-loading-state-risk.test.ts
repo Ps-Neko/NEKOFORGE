@@ -108,13 +108,84 @@ test("missing-loading-state-risk: deleted tsx file is skipped even with fetch", 
 });
 
 // 경계: useQuery 는 FETCH_RE 에 잡히지만, "loading" 토큰이 같은 added 에 있으면 미발화.
-// LOADING_RE 는 단어 \b loading 만으로도 매칭하므로 isLoading 구조분해 destructure 도 가드로 인정된다.
+// LOADING_RE 는 isLoading 구조분해 destructure 도 가드로 인정된다.
 test("missing-loading-state-risk: useQuery with destructured loading flag is clean", async () => {
   const ctx = mockCtx({
     diff: diffOf([
       fc("src/components/Posts.tsx", {
         addedLines: [
           "const { data, isLoading } = useQuery(['posts'], fetchPosts);"
+        ]
+      })
+    ])
+  });
+  const out = await missingLoadingStateRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
+// FN: a .then() chain fetch (no await) without loading state must trigger.
+test("missing-loading-state-risk: .then() chain fetch without loading state triggers info", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/components/Feed.tsx", {
+        addedLines: [
+          "fetch('/api/feed')",
+          "  .then((r) => r.json())",
+          "  .then((data) => setItems(data));"
+        ]
+      })
+    ])
+  });
+  const out = await missingLoadingStateRiskRule.run(ctx);
+  assert.ok(
+    out.some((f) => f.ruleId === RULE_ID && f.severity === "info"),
+    "a .then() chained fetch is still an async data fetch"
+  );
+});
+
+// FP: the bare word "loading" inside a comment must NOT count as loading state.
+test("missing-loading-state-risk: 'loading' only in a comment does not suppress", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/components/Feed.tsx", {
+        addedLines: [
+          "// TODO: show a loading spinner here later",
+          "const data = await fetch('/api/feed');"
+        ]
+      })
+    ])
+  });
+  const out = await missingLoadingStateRiskRule.run(ctx);
+  assert.ok(
+    out.some((f) => f.ruleId === RULE_ID && f.severity === "info"),
+    "a comment mentioning loading is not real loading state"
+  );
+});
+
+// TN: a genuine `loading` state destructure still suppresses (state form, not comment).
+test("missing-loading-state-risk: destructured { loading } state still suppresses", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/components/Feed.tsx", {
+        addedLines: [
+          "const { data, loading } = useQuery(['feed'], fetchFeed);"
+        ]
+      })
+    ])
+  });
+  const out = await missingLoadingStateRiskRule.run(ctx);
+  assert.equal(out.filter((f) => f.ruleId === RULE_ID).length, 0);
+});
+
+// TN: a real setLoading state setter still suppresses.
+test("missing-loading-state-risk: setLoading state setter suppresses", async () => {
+  const ctx = mockCtx({
+    diff: diffOf([
+      fc("src/components/Feed.tsx", {
+        addedLines: [
+          "setLoading(true);",
+          "const data = await fetch('/api/feed');",
+          "setLoading(false);"
         ]
       })
     ])
