@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { runAuto } from "../../../src/core/auto/index.js";
 import type { WorkerAdapter } from "../../../src/workers/adapter.js";
 import type { ReviewAdapter } from "../../../src/integrations/review-adapter.js";
@@ -38,6 +39,19 @@ test("runAuto: 끝까지 진행해 verdict 를 내고 apply 는 절대 호출 �
   );
   assert.equal(r.applied, false);
   assert.equal(applyCalled, false);
+});
+
+test("runAuto: 정상 종료 시 임시 워크스페이스를 정리한다 (누적 leak 회귀 방지)", async () => {
+  const r = await runAuto({
+    goal: "테스트 목표",
+    taskId: "TASK-001",
+    maxCostUsd: 5,
+    workerAdapter: fakeWorker,
+    reviewAdapter: fakeReview,
+    captureDiff: () => "diff --git a/src/x.ts b/src/x.ts\n+const x = 1;"
+  });
+  assert.equal(existsSync(r.workspace), false, "정상 종료 후 임시 폴더가 남아 있으면 안 된다");
+  assert.ok(r.report.length > 0, "정리 전에 건진 REPORT.md 본문이 결과에 담겨야 한다");
 });
 
 test("runAuto: --max-cost 0 이면 AI 호출 전 CostExceededError", async () => {
