@@ -57,7 +57,9 @@ export function registerAuto(program: Command): void {
         console.error(`[verdict] ${r.verdict}`);
         console.error(`[rules]   ${r.triggeredRules.join(", ") || "(none)"}`);
         console.error(`[cost]    $${r.spentUsd.toFixed(2)}`);
-        console.error(`[report]  ${r.reportPath} (workspace: ${r.workspace})`);
+        // 임시 워크스페이스는 종료 시 정리되므로 경로 대신 리포트 본문을 그대로 보여준다.
+        console.error(`[report]  ↓ 본문 (임시 워크스페이스는 정리됨)`);
+        if (r.report) console.log(r.report);
         console.error(`[next]    검토 후: harness apply --approved  (auto 는 apply 안 함)`);
         if (opts.strict) {
           const code = gateStrictExitCode(r.verdict);
