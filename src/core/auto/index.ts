@@ -8,7 +8,7 @@
  *
  * 불변식: onApply 콜백은 절대 호출되지 않는다.
  */
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildDeps } from "../stage-runner.js";
@@ -53,7 +53,9 @@ export interface AutoInput {
 export interface AutoResult {
   verdict: Verdict;
   triggeredRules: string[];
-  reportPath: string;
+  /** REPORT.md 본문 — 워크스페이스는 종료 시 정리되므로 내용을 결과에 담아 전달 */
+  report: string;
+  /** 임시 워크스페이스 경로. 정상/오류 종료 모두에서 정리됨(진단·회귀테스트용 기록) */
   workspace: string;
   applied: false;
   spentUsd: number;
@@ -130,16 +132,20 @@ export async function runAuto(input: AutoInput): Promise<AutoResult> {
     // ③ gate — verdict 산출 후 STOP (apply 없음)
     const r = await runGate({ taskId }, deps);
 
+    // 워크스페이스는 일회용 — 사람이 봐야 할 REPORT.md 본문만 건져서 결과에 담는다.
+    // (워커 편집·diff 캡처는 모두 호출자 cwd 기준이라 ws 에 남길 실동작 흐름이 없다.)
+    const report = await readFile(join(ws, r.reportPath), "utf8").catch(() => "");
+
     return {
       verdict: r.verdict,
       triggeredRules: r.triggeredRules,
-      reportPath: r.reportPath,
+      report,
       workspace: ws,
       applied: false,
       spentUsd: guard.spent()
     };
-  } catch (err) {
-    await rm(ws, { recursive: true, force: true }).catch(() => {});
-    throw err;
+  } finally {
+    // 정상/오류 모두 임시 폴더를 정리한다(누적 leak 방지). 정리 실패는 verdict 를 깨지 않게 best-effort.
+    await rm(ws, { recursive: true, force: true, maxRetries: 3 }).catch(() => {});
   }
 }
