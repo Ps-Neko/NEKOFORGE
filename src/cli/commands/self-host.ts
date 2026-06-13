@@ -12,7 +12,7 @@
  * - 본 명령이 apply 까지 가지 않는다. apply 는 사람이 명시적으로.
  * - 실패하면 어느 단계에서 실패했는지 + exit code 보고.
  */
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
@@ -106,6 +106,11 @@ export function registerSelfHost(program: Command): void {
       // self-host #6 후속 — 실 repo 의 .harness/ 와 audit chain 격리.
       // tmpdir 에 격리 워크스페이스 생성, work 단계의 git diff 만 실제 cwd 에서 캡처.
       const tmpWs = await mkdtemp(join(tmpdir(), "nekoforge-self-host-"));
+      // process.exit 는 finally 를 건너뛰므로, exit 하는 경로(catch/--strict)에서는
+      // 호출 전에 직접 정리한다. force:true 라 중복 호출도 무해.
+      const cleanupTmpWs = async (): Promise<void> => {
+        await rm(tmpWs, { recursive: true, force: true }).catch(() => {});
+      };
       try {
         await runInit({ cwd: tmpWs });
         const deps = buildDeps(tmpWs);
@@ -169,12 +174,18 @@ export function registerSelfHost(program: Command): void {
 
         await runReview({ adapters: [] }, deps);
         const r = await runGate({ taskId }, deps);
+        // 격리 워크스페이스는 종료 시 삭제되므로 경로 대신 REPORT.md 본문을 출력한다.
+        const report = await readFile(join(tmpWs, r.reportPath), "utf8").catch(
+          () => null
+        );
         console.error(`[ok] self-host complete: verdict=${r.verdict}`);
         console.error(`[rules] ${r.triggeredRules.join(", ") || "(none)"}`);
-        console.error(`[report] ${r.reportPath} (in tmpdir: ${tmpWs})`);
-        console.error(`[decision] ${r.decisionPath} (in tmpdir)`);
+        if (report !== null) {
+          console.error(`[report] REPORT.md:`);
+          console.error(report);
+        }
         console.error(
-          `[note] 실 repo 의 .harness/audit.jsonl 은 영향 없음 (격리 워크스페이스).`
+          `[note] 실 repo 의 .harness/audit.jsonl 은 영향 없음 (격리 워크스페이스, 종료 시 삭제).`
         );
         // --strict: self-host verdict 가 clean PASS 가 아니면 non-zero exit (CI self-check 게이팅).
         if (opts.strict) {
@@ -183,14 +194,17 @@ export function registerSelfHost(program: Command): void {
             console.error(
               `[strict] verdict ${r.verdict} is not a clean PASS → exit ${code}`
             );
+            await cleanupTmpWs();
             process.exit(code);
           }
         }
       } catch (err) {
         const e = err as Error & { exitCode?: number };
         console.error(`[error] self-host failed: ${e.message}`);
-        await rm(tmpWs, { recursive: true, force: true }).catch(() => {});
+        await cleanupTmpWs();
         process.exit(e.exitCode ?? 1);
+      } finally {
+        await cleanupTmpWs();
       }
     });
 }
