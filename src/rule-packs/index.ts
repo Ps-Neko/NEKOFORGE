@@ -101,6 +101,12 @@ export async function enableRulePack(
   return next;
 }
 
+/**
+ * pack 을 disabled 로 표시(rule-packs.json 갱신).
+ * ⚠️ 이 토글은 **룰 실행을 멈추지 않는다** — 모든 결정적 룰은 계속 실행되고 finding 도 그대로 난다
+ * (게이트 보수성: 룰이 더 도는 쪽이 더 엄격). 끄기는 '트리거된 pack' 보고 범위와 필수 pack 정책에만
+ * 반영된다. 룰을 실제로 안 돌리려면 phase-rules 에 enabledRules 필터 배선이 필요하다(현재 미구현).
+ */
 export async function disableRulePack(
   packId: string,
   deps: StageDeps

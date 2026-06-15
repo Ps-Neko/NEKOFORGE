@@ -5,6 +5,7 @@
  */
 import type { RuleFinding } from "../../rules/index.js";
 import type { Verdict } from "./verdict.js";
+import { RULE_PACK_CATALOG } from "../../rule-packs/catalog.js";
 
 const VERDICT_ORDER: Record<Verdict, number> = {
   PASS: 5,
@@ -41,8 +42,27 @@ export function mergeCap(a: Verdict | null, b: Verdict | null): Verdict | null {
   return VERDICT_ORDER[a] <= VERDICT_ORDER[b] ? a : b;
 }
 
+// worker-safety-core 는 catalog 의 결정적 '룰' 정의가 아니라 worker 합성 단계
+// (phase-synthesis)가 내는 finding id 로 트리거된다 — 이 id 들은 결정적 rule 이 아니라
+// catalog.rules 에 없다. 그래서 이 pack 만 reverse-map 트리거 대상을 명시 오버라이드한다
+// (드리프트가 아니라 의미 차이: catalog=룰 정의 / 여기=어떤 finding 이 pack 을 트리거하나).
+const TRIGGER_ID_OVERRIDE: Readonly<Record<string, readonly string[]>> = {
+  "worker-safety-core": [
+    "worker-safety-risk",
+    "worker-role-separation",
+    "worker-missing-required",
+    "worker-critical-finding",
+    "worker-high-finding",
+    "worker-factory-missing"
+  ]
+};
+
+const CATALOG_RULES_BY_PACK = new Map(RULE_PACK_CATALOG.map((p) => [p.id, p.rules]));
+
 /**
  * Phase RP — passTwo findings 의 ruleId 를 enabled pack 으로 역매핑.
+ * pack→rule 매핑은 RULE_PACK_CATALOG 단일 출처에서 파생(하드코딩 드리프트 제거).
+ * worker-safety-core 만 worker-합성 finding id 로 트리거되므로 명시 오버라이드(위 주석).
  */
 export function uniqueTriggeredPacks(
   findings: ReadonlyArray<RuleFinding>,
@@ -51,80 +71,8 @@ export function uniqueTriggeredPacks(
   const triggered = new Set<string>();
   const ids = new Set(findings.map((f) => f.ruleId));
   for (const p of enabledPacks) {
-    // 동적 import 회피 — 간단한 매칭만.
-    if (p === "security-core" && [
-      "secret-fallback",
-      "auth-bypass",
-      "dangerous-file-write",
-      "hook-injection-risk",
-      "agent-permission-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "test-discipline" && ["test-deletion", "no-test-risk"].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "architecture-core" && [
-      "large-file-risk",
-      "layer-violation",
-      "circular-dependency-risk",
-      "untyped-api-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "design-web" && [
-      "accessibility-risk",
-      "design-token-violation",
-      "responsive-break-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "release-strict" && [
-      "codex-missing-risk",
-      "release-benchmark-required",
-      "auto-apply-block"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "worker-safety-core" && [
-      "worker-safety-risk",
-      "worker-role-separation",
-      "worker-missing-required",
-      "worker-critical-finding",
-      "worker-high-finding",
-      "worker-factory-missing"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "quality-contract-core" && [
-      "quality-contract-invalid",
-      "rule-pack-missing"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "api-safety" && [
-      "missing-input-validation-risk",
-      "missing-rate-limit-risk",
-      "unsafe-error-exposure-risk",
-      "missing-auth-boundary-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "dependency-risk" && [
-      "unbounded-version-risk",
-      "new-runtime-dependency-risk",
-      "postinstall-script-risk",
-      "lockfile-mismatch-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "docs-quality" && [
-      "stale-count-risk",
-      "missing-release-note-risk",
-      "missing-cli-doc-risk",
-      "broken-doc-link-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "release-evidence" && [
-      "release-benchmark-required",
-      "missing-self-host-risk",
-      "missing-migration-note-risk",
-      "missing-external-review-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "frontend-accessibility" && [
-      "accessibility-risk",
-      "missing-focus-state-risk",
-      "interactive-div-risk",
-      "missing-loading-state-risk",
-      "contrast-token-risk"
-    ].some((r) => ids.has(r))) triggered.add(p);
-    if (p === "ai-generated-code-risk" && [
-      "no-test-risk",
-      "untyped-api-risk",
-      "secret-fallback",
-      "auth-bypass"
-    ].some((r) => ids.has(r))) triggered.add(p);
+    const triggerIds = TRIGGER_ID_OVERRIDE[p] ?? CATALOG_RULES_BY_PACK.get(p) ?? [];
+    if (triggerIds.some((r) => ids.has(r))) triggered.add(p);
   }
   return [...triggered];
 }

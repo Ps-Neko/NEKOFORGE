@@ -1,8 +1,10 @@
 /**
- * Rule pack catalog (Phase RP) — 13 큐레이션 pack.
+ * Rule pack catalog (Phase RP) — 13 큐레이션 pack. 각 pack 은 rule id 목록 + 정체성 설명.
  *
- * 각 pack 은 rule id 목록 + 짧은 정체성 설명.
- * gate 가 enabledPacks 를 보고 rule id 집합을 결정.
+ * ⚠️ 이 카탈로그는 pack 의 '정의'다. enabledPacks/disabledPacks 토글은 **어떤 룰이 실행되는지
+ *    제어하지 않는다** — 모든 결정적 룰은 항상 실행된다(게이트는 보수적: 룰이 더 도는 쪽이 더 엄격).
+ *    토글은 (a) uniqueTriggeredPacks 의 '트리거된 pack' 보고 범위와 (b) 필수 pack 정책에만 쓰인다.
+ *    resolveRulePacks 가 enabledRules 를 계산하지만 현재 phase-rules 는 실행 필터로 쓰지 않는다.
  */
 export interface RulePackDef {
   id: string;
