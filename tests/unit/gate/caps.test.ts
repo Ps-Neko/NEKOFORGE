@@ -47,3 +47,17 @@ test("uniqueTriggeredPacks: multiple packs triggered simultaneously", () => {
   assert.ok(result.includes("dependency-risk"));
   assert.equal(result.length, 2);
 });
+
+// 동작 보존(특성화): worker-safety-core 는 catalog '룰' 정의가 아니라 worker 합성 단계
+// (phase-synthesis)가 내는 finding id 로 트리거된다. catalog 로 단순 병합하면 이 트리거가
+// 사라지므로(회귀), 단일출처화 후에도 worker-phase finding 트리거를 보존해야 한다.
+test("uniqueTriggeredPacks: worker-safety-core 는 worker-합성 finding(worker-role-separation)으로도 트리거", () => {
+  const result = uniqueTriggeredPacks([finding("worker-role-separation")], ["worker-safety-core"]);
+  assert.ok(result.includes("worker-safety-core"), "worker-phase finding 이 worker-safety-core 를 트리거해야 함");
+});
+
+// catalog 파생이 first rule 뿐 아니라 pack 의 모든 rule 로 동작하는지(단일출처화 검증).
+test("uniqueTriggeredPacks: catalog pack 은 non-first rule 로도 트리거(api-safety via missing-rate-limit-risk)", () => {
+  const result = uniqueTriggeredPacks([finding("missing-rate-limit-risk")], ["api-safety"]);
+  assert.ok(result.includes("api-safety"));
+});

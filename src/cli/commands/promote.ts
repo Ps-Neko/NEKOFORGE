@@ -71,7 +71,9 @@ export function registerPromote(program: Command): void {
         const { files } = await readFixtures(resolve(o.fixtures));
         const fxCheck = verifyFixturesHash(stored, cand, files);
         if (!fxCheck.ok) { const e = new Error(`INVALID_TRIAL: ${fxCheck.reason}`); (e as Error & { exitCode?: number }).exitCode = 4; throw e; }
-        const rule = await loadCandidateRule(cand);
+        // root=deps.cwd 를 넘겨 gate 경로와 동일하게 경계검사 — 변조된 candidate.json 의
+        // modulePath 가 프로젝트 루트 밖(/tmp/evil.js 등)을 가리켜도 import=실행되지 않게 봉쇄.
+        const rule = await loadCandidateRule(cand, undefined, deps.cwd);
         const readManifest = async () => readPromotedManifest(deps.artifact);
         const active = await loadActiveRules(readManifest, undefined, deps.cwd);
         const t = await runTrial(resolve(o.fixtures), [rule], { activeBaseline: active });
