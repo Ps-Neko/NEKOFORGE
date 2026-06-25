@@ -263,7 +263,7 @@ async function runAutoDemoCli(taskId: string, real: boolean): Promise<void> {
     console.error(`[goal]    login 모듈에 입력 검증 + lockout 헬퍼 추가`);
     console.error(`[stages]  intake→clarify→context→spec→plan→design→policy→team→contract→work→review→gate`);
     const r = await runAutoDemo({ taskId, real });
-    console.error(`[work]    AI 코드 산출 (${real ? "claude 라이브" : "예시 재생"})`);
+    console.error(`[work]    AI 코드 산출 (${real ? "claude 라이브" : "캡처 재생"})`);
     console.error(`[review]  codex 독립 리뷰 (${real ? "라이브" : "stub"})`);
     console.error(`[verdict] ${r.verdict}   (rules: ${r.triggeredRules.join(", ") || "none"})`);
     console.error(`[cost]    $${r.spentUsd.toFixed(2)}${real ? "" : " (재생: 실제 AI 미호출, 게이트 회계상 예약치)"}`);
