@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { runAutoDemo } from "../../src/cli/commands/demo.js";
+import { mkdtemp, writeFile, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 test("demo auto (재생): 오프라인으로 verdict 라이브 계산", async () => {
   const cwdBefore = process.cwd();
@@ -24,4 +27,20 @@ test("demo auto (재생): 결정성 — 두 번 돌려도 같은 verdict/rules",
 test("demo auto (재생): 출력은 '재생'으로 표기, '라이브' 주장 안 함 (I3)", async () => {
   const r = await runAutoDemo({ taskId: "TASK-001", real: false });
   assert.equal(r.mode, "재생");
+});
+
+test("demo auto (재생): 호출자 cwd 파일을 생성/변경하지 않음 (I2)", async () => {
+  const probe = await mkdtemp(join(tmpdir(), "nf-demo-probe-"));
+  const sentinel = join(probe, "sentinel.txt");
+  await writeFile(sentinel, "untouched", "utf8");
+  const before = await readdir(probe);
+  const orig = process.cwd();
+  process.chdir(probe);
+  try {
+    await runAutoDemo({ taskId: "TASK-001", real: false });
+  } finally {
+    process.chdir(orig);
+  }
+  const after = await readdir(probe);
+  assert.deepEqual(after, before, "I2: 데모가 cwd 에 파일을 만들지 않음");
 });
