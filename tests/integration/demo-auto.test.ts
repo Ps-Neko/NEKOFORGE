@@ -10,7 +10,7 @@ test("demo auto (재생): 오프라인으로 verdict 라이브 계산", async ()
   assert.ok(["PASS", "REVIEW", "BLOCK", "INSUFFICIENT", "NEEDS_HUMAN_REVIEW", "PASS_WITH_WARNINGS", "INSUFFICIENT_EVIDENCE"].includes(r.verdict), `verdict=${r.verdict}`);
   assert.equal(typeof r.report, "string");
   // 재생 모드: work=0(replay adapter), review=0.2(cost-guard 예약치). 실제 AI 미호출.
-  assert.ok(r.spentUsd <= 0.2, `재생 spentUsd 는 AI review 예약치 이하여야 함: got ${r.spentUsd}`);
+  assert.equal(r.spentUsd, 0.2);
   assert.equal(process.cwd(), cwdBefore, "I2: cwd 불변");
 });
 

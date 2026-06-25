@@ -271,31 +271,35 @@ export async function runAutoDemo(
   const mode = opts.real ? "라이브" : "재생";
   // --real: 격리 샌드박스(git repo)에서 실제 claude 가 편집. 재생: 캡처 diff 공급(편집 0).
   const sandbox = await mkdtemp(join(tmpdir(), "nekoforge-demo-auto-"));
-  const workerAdapter = opts.real
-    ? createClaudeWorkerAdapter({ cwd: sandbox, permissionMode: "acceptEdits" })
-    : createReplayWorkerAdapter({ resultMd: "# implementation-worker\n\n캡처된 AI 산출물(검증 추가 + isLocked).\n" });
-  const reviewAdapter = opts.real ? createCodexRealAdapter() : createCodexStubAdapter({ enabled: true });
-  const captureDiff = opts.real
-    ? () => readGitDiff(sandbox) ?? ""
-    : () => AUTO_DEMO_DIFF;
+  try {
+    const workerAdapter = opts.real
+      ? createClaudeWorkerAdapter({ cwd: sandbox, permissionMode: "acceptEdits" })
+      : createReplayWorkerAdapter({ resultMd: "# implementation-worker\n\n캡처된 AI 산출물(검증 추가 + isLocked).\n" });
+    const reviewAdapter = opts.real ? createCodexRealAdapter() : createCodexStubAdapter({ enabled: true });
+    const captureDiff = opts.real
+      ? () => readGitDiff(sandbox) ?? ""
+      : () => AUTO_DEMO_DIFF;
 
-  const r = await runAuto({
-    goal: "Add input validation and a lockout helper to the login module, with tests",
-    taskId: opts.taskId,
-    // 재생 모드: work=0 (replay adapter, estimateCostUsd=0), review=0.2 (stub, cost-guard 예약치).
-    // maxCostUsd=0 이면 review 예약 0.2 도 차단되므로 재생 모드 최솟값을 0.2 로 설정.
-    maxCostUsd: opts.real ? 5 : 0.2,
-    workerAdapter,
-    reviewAdapter,
-    captureDiff
-  });
-  return {
-    verdict: r.verdict,
-    triggeredRules: r.triggeredRules,
-    spentUsd: r.spentUsd,
-    report: r.report,
-    mode
-  };
+    const r = await runAuto({
+      goal: "Add input validation and a lockout helper to the login module, with tests",
+      taskId: opts.taskId,
+      // 재생 모드: work=0 (replay adapter, estimateCostUsd=0), review=0.2 (stub, cost-guard 예약치).
+      // maxCostUsd=0 이면 review 예약 0.2 도 차단되므로 재생 모드 최솟값을 0.2 로 설정.
+      maxCostUsd: opts.real ? 5 : 0.2,
+      workerAdapter,
+      reviewAdapter,
+      captureDiff
+    });
+    return {
+      verdict: r.verdict,
+      triggeredRules: r.triggeredRules,
+      spentUsd: r.spentUsd,
+      report: r.report,
+      mode
+    };
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 }
 
 export function registerDemo(program: Command): void {
