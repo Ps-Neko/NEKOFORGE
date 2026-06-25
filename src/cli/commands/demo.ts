@@ -17,6 +17,12 @@ import { runReview } from "../../core/review/index.js";
 import { runGate } from "../../core/gate/index.js";
 import { runPacket } from "../../core/packet/index.js";
 import { createCodexStubAdapter } from "../../integrations/codex/stub.js";
+import { runAuto } from "../../core/auto/index.js";
+import { createReplayWorkerAdapter } from "../../workers/adapters/replay.js";
+import { createClaudeWorkerAdapter } from "../../workers/adapters/claude.js";
+import { createCodexRealAdapter } from "../../integrations/codex/real.js";
+import { readGitDiff } from "../../utils/git.js";
+import { AUTO_DEMO_DIFF } from "../demo-auto-diff.js";
 import { isoNow, systemClock } from "../../utils/time.js";
 import { canonicalHash } from "../../utils/integrity.js";
 import { runWorkersInit } from "../../workers/index.js";
@@ -27,7 +33,7 @@ interface DemoOpts {
   clean?: boolean;
 }
 
-type DemoScenario = "safety" | "productivity";
+type DemoScenario = "safety" | "productivity" | "auto";
 
 const SAFETY_SPEC = {
   who: "solo developer evaluating AI-generated code",
@@ -76,8 +82,8 @@ const SAFETY_DIFF = [
 
 function parseScenario(raw: string | undefined): DemoScenario {
   const scenario = raw ?? "safety";
-  if (scenario === "safety" || scenario === "productivity") return scenario;
-  throw new Error(`unknown demo scenario: ${scenario}. Expected safety or productivity`);
+  if (scenario === "safety" || scenario === "productivity" || scenario === "auto") return scenario;
+  throw new Error(`unknown demo scenario: ${scenario}. Expected safety, productivity, or auto`);
 }
 
 async function writeJsonFile(path: string, data: unknown): Promise<void> {
@@ -257,6 +263,39 @@ async function cleanupAndExit(err: unknown, workspace: string, clean: boolean): 
     await rm(workspace, { recursive: true, force: true }).catch(() => {});
   }
   process.exit(e.exitCode ?? 1);
+}
+
+export async function runAutoDemo(
+  opts: { taskId: string; real: boolean }
+): Promise<{ verdict: string; triggeredRules: string[]; spentUsd: number; report: string; mode: "재생" | "라이브" }> {
+  const mode = opts.real ? "라이브" : "재생";
+  // --real: 격리 샌드박스(git repo)에서 실제 claude 가 편집. 재생: 캡처 diff 공급(편집 0).
+  const sandbox = await mkdtemp(join(tmpdir(), "nekoforge-demo-auto-"));
+  const workerAdapter = opts.real
+    ? createClaudeWorkerAdapter({ cwd: sandbox, permissionMode: "acceptEdits" })
+    : createReplayWorkerAdapter({ resultMd: "# implementation-worker\n\n캡처된 AI 산출물(검증 추가 + isLocked).\n" });
+  const reviewAdapter = opts.real ? createCodexRealAdapter() : createCodexStubAdapter({ enabled: true });
+  const captureDiff = opts.real
+    ? () => readGitDiff(sandbox) ?? ""
+    : () => AUTO_DEMO_DIFF;
+
+  const r = await runAuto({
+    goal: "Add input validation and a lockout helper to the login module, with tests",
+    taskId: opts.taskId,
+    // 재생 모드: work=0 (replay adapter, estimateCostUsd=0), review=0.2 (stub, cost-guard 예약치).
+    // maxCostUsd=0 이면 review 예약 0.2 도 차단되므로 재생 모드 최솟값을 0.2 로 설정.
+    maxCostUsd: opts.real ? 5 : 0.2,
+    workerAdapter,
+    reviewAdapter,
+    captureDiff
+  });
+  return {
+    verdict: r.verdict,
+    triggeredRules: r.triggeredRules,
+    spentUsd: r.spentUsd,
+    report: r.report,
+    mode
+  };
 }
 
 export function registerDemo(program: Command): void {
