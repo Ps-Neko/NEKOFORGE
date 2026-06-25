@@ -1,9 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runAutoDemo } from "../../src/cli/commands/demo.js";
-import { mkdtemp, writeFile, readdir } from "node:fs/promises";
+import { runAutoDemo, seedAutoSandbox } from "../../src/cli/commands/demo.js";
+import { mkdtemp, writeFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { readGitDiff } from "../../src/utils/git.js";
 
 test("demo auto (재생): 오프라인으로 verdict 라이브 계산", async () => {
   const cwdBefore = process.cwd();
@@ -43,4 +44,38 @@ test("demo auto (재생): 호출자 cwd 파일을 생성/변경하지 않음 (I2
   }
   const after = await readdir(probe);
   assert.deepEqual(after, before, "I2: 데모가 cwd 에 파일을 만들지 않음");
+});
+
+test("seedAutoSandbox: git baseline 후 파일 편집 시 readGitDiff 가 login.ts 포함 diff 를 반환 (Fix B 플럼빙)", async () => {
+  const sandbox = await mkdtemp(join(tmpdir(), "nf-seed-test-"));
+  try {
+    await seedAutoSandbox(sandbox);
+
+    // 베이스라인 커밋 후 파일을 변경 — claude 역할을 수동으로 시뮬레이션
+    const loginPath = join(sandbox, "src", "auth", "login.ts");
+    await writeFile(
+      loginPath,
+      [
+        "export interface LoginInput { email: string; password: string }",
+        "",
+        "export function canLogin(input: LoginInput): boolean {",
+        "  if (!input.email.includes('@')) return false;",
+        "  if (input.password.length < 8) return false;",
+        "  return true;",
+        "}",
+        "",
+        "export function isLocked(attempts: number): boolean {",
+        "  return attempts >= 5;",
+        "}",
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+
+    const diff = readGitDiff(sandbox);
+    assert.ok(typeof diff === "string" && diff.length > 0, "readGitDiff 가 빈 문자열/null 을 반환하지 않아야 함");
+    assert.ok(diff.includes("login.ts"), `diff 에 login.ts 가 포함되어야 함, 실제: ${diff.slice(0, 200)}`);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 });

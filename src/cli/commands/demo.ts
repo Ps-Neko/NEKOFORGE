@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
@@ -262,7 +263,7 @@ async function runAutoDemoCli(taskId: string, real: boolean): Promise<void> {
     console.error(`[goal]    login 모듈에 입력 검증 + lockout 헬퍼 추가`);
     console.error(`[stages]  intake→clarify→context→spec→plan→design→policy→team→contract→work→review→gate`);
     const r = await runAutoDemo({ taskId, real });
-    console.error(`[work]    AI 코드 산출 (${real ? "claude 라이브" : "캡처 재생"})`);
+    console.error(`[work]    AI 코드 산출 (${real ? "claude 라이브" : "예시 재생"})`);
     console.error(`[review]  codex 독립 리뷰 (${real ? "라이브" : "stub"})`);
     console.error(`[verdict] ${r.verdict}   (rules: ${r.triggeredRules.join(", ") || "none"})`);
     console.error(`[cost]    $${r.spentUsd.toFixed(2)}${real ? "" : " (재생: 실제 AI 미호출, 게이트 회계상 예약치)"}`);
@@ -286,6 +287,43 @@ async function cleanupAndExit(err: unknown, workspace: string, clean: boolean): 
   process.exit(e.exitCode ?? 1);
 }
 
+/**
+ * --real 샌드박스 시드: src/auth/login.ts "before" 파일 + git baseline commit.
+ * AUTO_DEMO_DIFF 의 a/ 측과 동일한 내용이므로 claude 가 편집하면 readGitDiff() 가
+ * 비어있지 않은 real diff 를 반환한다.
+ */
+export async function seedAutoSandbox(sandbox: string): Promise<void> {
+  await mkdir(join(sandbox, "src", "auth"), { recursive: true });
+  await writeFile(
+    join(sandbox, "src", "auth", "login.ts"),
+    [
+      "export interface LoginInput { email: string; password: string }",
+      "",
+      "export function canLogin(input: LoginInput): boolean {",
+      "  return input.email.length > 0 && input.password.length >= 8;",
+      "}",
+      ""
+    ].join("\n"),
+    "utf8"
+  );
+
+  const runGit = (args: string[]): void => {
+    const r = spawnSync("git", args, { cwd: sandbox, encoding: "utf8" });
+    if (r.status !== 0) {
+      throw new Error(`git ${args[0]} failed: ${r.stderr ?? r.stdout}`);
+    }
+  };
+
+  runGit(["init"]);
+  runGit(["add", "-A"]);
+  runGit([
+    "-c", "user.email=demo@nekoforge.local",
+    "-c", "user.name=nekoforge-demo",
+    "-c", "commit.gpgsign=false",
+    "commit", "-m", "seed"
+  ]);
+}
+
 export async function runAutoDemo(
   opts: { taskId: string; real: boolean }
 ): Promise<{ verdict: string; triggeredRules: string[]; spentUsd: number; report: string; mode: "재생" | "라이브" }> {
@@ -293,6 +331,9 @@ export async function runAutoDemo(
   // --real: 격리 샌드박스(git repo)에서 실제 claude 가 편집. 재생: 캡처 diff 공급(편집 0).
   const sandbox = await mkdtemp(join(tmpdir(), "nekoforge-demo-auto-"));
   try {
+    // real 모드: git baseline + before 소스를 시드해야 readGitDiff() 가 real diff 를 반환함.
+    if (opts.real) await seedAutoSandbox(sandbox);
+
     const workerAdapter = opts.real
       ? createClaudeWorkerAdapter({ cwd: sandbox, permissionMode: "acceptEdits" })
       : createReplayWorkerAdapter({ resultMd: "# implementation-worker\n\n캡처된 AI 산출물(검증 추가 + isLocked).\n" });
