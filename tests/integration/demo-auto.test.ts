@@ -20,3 +20,8 @@ test("demo auto (재생): 결정성 — 두 번 돌려도 같은 verdict/rules",
   assert.equal(a.verdict, b.verdict);
   assert.deepEqual(a.triggeredRules, b.triggeredRules);
 });
+
+test("demo auto (재생): 출력은 '재생'으로 표기, '라이브' 주장 안 함 (I3)", async () => {
+  const r = await runAutoDemo({ taskId: "TASK-001", real: false });
+  assert.equal(r.mode, "재생");
+});

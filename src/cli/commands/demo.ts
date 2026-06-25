@@ -256,6 +256,27 @@ async function runProductivityDemo(taskId: string, clean: boolean): Promise<void
   }
 }
 
+async function runAutoDemoCli(taskId: string, real: boolean): Promise<void> {
+  try {
+    console.error(`[demo]    nekoforge 자동 공장 (${real ? "라이브" : "재생"} 모드)`);
+    console.error(`[goal]    login 모듈에 입력 검증 + lockout 헬퍼 추가`);
+    console.error(`[stages]  intake→clarify→context→spec→plan→design→policy→team→contract→work→review→gate`);
+    const r = await runAutoDemo({ taskId, real });
+    console.error(`[work]    AI 코드 산출 (${real ? "claude 라이브" : "캡처 재생"})`);
+    console.error(`[review]  codex 독립 리뷰 (${real ? "라이브" : "stub"})`);
+    console.error(`[verdict] ${r.verdict}   (rules: ${r.triggeredRules.join(", ") || "none"})`);
+    console.error(`[cost]    $${r.spentUsd.toFixed(2)}${real ? "" : " (재생: 실제 AI 미호출, 게이트 회계상 예약치)"}`);
+    console.error(`[gate]    ⏸ 여기서 멈춥니다 — Humans decide. NEKOFORGE 는 자동 apply 하지 않습니다.`);
+    console.error(`[next]    검토 후 적용은 사람이: 'nekoforge apply --approved' (데모는 실제 레포에 적용 안 함)`);
+    if (r.report) console.log(r.report);
+  } catch (err) {
+    const e = err as Error & { exitCode?: number };
+    console.error(`[error] demo auto failed: ${e.message}`);
+    if (real) console.error(`[hint]  --real 은 claude+codex 인증이 필요합니다. 인증 없이 기본(재생)으로 실행해 보세요.`);
+    process.exit(e.exitCode ?? 1);
+  }
+}
+
 async function cleanupAndExit(err: unknown, workspace: string, clean: boolean): Promise<never> {
   const e = err as Error & { exitCode?: number };
   console.error(`[error] demo failed: ${e.message}`);
@@ -305,14 +326,17 @@ export async function runAutoDemo(
 export function registerDemo(program: Command): void {
   program
     .command("demo")
-    .description("Run an isolated NEKOFORGE demo (safety or productivity).")
-    .argument("[scenario]", "safety | productivity", "safety")
+    .description("Run an isolated NEKOFORGE demo (safety, productivity, or auto).")
+    .argument("[scenario]", "safety | productivity | auto", "safety")
     .option("--task <id>", "task id", "TASK-001")
     .option("--clean", "remove the temporary demo workspace after printing the result", false)
-    .action(async (scenarioRaw: string | undefined, opts: DemoOpts) => {
+    .option("--real", "auto 시나리오를 실제 claude+codex 로 라이브 실행(인증 필요)", false)
+    .action(async (scenarioRaw: string | undefined, opts: DemoOpts & { real?: boolean }) => {
       const scenario = parseScenario(scenarioRaw);
       const taskId = opts.task ?? "TASK-001";
-      if (scenario === "productivity") {
+      if (scenario === "auto") {
+        await runAutoDemoCli(taskId, opts.real === true);
+      } else if (scenario === "productivity") {
         await runProductivityDemo(taskId, opts.clean === true);
       } else {
         await runSafetyDemo(taskId, opts.clean === true);
