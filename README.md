@@ -1,3 +1,11 @@
+> [!WARNING]
+> **NEKOFORGE는 2026년 7월 22일부로 개발이 종료되었습니다.** 이 저장소는 역사적 참고와 재현성을 위해 보존됩니다. 새 기능, 지원, 보안 업데이트는 제공하지 않습니다.
+>
+> - AI가 만든 코드 변경의 안전 검사는 [NEKOWORK](https://github.com/Ps-Neko/NEKOWORK)를 사용하세요.
+> - 비개발자를 위한 프로젝트 진단은 [Project Doctor](https://github.com/Ps-Neko/project-doctor)를 사용하세요.
+>
+> 기존 설치본은 계속 사용할 수 있지만, 새 프로젝트에는 권장하지 않습니다.
+
 # NEKOFORGE
 
 [![CI](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml/badge.svg)](https://github.com/Ps-Neko/NEKOFORGE/actions/workflows/test.yml)
